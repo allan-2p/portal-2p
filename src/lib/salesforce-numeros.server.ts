@@ -136,18 +136,25 @@ export async function forcarNumerosSalesforce(
       continue;
     }
 
-    const paraGravar: { Id: string; Name: string }[] = [];
+    const paraGravar: { Id: string; Name: string; Descri_o_do_Motivo_de_Perda__c?: string }[] = [];
     for (const id of bloco) {
       const alvoNome = esperado.get(id)!.nome;
       const atual = atuais.get(id);
       if (atual === undefined) continue; // oportunidade apagada na org
-      if (atual === alvoNome) {
+      if (atual.nome === alvoNome) {
         res.jaCorretos += 1;
         continue;
       }
-      paraGravar.push({ Id: id, Name: alvoNome });
+      paraGravar.push({
+        Id: id,
+        Name: alvoNome,
+        // Regra de validação da org: perdida sem detalhamento bloqueia update.
+        ...(atual.perdidaSemDetalhe
+          ? { Descri_o_do_Motivo_de_Perda__c: DETALHAMENTO_PERDA_PADRAO }
+          : {}),
+      });
       if (res.amostra.length < 20)
-        res.amostra.push({ numero: so(esperado.get(id)!.row["numero"]), de: atual, para: alvoNome });
+        res.amostra.push({ numero: so(esperado.get(id)!.row["numero"]), de: atual.nome, para: alvoNome });
     }
 
     if (!paraGravar.length || opts.dryRun) {
