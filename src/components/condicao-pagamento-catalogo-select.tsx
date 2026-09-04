@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { listCondicoesPagamento } from "@/lib/condicoes-pagamento.functions";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useListaIncremental, normalizarBusca } from "@/hooks/use-lista-incremental";
 
 /**
  * Seletor do catálogo de condições de pagamento para o cadastro do cliente.
@@ -38,7 +40,15 @@ export function CondicaoPagamentoCatalogoSelect({
     staleTime: 5 * 60_000,
   });
 
-  const opcoes = (q.data ?? []).filter((c) => c.ativo);
+  const opcoes = useMemo(() => (q.data ?? []).filter((c) => c.ativo), [q.data]);
+  const [busca, setBusca] = useState("");
+  const termo = useDebouncedValue(busca.trim(), 250);
+  const filtradas = useMemo(() => {
+    const t = normalizarBusca(termo);
+    if (!t) return opcoes;
+    return opcoes.filter((c) => normalizarBusca(`${c.codigo} ${c.descricao}`).includes(t));
+  }, [opcoes, termo]);
+  const lista = useListaIncremental(filtradas, { passo: 30, chave: termo });
   const cod = String(codigo ?? "").trim();
   const atual = opcoes.find((c) => c.codigo === cod);
   const rotulo = atual
@@ -66,13 +76,17 @@ export function CondicaoPagamentoCatalogoSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-          <Command>
-            <CommandInput placeholder="Busque pela condição de pagamento" />
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Busque pela condição de pagamento"
+              value={busca}
+              onValueChange={setBusca}
+            />
             <CommandList className="max-h-72">
               <CommandEmpty>
                 {q.isLoading ? "Carregando…" : "Nenhuma condição encontrada."}
               </CommandEmpty>
-              {opcoes.map((c) => (
+              {lista.visiveis.map((c) => (
                 <CommandItem
                   key={c.codigo}
                   value={`${c.codigo} ${c.descricao}`}
@@ -85,6 +99,17 @@ export function CondicaoPagamentoCatalogoSelect({
                   <span className="truncate">{c.descricao}</span>
                 </CommandItem>
               ))}
+              {lista.temMais ? (
+                <div ref={lista.sentinelaRef} className="px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={lista.carregarMais}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Carregar mais ({lista.restantes})
+                  </button>
+                </div>
+              ) : null}
             </CommandList>
           </Command>
       </PopoverContent>
