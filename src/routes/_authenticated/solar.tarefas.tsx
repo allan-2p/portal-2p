@@ -182,18 +182,23 @@ function TarefasPage() {
             .some((v) => String(v).toLowerCase().includes(q))
         : true,
     );
-    return arr.sort((a, b) => a.date.localeCompare(b.date));
-  }, [tasksQuery.data, busca]);
-
-  const gruposLista = useMemo(() => {
-    const map = new Map<string, SalesforceTask[]>();
-    for (const t of listaFiltrada) {
-      const arr = map.get(t.date) ?? [];
-      arr.push(t);
-      map.set(t.date, arr);
-    }
-    return [...map.entries()];
-  }, [listaFiltrada]);
+    const prioPeso = (t: SalesforceTask) => ({ high: 0, medium: 1, low: 2 })[mapPriority(t.priority)];
+    const porData = (a: SalesforceTask, b: SalesforceTask) => a.date.localeCompare(b.date);
+    return arr.sort((a, b) => {
+      switch (ordem) {
+        case "data-desc":
+          return b.date.localeCompare(a.date);
+        case "prioridade":
+          return prioPeso(a) - prioPeso(b) || porData(a, b);
+        case "cliente":
+          return (a.what ?? "").localeCompare(b.what ?? "", "pt-BR") || porData(a, b);
+        case "data-asc":
+        default:
+          // Data crescente: atrasadas primeiro, depois hoje e os próximos dias.
+          return porData(a, b);
+      }
+    });
+  }, [tasksQuery.data, busca, ordem]);
 
   const cells: Array<{ date: Date; key: string } | null> = [];
   for (let i = 0; i < startOffset; i++) cells.push(null);
