@@ -61,6 +61,7 @@ import {
   calcularCarregadores,
   fmtBRL,
   fmtPct,
+  fmtAliquota,
   labelFinalidadeUso,
   finalidadeUsoDoCadastro,
   OBSERVACOES_PADRAO,
@@ -2657,6 +2658,9 @@ function PropostaCarregadoresPage() {
                           <th className="text-left font-medium py-1">Produto</th>
                           <th className="text-left font-medium py-1">NCM</th>
                           <th className="text-right font-medium py-1">Qtd</th>
+                          <th className="text-right font-medium py-1">IPI</th>
+                          <th className="text-right font-medium py-1">ICMS</th>
+                          <th className="text-right font-medium py-1">PIS/COFINS</th>
                           <th className="text-right font-medium py-1">Valor unit.</th>
                           <th className="text-right font-medium py-1">Total</th>
                         </tr>
@@ -2670,6 +2674,15 @@ function PropostaCarregadoresPage() {
                               prod?.ncm_codigo ??
                               (ncmsQ.data ?? []).find((n) => n.id === prod?.ncm_id)?.codigo ??
                               "—";
+                            const ncmRow = (ncmsQ.data ?? []).find((n) => n.id === prod?.ncm_id) ?? null;
+                            const aliq = aliquotasDoItem({
+                              uf: state.uf,
+                              contribuinte: state.contribuinte,
+                              regimeTributario: state.regimeTributario ?? null,
+                              finalidade: state.finalidadeUso,
+                              ncm: ncmRow,
+                              config,
+                            });
                             return (
                               <tr key={i.key} className="border-t border-border/60">
                                 <td className="py-1.5 pr-2">
@@ -2693,6 +2706,9 @@ function PropostaCarregadoresPage() {
                                 </td>
                                 <td className="py-1.5 pr-2 tabular-nums">{ncm}</td>
                                 <td className="py-1.5 text-right tabular-nums">{i.qtd}</td>
+                                <td className="py-1.5 text-right tabular-nums">{fmtAliquota(aliq.ipi)}</td>
+                                <td className="py-1.5 text-right tabular-nums">{fmtAliquota(aliq.icms)}</td>
+                                <td className="py-1.5 text-right tabular-nums">{fmtAliquota(aliq.pisCofins)}</td>
                                 <td className="py-1.5 text-right tabular-nums">{fmtBRL(i.valor)}</td>
                                 <td className="py-1.5 text-right tabular-nums font-medium">
                                   {fmtBRL(i.valor * i.qtd)}
@@ -2709,7 +2725,7 @@ function PropostaCarregadoresPage() {
                 <div className="border-t border-border pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
                   <p className="sm:col-span-2 text-xs uppercase tracking-wide text-muted-foreground">Impostos</p>
                   <ResumoLinha k="Total dos itens" v={fmtBRL(d.valorItens)} />
-                  <ResumoLinha k="IPI destacado" v={fmtBRL(d.ipiValor)} />
+                  <ResumoLinha k={`IPI destacado (${fmtAliquota(config.ipi)})`} v={fmtBRL(d.ipiValor)} />
                   <ResumoLinha k="Itens sem IPI (base fiscal)" v={fmtBRL(d.valorItem)} />
                   <ResumoLinha k="Valor líquido (sem IPI/ICMS/PIS-COFINS)" v={fmtBRL(d.rl)} />
                   <ResumoLinha
