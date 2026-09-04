@@ -189,7 +189,8 @@ export async function forcarNumerosSalesforce(
       // Gateway sem /composite: cai para PATCH individual.
       for (const r of paraGravar) {
         try {
-          await sf(`/sobjects/Opportunity/${r.Id}`, { method: "PATCH", body: JSON.stringify({ Name: r.Name }) });
+          const { Id, ...campos } = r;
+          await sf(`/sobjects/Opportunity/${Id}`, { method: "PATCH", body: JSON.stringify(campos) });
           res.corrigidos += 1;
         } catch (err) {
           res.falhas += 1;
