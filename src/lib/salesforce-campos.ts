@@ -169,7 +169,7 @@ export const CAMPOS_ACCOUNT: CampoOrigem[] = [
     chave: "nome_fantasia",
     rotulo: "Nome fantasia",
     origem: "Cadastro de cliente › Nome fantasia",
-    sfPadrao: null,
+    sfPadrao: "Nome_Fantasia__c",
     tipo: "texto",
     valor: (c) => ouNulo(c["nome_fantasia"]),
   },
@@ -185,11 +185,12 @@ export const CAMPOS_ACCOUNT: CampoOrigem[] = [
     chave: "email",
     rotulo: "E-mail principal",
     origem: "Cadastro de cliente › E-mail",
-    ajuda: "Account não tem campo padrão de e-mail; mapeie para um campo customizado da org.",
-    sfPadrao: null,
+    ajuda: "Account não tem campo padrão de e-mail; a org usa o customizado `Email__c`.",
+    sfPadrao: "Email__c",
     tipo: "email",
     valor: (c) => ouNulo(c["email"]),
   },
+
   {
     chave: "site",
     rotulo: "Site",
@@ -259,7 +260,7 @@ export const CAMPOS_ACCOUNT: CampoOrigem[] = [
     chave: "inscricao_estadual",
     rotulo: "Inscrição estadual",
     origem: "Cadastro de cliente › IE",
-    sfPadrao: null,
+    sfPadrao: "Inscri_o_Estadual__c",
     tipo: "texto",
     valor: (c) => ouNulo(c["inscricao_estadual"] ?? c["ie"]),
   },
@@ -267,10 +268,12 @@ export const CAMPOS_ACCOUNT: CampoOrigem[] = [
     chave: "numero_sap",
     rotulo: "Código do cliente no SAP",
     origem: "Cadastro de cliente › Nº SAP",
-    sfPadrao: null,
+    ajuda: "Campo numérico `N_SAP__c` da org (vai sem os zeros à esquerda).",
+    sfPadrao: "N_SAP__c",
     tipo: "texto",
-    valor: (c) => ouNulo(c["numero_sap"]),
+    valor: (c) => numeroOuNulo(so(c["numero_sap"])),
   },
+
 ];
 
 /* ------------------------------------------------------------------ */
