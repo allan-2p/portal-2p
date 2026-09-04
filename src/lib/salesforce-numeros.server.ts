@@ -114,7 +114,7 @@ export async function forcarNumerosSalesforce(
   for (let i = 0; i < ids.length; i += LOTE) {
     const bloco = ids.slice(i, i + LOTE);
     // Nome atual na org (SOQL em lote) — evita PATCH desnecessário.
-    let atuais = new Map<string, { nome: string; perdidaSemDetalhe: boolean }>();
+    let atuais = new Map<string, { nome: string; perdida: boolean; detalhe: string }>();
     try {
       const q = `SELECT Id, Name, IsClosed, IsWon, Descri_o_do_Motivo_de_Perda__c FROM Opportunity WHERE Id IN (${bloco.map((x) => `'${x}'`).join(",")})`;
       const r = await sf(`/query?q=${encodeURIComponent(q)}`);
@@ -123,12 +123,8 @@ export async function forcarNumerosSalesforce(
           String(x.Id),
           {
             nome: String(x.Name ?? ""),
-            // Detalhamento com menos de 5 caracteres ("a", ".", "-") é lixo
-            // que a regra de validação da org não aceita.
-            perdidaSemDetalhe:
-              x.IsClosed === true &&
-              x.IsWon !== true &&
-              String(x.Descri_o_do_Motivo_de_Perda__c ?? "").trim().length < 5,
+            perdida: x.IsClosed === true && x.IsWon !== true,
+            detalhe: String(x.Descri_o_do_Motivo_de_Perda__c ?? "").trim(),
           },
         ]),
       );
