@@ -232,7 +232,7 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
             const contatos = await contatosDb.buscarContatos(inst, {
               q: termo,
               docsCarteira: docs,
-              limite: LIMITE_POR_GRUPO,
+              limite: porGrupo,
             });
             const podeVer = !!permContatos.view_all_fields;
             for (const c of contatos) {
@@ -279,5 +279,5 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
       }
     resultados.sort((a, b) => b.score - a.score || a.titulo.localeCompare(b.titulo, "pt-BR"));
 
-    return { resultados: resultados.slice(0, 30) };
+    return { resultados: resultados.slice(0, porGrupo * 8) };
   });
