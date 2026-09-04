@@ -28,6 +28,7 @@ import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-
 import { cidadeUf } from "@/lib/local-format";
 import { adicionarDiasUteis } from "@/lib/dias-uteis";
 import { formatSapNumero } from "@/lib/sap-numero";
+import { soDigitos } from "@/lib/cnpj";
 import { numeroExibicao } from "@/lib/proposta-variacoes";
 import {
   numeroAnterior,
