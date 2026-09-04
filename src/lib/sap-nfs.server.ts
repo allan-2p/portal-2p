@@ -440,6 +440,8 @@ export type NfAplicacao = {
   de: string;
   para: string | null;
   nf: string | null;
+  /** true quando o SAP não devolveu nenhum sinal de progresso para a OV. */
+  vazio?: boolean;
 };
 
 async function processarProposta(row: Record<string, any>): Promise<NfAplicacao> {
@@ -618,7 +620,7 @@ export function selecionarFilaRotativa<T>(rows: T[], limite: number, rodada: num
  */
 export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado> {
   if (!sapNfsConfigurado()) {
-    return { verificados: 0, atualizados: 0, detalhes: [], skipped: true, motivo: "SAP_NFS_URL/credencial não configurada." };
+    return { verificados: 0, atualizados: 0, vazios: 0, erros_total: 0, detalhes: [], skipped: true, motivo: "SAP_NFS_URL/credencial não configurada." };
   }
 
   // Ordenação e filtro no banco: com backlog grande, ordenar em memória
@@ -667,7 +669,7 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
       await logIntegrationEvent({
         slug: "cron.sap-nfs",
         level: "error",
-        event: "consulta",
+        event: "consulta-erro",
         message: erro,
         detail: {
           proposta_id: String(row["id"]),
@@ -679,5 +681,13 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
   }
 
   const atualizados = detalhes.filter((d) => d.para).length;
-  return { verificados: fila.length, atualizados, detalhes, ...(erros.length ? { erros } : {}) };
+  const vazios = detalhes.filter((d) => d.vazio).length;
+  return {
+    verificados: fila.length,
+    atualizados,
+    vazios,
+    erros_total: erros.length,
+    detalhes,
+    ...(erros.length ? { erros } : {}),
+  };
 }
