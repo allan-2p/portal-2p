@@ -244,6 +244,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/admin/logs/moderacao": "admin.logs.moderacao",
   "/admin/logs/retencao": "admin.logs.retencao",
   "/admin/logs/gatilhos": "admin.logs.jobs",
+  "/admin/logs/fretefy": "admin.logs.jobs",
   "/admin/vinculos": "admin.vinculos",
   "/admin/emails": "admin.emails",
   "/marketing": "marketing.home",
