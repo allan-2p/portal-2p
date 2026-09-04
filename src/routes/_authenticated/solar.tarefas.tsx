@@ -24,10 +24,18 @@ import {
   MessageSquare,
   Plus,
   Search,
+  ArrowUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
