@@ -28,6 +28,7 @@ import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-
 import { cidadeUf } from "@/lib/local-format";
 import { adicionarDiasUteis } from "@/lib/dias-uteis";
 import { formatSapNumero } from "@/lib/sap-numero";
+import { soDigitos } from "@/lib/cnpj";
 import { numeroExibicao } from "@/lib/proposta-variacoes";
 import {
   numeroAnterior,
@@ -232,7 +233,11 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-sm">
           <Campo label="CNPJ/CPF" value={p['cliente_doc'] || "—"} />
           <Campo label="Inscrição estadual" value={p['cliente_ie'] || "—"} />
-          <Campo label="Telefone" value={p['cliente_telefone'] || "—"} />
+          <Campo
+            label="Telefone"
+            value={p['cliente_telefone'] || "—"}
+            href={p['cliente_telefone'] ? `https://wa.me/55${soDigitos(String(p['cliente_telefone']))}` : undefined}
+          />
           <Campo label="E-mail" value={p['cliente_email'] || "—"} />
           <Campo label="Fase (Salesforce)" value={faseDaProposta(p as any)} />
           {p['motivo_perda'] ? (
@@ -636,15 +641,35 @@ function labelFinalidade(v: unknown) {
   return map[String(v ?? "")] ?? "—";
 }
 
-function Campo({ label, value }: { label: string; value: string }) {
+function Campo({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const conteudo = href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-medium break-words sm:truncate text-primary hover:underline"
+      title={`${value} — abrir no WhatsApp`}
+    >
+      {value}
+    </a>
+  ) : (
+    <div className="font-medium break-words sm:truncate" title={value}>
+      {value}
+    </div>
+  );
   return (
     <div className="min-w-0">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-medium break-words sm:truncate" title={value}>
-        {value}
-      </div>
+      {conteudo}
     </div>
-
   );
 }
 
