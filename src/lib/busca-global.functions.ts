@@ -79,11 +79,19 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
     const i = (input ?? {}) as Record<string, unknown>;
-    return { q: typeof i["q"] === "string" ? i["q"].slice(0, 120) : "" };
+    const limite = Number(i["limite"]);
+    return {
+      q: typeof i["q"] === "string" ? i["q"].slice(0, 120) : "",
+      limite: Number.isFinite(limite)
+        ? Math.min(Math.max(Math.trunc(limite), 1), LIMITE_MAX)
+        : LIMITE_POR_GRUPO,
+    };
   })
   .handler(async ({ data, context }): Promise<{ resultados: BuscaResultado[] }> => {
     const termo = data.q.trim();
+    const porGrupo = data.limite;
     if (termo.length < 2) return { resultados: [] };
+
 
     const { resolveAccess } = await import("./guards.server");
     const { getPerm } = await import("./object-perms.server");
