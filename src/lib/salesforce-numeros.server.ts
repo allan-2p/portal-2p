@@ -123,10 +123,12 @@ export async function forcarNumerosSalesforce(
           String(x.Id),
           {
             nome: String(x.Name ?? ""),
+            // Detalhamento com menos de 5 caracteres ("a", ".", "-") é lixo
+            // que a regra de validação da org não aceita.
             perdidaSemDetalhe:
               x.IsClosed === true &&
               x.IsWon !== true &&
-              !String(x.Descri_o_do_Motivo_de_Perda__c ?? "").trim(),
+              String(x.Descri_o_do_Motivo_de_Perda__c ?? "").trim().length < 5,
           },
         ]),
       );
