@@ -17,6 +17,14 @@ import { numeroExibicao } from "./proposta-variacoes";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 const LOTE = 200;
 
+/**
+ * Oportunidades perdidas têm regra de validação na org que exige o campo
+ * "Detalhamento (Motivo de Perda)" preenchido em qualquer alteração. Quando o
+ * campo está vazio, até um update de `Name` é recusado. Nesses casos gravamos
+ * este texto padrão junto com o nome (autorizado pelo usuário).
+ */
+const DETALHAMENTO_PERDA_PADRAO = "Oportunidade Mecanicamente Perdida";
+
 const so = (v: unknown) => String(v ?? "").trim();
 
 function secrets() {
@@ -106,29 +114,48 @@ export async function forcarNumerosSalesforce(
   for (let i = 0; i < ids.length; i += LOTE) {
     const bloco = ids.slice(i, i + LOTE);
     // Nome atual na org (SOQL em lote) — evita PATCH desnecessário.
-    let atuais = new Map<string, string>();
+    let atuais = new Map<string, { nome: string; perdida: boolean; detalhe: string }>();
     try {
-      const q = `SELECT Id, Name FROM Opportunity WHERE Id IN (${bloco.map((x) => `'${x}'`).join(",")})`;
+      const q = `SELECT Id, Name, IsClosed, IsWon, Descri_o_do_Motivo_de_Perda__c FROM Opportunity WHERE Id IN (${bloco.map((x) => `'${x}'`).join(",")})`;
       const r = await sf(`/query?q=${encodeURIComponent(q)}`);
-      atuais = new Map((r?.records ?? []).map((x: any) => [String(x.Id), String(x.Name ?? "")]));
+      atuais = new Map(
+        (r?.records ?? []).map((x: any) => [
+          String(x.Id),
+          {
+            nome: String(x.Name ?? ""),
+            perdida: x.IsClosed === true && x.IsWon !== true,
+            detalhe: String(x.Descri_o_do_Motivo_de_Perda__c ?? "").trim(),
+          },
+        ]),
+      );
     } catch (err) {
       res.falhas += bloco.length;
       res.erros.push({ id: bloco[0] ?? "", numero: "", mensagem: (err as Error).message });
       continue;
     }
 
-    const paraGravar: { Id: string; Name: string }[] = [];
+    const paraGravar: { Id: string; Name: string; Descri_o_do_Motivo_de_Perda__c?: string }[] = [];
     for (const id of bloco) {
       const alvoNome = esperado.get(id)!.nome;
       const atual = atuais.get(id);
       if (atual === undefined) continue; // oportunidade apagada na org
-      if (atual === alvoNome) {
+      if (atual.nome === alvoNome) {
         res.jaCorretos += 1;
         continue;
       }
-      paraGravar.push({ Id: id, Name: alvoNome });
+      paraGravar.push({
+        Id: id,
+        Name: alvoNome,
+        // Regra de validação da org: perdida exige detalhamento do motivo de
+        // perda com texto de verdade. Detalhe vazio/lixo ("a", ".") recebe o
+        // texto padrão; detalhe curto demais ("BELENERGY") também é recusado
+        // pela regra — nesses casos o retry abaixo anexa o texto padrão.
+        ...(atual.perdida && atual.detalhe.length < 5
+          ? { Descri_o_do_Motivo_de_Perda__c: DETALHAMENTO_PERDA_PADRAO }
+          : {}),
+      });
       if (res.amostra.length < 20)
-        res.amostra.push({ numero: so(esperado.get(id)!.row["numero"]), de: atual, para: alvoNome });
+        res.amostra.push({ numero: so(esperado.get(id)!.row["numero"]), de: atual.nome, para: alvoNome });
     }
 
     if (!paraGravar.length || opts.dryRun) {
@@ -144,18 +171,40 @@ export async function forcarNumerosSalesforce(
       const r = await sf(`/composite/sobjects`, { method: "PATCH", body: JSON.stringify(body) });
       const lista = Array.isArray(r) ? r : [];
       if (lista.length === paraGravar.length) {
-        lista.forEach((x: any, idx: number) => {
-          if (x?.success) res.corrigidos += 1;
-          else {
-            res.falhas += 1;
-            if (res.erros.length < 30)
-              res.erros.push({
-                id: paraGravar[idx]!.Id,
-                numero: so(esperado.get(paraGravar[idx]!.Id)?.row["numero"]),
-                mensagem: JSON.stringify(x?.errors ?? x).slice(0, 300),
-              });
+        for (let idx = 0; idx < lista.length; idx++) {
+          const x: any = lista[idx];
+          const reg = paraGravar[idx]!;
+          if (x?.success) {
+            res.corrigidos += 1;
+            continue;
           }
-        });
+          // Regra da org recusou o detalhamento curto: anexa o texto padrão
+          // ao que o vendedor escreveu e tenta de novo, uma por uma.
+          const codigo = String(x?.errors?.[0]?.statusCode ?? "");
+          const info = atuais.get(reg.Id);
+          if (codigo === "FIELD_CUSTOM_VALIDATION_EXCEPTION" && info?.perdida && !reg.Descri_o_do_Motivo_de_Perda__c) {
+            try {
+              const detalhe = info.detalhe
+                ? `${info.detalhe} — ${DETALHAMENTO_PERDA_PADRAO}`
+                : DETALHAMENTO_PERDA_PADRAO;
+              await sf(`/sobjects/Opportunity/${reg.Id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ Name: reg.Name, Descri_o_do_Motivo_de_Perda__c: detalhe }),
+              });
+              res.corrigidos += 1;
+              continue;
+            } catch (err) {
+              x.errors = [{ statusCode: codigo, message: (err as Error).message }];
+            }
+          }
+          res.falhas += 1;
+          if (res.erros.length < 30)
+            res.erros.push({
+              id: reg.Id,
+              numero: so(esperado.get(reg.Id)?.row["numero"]),
+              mensagem: JSON.stringify(x?.errors ?? x).slice(0, 300),
+            });
+        }
         continue;
       }
       throw new Error("Resposta inesperada do composite.");
@@ -163,7 +212,8 @@ export async function forcarNumerosSalesforce(
       // Gateway sem /composite: cai para PATCH individual.
       for (const r of paraGravar) {
         try {
-          await sf(`/sobjects/Opportunity/${r.Id}`, { method: "PATCH", body: JSON.stringify({ Name: r.Name }) });
+          const { Id, ...campos } = r;
+          await sf(`/sobjects/Opportunity/${Id}`, { method: "PATCH", body: JSON.stringify(campos) });
           res.corrigidos += 1;
         } catch (err) {
           res.falhas += 1;
