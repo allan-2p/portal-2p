@@ -336,13 +336,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     </>
                   )}
                 </Link>
-                {show("clientes.sugestoes") && !collapsed && (
+                {!collapsed && (
                   <div className="mb-2 ml-3 pl-3 border-l border-border">
                     <SubLink
-                      to="/solar/clientes/sugestoes"
-                      label="Sugestões do Atlas"
+                      to="/atlas-ia/radar"
+                      label="Radar do Atlas"
                       icon={Sparkles}
-                      active={pathname.startsWith("/solar/clientes/sugestoes")}
+                      active={pathname.startsWith("/atlas-ia/radar")}
                     />
                   </div>
                 )}
@@ -614,7 +614,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex flex-col bg-background">
       {/* ---------- Barra superior (identidade + utilidades) ---------- */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-lg">
-        <div className="flex items-center gap-2 px-3 sm:px-4 md:px-6 h-14">
+        <div className="relative flex items-center gap-2 px-3 sm:px-4 md:px-6 h-14">
+
           <button
             onClick={() => setMobileNavOpen(true)}
             className="md:hidden h-10 w-10 -ml-1 shrink-0 rounded-lg border border-border bg-surface flex items-center justify-center"
@@ -634,15 +635,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          {/* Busca global do menu (⌘K) */}
+          {/* Busca global do menu (⌘K) — centralizada na barra, independente do conteúdo das laterais */}
           <button
             onClick={() => setBuscaOpen(true)}
-            className="hidden lg:flex items-center gap-2 mx-auto h-9 w-[min(420px,32vw)] rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground hover:bg-surface-2"
+            className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2 h-9 w-[min(420px,32vw)] rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground hover:bg-surface-2"
           >
             <Search className="h-4 w-4 shrink-0" />
             <span className="truncate">Buscar telas…</span>
             <kbd className="ml-auto text-[10px] rounded border border-border px-1 py-0.5">⌘K</kbd>
           </button>
+
 
           <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
             <button
@@ -827,15 +829,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Sparkles className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Atlas</span>
               </Link>
-              {show("clientes.sugestoes") && (
-                <Link
-                  to="/solar/clientes/sugestoes"
-                  title="Sugestões do Atlas"
-                  className="inline-flex items-center h-6 px-2 rounded-md hover:bg-surface-2 hover:text-foreground"
-                >
-                  Sugestões
-                </Link>
-              )}
             </>
           )}
           <Link
