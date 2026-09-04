@@ -31,6 +31,8 @@ export type SimulacaoValores = {
   pesoBruto: number;
   /** Valor líquido da linha devolvido pelo SAP, quando informado. */
   valor: number | null;
+  /** VALOR_LIQUIDO puro devolvido pelo SAP, antes de recompor os impostos. */
+  valorLiquido: number | null;
   /**
    * Valor da linha SEM ICMS e SEM IPI — usado no Kit Fotovoltaico, que tem
    * isenção desses dois tributos: VALOR_LIQUIDO + VL_PIS + VL_COFINS.
@@ -283,6 +285,7 @@ export async function simularSap(
       pesoBruto,
       // a antiga usa VALOR_LIQUIDO + VALOR_IMPOSTO (calculadora.php:894); só líquido subestima ~15%
       valor: valorTxt !== undefined ? liquido + num(reg["VALOR_IMPOSTO"], "VALOR_IMPOSTO") : null,
+      valorLiquido: valorTxt !== undefined ? liquido : null,
       // Kit fotovoltaico: isenção de ICMS e IPI → só PIS/COFINS entram
       // (calculadora.php:887-894).
       valorSemIcmsIpi: valorTxt !== undefined ? liquido + vlPis + vlCofins : null,

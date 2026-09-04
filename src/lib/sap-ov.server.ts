@@ -433,6 +433,10 @@ export function aliqIcmsDoItem(row: Record<string, any>, item: any): number | nu
  */
 export function valorProdUnitario(row: Record<string, any>, item: any): number {
   const valor = Number(item?.valor ?? 0);
+  const fatorSap = Number(item?.fator_valor_prod_sap ?? NaN);
+  if (valor > 0 && Number.isFinite(fatorSap) && fatorSap > 0 && fatorSap < 1) {
+    return Math.round(valor * fatorSap * 100) / 100;
+  }
   const ipi = aliqIpiDoItem(row, item);
   const icms = aliqIcmsDoItem(row, item);
   const pisCofins = aliqPisCofinsDoItem(row, item);
@@ -450,7 +454,13 @@ export function itensSemAliquota(row: Record<string, any>): any[] {
   );
 }
 
-export type AliquotasItemSap = { ipi: number; icms: number; pisCofins: number };
+export type AliquotasItemSap = {
+  ipi: number;
+  icms: number;
+  pisCofins: number;
+  /** Fator real VALOR_LIQUIDO ÷ preço final retornado pela simulação. */
+  fatorValorProd: number | null;
+};
 
 /**
  * Alíquotas REAIS por material, lidas da simulação do SAP (`ZNFE_OV_SIMULAR`)
@@ -494,6 +504,10 @@ export async function aliquotasSapDosItens(
       ipi: r6((v.vlIpi || 0) / semIpi),
       icms: r6((v.vlIcms || 0) / semIpi),
       pisCofins: r6(((v.vlPis || 0) + (v.vlCofins || 0)) / baseP),
+      fatorValorProd:
+        v.valor !== null && v.valor > 0 && v.valorLiquido !== null && v.valorLiquido > 0
+          ? r6(v.valorLiquido / v.valor)
+          : null,
     });
   }
   return out;
@@ -524,18 +538,22 @@ export async function sincronizarAliquotasComSap(row: Record<string, any>): Prom
       ipi: aliqIpiDoItem(row, item) ?? 0,
       icms: aliqIcmsDoItem(row, item) ?? 0,
       pisCofins: aliqPisCofinsDoItem(row, item) ?? 0,
+      fatorValorProd: Number(item?.fator_valor_prod_sap ?? NaN) || null,
     };
     const difere = (a: number, b: number) => Math.abs(a - b) > 1e-6;
     if (
       difere(atual.ipi, sap.ipi) ||
       difere(atual.icms, sap.icms) ||
-      difere(atual.pisCofins, sap.pisCofins)
+      difere(atual.pisCofins, sap.pisCofins) ||
+      (sap.fatorValorProd !== null &&
+        (atual.fatorValorProd === null || difere(atual.fatorValorProd, sap.fatorValorProd)))
     ) {
       mudou.push({ codigo: norm(item.codigo), de: atual, para: sap });
     }
     item["aliq_ipi"] = sap.ipi;
     item["aliq_icms"] = sap.icms;
     item["aliq_pis_cofins"] = sap.pisCofins;
+    item["fator_valor_prod_sap"] = sap.fatorValorProd;
   }
   return mudou;
 }
