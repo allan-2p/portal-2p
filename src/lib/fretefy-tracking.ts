@@ -51,6 +51,8 @@ export function classificarEventoFretefy(texto: string): FretefyEventoTipo {
   const s = norm(texto);
   if (!s) return "desconhecido";
   if (/(nao|sem|falha|insucesso|tentativa)\s+(de\s+)?entreg/.test(s)) return "ocorrencia";
+  // Envelope real do callback: { type: "carga.finalizada" }.
+  if (/carga\.?\s*finaliz|finalizad/.test(s)) return "entregue";
   // "saiu para entrega" / "em rota de entrega" ainda NÃO é entrega concluída.
   if (/saiu para|em rota|a caminho|previsao de entreg|rota de entreg/.test(s)) return "em_transito";
   if (/entreg|delivered|comprovante|canhoto|pod\b/.test(s)) return "entregue";
@@ -63,11 +65,23 @@ export function classificarEventoFretefy(texto: string): FretefyEventoTipo {
 
 export function interpretarEventoFretefy(payload: Record<string, unknown>): FretefyEvento {
   const pedido =
-    str(pick(payload, ["pedido", "numero", "numeroPedido", "numero_pedido", "nroped", "documento", "pedidoCliente"])) ||
+    str(
+      pick(payload, [
+        "pedido",
+        "numero",
+        "numeroPedido",
+        "numero_pedido",
+        "nroped",
+        "documento",
+        "pedidoCliente",
+        "pedidoEmbarcador",
+        "pedido_embarcador",
+      ]),
+    ) ||
     null;
 
   const bruto = [
-    pick(payload, ["evento", "event", "tipoEvento", "tipo_evento"]),
+    pick(payload, ["evento", "event", "type", "tipo", "tipoEvento", "tipo_evento", "tipoCarga"]),
     pick(payload, ["status", "situacao", "statusEntrega", "status_entrega"]),
     pick(payload, ["ocorrencia", "descricao", "descricaoOcorrencia", "mensagem", "message"]),
   ]
