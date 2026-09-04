@@ -24,10 +24,18 @@ import {
   MessageSquare,
   Plus,
   Search,
+  ArrowUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
@@ -124,6 +132,9 @@ function TarefasPage() {
   });
   const [view, setView] = useState<"calendario" | "lista">("lista");
   const [busca, setBusca] = useState("");
+  const [ordem, setOrdem] = useState<"data-asc" | "data-desc" | "prioridade" | "cliente">(
+    "data-asc",
+  );
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const { ownerId, setOwnerId, ownerParam, dataEnabled } = useScopedOwner("all");
 
@@ -135,9 +146,14 @@ function TarefasPage() {
   const today = new Date();
 
   const range = useMemo(() => {
-    const start = fmtKey(new Date(year, month, 1));
+    const inicioMes = new Date(year, month, 1);
+    // Puxa também as tarefas em aberto dos últimos 120 dias, para que as
+    // atrasadas apareçam no topo quando a lista é ordenada por data.
+    const janelaAtraso = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 120);
+    const start = fmtKey(inicioMes < janelaAtraso ? inicioMes : janelaAtraso);
     const end = fmtKey(new Date(year, month, daysInMonth));
     return { start, end };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month, daysInMonth]);
 
   const fetchTasks = useServerFn(getSalesforceTasks);
@@ -166,18 +182,23 @@ function TarefasPage() {
             .some((v) => String(v).toLowerCase().includes(q))
         : true,
     );
-    return arr.sort((a, b) => a.date.localeCompare(b.date));
-  }, [tasksQuery.data, busca]);
-
-  const gruposLista = useMemo(() => {
-    const map = new Map<string, SalesforceTask[]>();
-    for (const t of listaFiltrada) {
-      const arr = map.get(t.date) ?? [];
-      arr.push(t);
-      map.set(t.date, arr);
-    }
-    return [...map.entries()];
-  }, [listaFiltrada]);
+    const prioPeso = (t: SalesforceTask) => ({ high: 0, medium: 1, low: 2 })[mapPriority(t.priority)];
+    const porData = (a: SalesforceTask, b: SalesforceTask) => a.date.localeCompare(b.date);
+    return arr.sort((a, b) => {
+      switch (ordem) {
+        case "data-desc":
+          return b.date.localeCompare(a.date);
+        case "prioridade":
+          return prioPeso(a) - prioPeso(b) || porData(a, b);
+        case "cliente":
+          return (a.what ?? "").localeCompare(b.what ?? "", "pt-BR") || porData(a, b);
+        case "data-asc":
+        default:
+          // Data crescente: atrasadas primeiro, depois hoje e os próximos dias.
+          return porData(a, b);
+      }
+    });
+  }, [tasksQuery.data, busca, ordem]);
 
   const cells: Array<{ date: Date; key: string } | null> = [];
   for (let i = 0; i < startOffset; i++) cells.push(null);
@@ -226,11 +247,14 @@ function TarefasPage() {
     </div>
   );
 
+  const hojeKey = fmtKey(today);
+
   const CardTarefa = ({ t }: { t: SalesforceTask }) => {
     const type = inferType(t.subject);
     const Icon = TYPE_ICON[type];
     const prio = mapPriority(t.priority);
     const jaInteragiu = !!taskInteractions[t.id];
+    const atrasada = t.date < hojeKey;
     return (
       <div className="rounded-xl border border-border bg-background p-4 hover:border-primary/40 transition-colors">
         <div className="flex items-start gap-3">
@@ -246,6 +270,19 @@ function TarefasPage() {
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
                 {type}
+              </span>
+              <span
+                className={cn(
+                  "text-[10px] px-1.5 py-0.5 rounded capitalize",
+                  atrasada
+                    ? "bg-destructive/15 text-destructive font-semibold"
+                    : t.date === hojeKey
+                      ? "bg-primary/15 text-primary font-semibold"
+                      : "bg-surface-2 text-muted-foreground",
+                )}
+              >
+                {atrasada ? "Atrasada · " : t.date === hojeKey ? "Hoje · " : ""}
+                {fmtDia(t.date)}
               </span>
               {t.status && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground">
@@ -372,14 +409,28 @@ function TarefasPage() {
 
         {view === "lista" ? (
           <div className="glass rounded-2xl p-4 space-y-4">
-            <div className="relative max-w-md">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Buscar por assunto, cliente, contato ou responsável…"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-              />
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Buscar por assunto, cliente, contato ou responsável…"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                />
+              </div>
+              <Select value={ordem} onValueChange={(v) => setOrdem(v as typeof ordem)}>
+                <SelectTrigger className="w-[230px] gap-2">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="data-asc">Data: atrasadas primeiro</SelectItem>
+                  <SelectItem value="data-desc">Data: mais distantes primeiro</SelectItem>
+                  <SelectItem value="prioridade">Prioridade: alta primeiro</SelectItem>
+                  <SelectItem value="cliente">Cliente (A–Z)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {tasksQuery.isLoading && (
@@ -387,33 +438,17 @@ function TarefasPage() {
                 Carregando tarefas…
               </div>
             )}
-            {!tasksQuery.isLoading && gruposLista.length === 0 && (
+            {!tasksQuery.isLoading && listaFiltrada.length === 0 && (
               <div className="text-sm text-muted-foreground py-10 text-center">
                 Nenhuma tarefa encontrada para {monthName}.
               </div>
             )}
 
-            {gruposLista.map(([dia, itens]) => (
-              <section key={dia} className="space-y-2">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      dia === fmtKey(today) && "text-primary",
-                    )}
-                  >
-                    {fmtDia(dia)}
-                  </span>
-                  <span className="h-px flex-1 bg-border" />
-                  <span>{itens.length} tarefa(s)</span>
-                </div>
-                <div className="grid gap-2 lg:grid-cols-2">
-                  {itens.map((t) => (
-                    <CardTarefa key={t.id} t={t} />
-                  ))}
-                </div>
-              </section>
-            ))}
+            <div className="flex flex-col gap-2">
+              {listaFiltrada.map((t) => (
+                <CardTarefa key={t.id} t={t} />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="glass rounded-2xl overflow-hidden">
