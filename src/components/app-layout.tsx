@@ -298,13 +298,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   /** Itens "planos" para a busca global (command palette) — só o menu, sem dados. */
-  const itensBusca = tabs.flatMap((t) =>
-    t.items?.length
-      ? t.items.map((i) => ({ to: i.to, label: `${t.label} › ${i.label}`, icon: i.icon }))
-      : t.to
-        ? [{ to: t.to, label: t.label, icon: t.icon }]
-        : [],
-  );
+  const itensBusca = tabs.flatMap((t) => [
+    ...(t.to ? [{ to: t.to, label: t.label, icon: t.icon }] : []),
+    ...(t.items ?? []).map((i) => ({ to: i.to, label: `${t.label} › ${i.label}`, icon: i.icon })),
+  ]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
