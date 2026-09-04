@@ -37,12 +37,16 @@ export type FilaSalesforceResultado = {
 /** Marca de água usada pelo backfill em massa (`sf_mensagem`). */
 export const MARCA_BACKFILL = "(backfill)";
 
+/** Propostas criadas nesta janela contam como "novas" (não backfill). */
+export const JANELA_NOVAS_DIAS = 120;
+
 /**
  * A fila tem três faixas, nesta ordem de prioridade:
  *
  * 1. **vinculadas** — oportunidades já existentes: atualizações operacionais
  *    (compra, SAP, NF, perda, cancelamento).
- * 2. **novas** — pedidos criados no portal e ainda sem oportunidade.
+ * 2. **novas** — propostas criadas nos últimos `JANELA_NOVAS_DIAS` dias e
+ *    ainda sem oportunidade.
  * 3. **backfill** — importação histórica (milhares de registros de 2022 em
  *    diante), que só usa as vagas que sobram.
  *
@@ -50,6 +54,7 @@ export const MARCA_BACKFILL = "(backfill)";
  * backfill ordenada por `created_at` crescente e ficava atrás de mais de mil
  * registros antigos — na prática nunca chegava ao CRM.
  */
+
 export function cotasFilaSalesforce(limite: number) {
   const total = Math.max(1, Math.floor(limite));
   if (total === 1) return { vinculadas: 1, novas: 0, backfill: 0 };
