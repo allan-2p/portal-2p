@@ -38,7 +38,11 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ### Adicionado
 - **Busca global (⌘K / Ctrl+K)**: a busca do topo passa a procurar também **clientes, contatos, propostas e pedidos** das unidades a que o usuário tem acesso, além das telas do portal. Os resultados vêm agrupados por tipo, com a unidade indicada, e levam direto ao registro (perfil do cliente, proposta ou pedido). A busca respeita as permissões: quem não tem "ver todos os registros" só encontra o que está na própria carteira, e sem "ver todos os campos" documentos e e-mails aparecem mascarados.
 
+### Alterado
+- **Sugestões do Atlas e Radar viraram uma tela só**: agora tudo fica em **Radar do Atlas**, com as abas **Alertas** (clientes em risco) e **Sugestões** (as 10 melhores hipóteses e as ações de Pix). Links antigos para `/solar/clientes/sugestoes` redirecionam para o Radar.
+
 ### Corrigido
+- **Busca global do topo fora do centro**: o campo "Buscar telas…" era centralizado apenas no espaço que sobrava entre o logo e os botões da direita. Agora fica centralizado de verdade na barra superior.
 - **Propostas novas presas na fila do Salesforce**: a fila separava o histórico dos registros do dia por uma marca de texto na mensagem ("backfill"), que acabou carimbada também em propostas criadas no portal. Elas caíam na faixa histórica (ordenada da mais antiga para a mais nova) e ficavam atrás de milhares de registros de 2022 — na prática nunca chegavam ao CRM. Agora a separação é pela **data de criação** (últimos 120 dias contam como novas) e o histórico é processado do mais recente para o mais antigo.
 - **Nº SAP, e-mail, nome fantasia e IE do cliente não iam para o Salesforce**: esses quatro campos não tinham destino padrão na org e só eram enviados se alguém os mapeasse manualmente em Admin › Integrações › Salesforce › Campos. Passam a sair por padrão para `N_SAP__c`, `Email__c`, `Nome_Fantasia__c` e `Inscri_o_Estadual__c` (mapeamentos personalizados continuam prevalecendo).
 - **Seletor de instância cortado**: o menu do seletor (Solar/Carregadores/Marketing/Financeiro) abria alinhado pela direita do botão e, como ele fica no canto esquerdo da barra de abas, parte da lista saía da tela. Agora abre alinhado pela esquerda, sempre visível por inteiro.
