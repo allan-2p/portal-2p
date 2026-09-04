@@ -179,8 +179,11 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
             });
 
             const podeVer = !!permPropostas.view_all_fields;
+            const soNumeros = /^[\d.\-/]+$/.test(termo);
             for (const p of rows) {
               const ehPedido = PEDIDO_STATUS.has(String(p["status"] ?? "")) || !!p["sap_ov_numero"];
+              const totais = (p["totais"] ?? {}) as Record<string, unknown>;
+              const anterior = totais["numeroAnterior"];
               out.push({
                 tipo: ehPedido ? "pedido" : "proposta",
                 id: String(p.id),
@@ -189,6 +192,8 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
                   p["cliente_nome"],
                   p["status"],
                   p["sap_ov_numero"] ? `OV ${p["sap_ov_numero"]}` : "",
+                  p["numero_sap"] ? `SAP ${p["numero_sap"]}` : "",
+                  anterior ? `nº anterior ${anterior}` : "",
                   podeVer ? "" : "",
                 ]
                   .filter(Boolean)
@@ -198,15 +203,18 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
                   inst === "solar" ? "/solar/propostas" : "/carregadores/propostas/visualizar",
                 search:
                   inst === "solar" ? { ver: String(p.id) } : { id: String(p.id) },
-                score: pontuar(
-                  termo,
-                  p["numero"],
-                  p["numero_anterior"],
-                  p["sap_ov_numero"],
-                  p["cliente_nome"],
-                ),
+                score:
+                  pontuar(
+                    termo,
+                    p["numero"],
+                    anterior,
+                    p["sap_ov_numero"],
+                    p["numero_sap"],
+                    p["cliente_nome"],
+                  ) + (soNumeros ? 20 : 0),
               });
             }
+
           } catch {
             /* idem */
           }
