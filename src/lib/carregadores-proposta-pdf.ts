@@ -1,4 +1,4 @@
-import { fmtBRL, fmtPct } from "@/lib/carregadores";
+import { fmtBRL, fmtPct, fmtAliquota } from "@/lib/carregadores";
 import { cidadeUf } from "./local-format";
 import { formatPropostaNumero } from "@/lib/sap-numero";
 import { textoPrazoEntrega } from "./prazo-entrega";
@@ -123,8 +123,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   const temFoto = p.itens.some((i) => !!i.foto);
 
   /** Alíquota da linha em % (vazio quando o item não tem regra fiscal). */
-  const pct = (v?: number | null) =>
-    typeof v === "number" && isFinite(v) ? fmtPct(v) : "—";
+  const pct = (v?: number | null) => fmtAliquota(v);
 
   const linhas = p.itens
     .map(
@@ -383,9 +382,9 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="panel">
         <h4>Composição fiscal</h4>
         <div class="rows">
-          <div class="row"><span>IPI<i class="rate">${fmtPct(p.impostos.ipiRate)}</i></span><b>${fmtBRL(p.impostos.ipiValor)}</b></div>
-          <div class="row"><span>ICMS efetivo<i class="rate">${fmtPct(p.impostos.icmsRate)}</i></span><b>${fmtBRL(p.impostos.icms)}</b></div>
-          <div class="row"><span>PIS / COFINS<i class="rate">${fmtPct(p.impostos.pisCofinsRate)}</i></span><b>${fmtBRL(p.impostos.pisCofins)}</b></div>
+          <div class="row"><span>IPI<i class="rate">${fmtAliquota(p.impostos.ipiRate)}</i></span><b>${fmtBRL(p.impostos.ipiValor)}</b></div>
+          <div class="row"><span>ICMS efetivo<i class="rate">${fmtAliquota(p.impostos.icmsRate)}</i></span><b>${fmtBRL(p.impostos.icms)}</b></div>
+          <div class="row"><span>PIS / COFINS<i class="rate">${fmtAliquota(p.impostos.pisCofinsRate)}</i></span><b>${fmtBRL(p.impostos.pisCofins)}</b></div>
         </div>
       </div>
       <div class="panel">
