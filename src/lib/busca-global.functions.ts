@@ -35,6 +35,9 @@ const PEDIDO_STATUS = new Set([
 ]);
 
 const LIMITE_POR_GRUPO = 5;
+/** Teto por grupo na página de resultados completos (`/busca`). */
+const LIMITE_MAX = 30;
+
 
 const norm = (v: unknown) =>
   String(v ?? "")
@@ -76,11 +79,19 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => {
     const i = (input ?? {}) as Record<string, unknown>;
-    return { q: typeof i["q"] === "string" ? i["q"].slice(0, 120) : "" };
+    const limite = Number(i["limite"]);
+    return {
+      q: typeof i["q"] === "string" ? i["q"].slice(0, 120) : "",
+      limite: Number.isFinite(limite)
+        ? Math.min(Math.max(Math.trunc(limite), 1), LIMITE_MAX)
+        : LIMITE_POR_GRUPO,
+    };
   })
   .handler(async ({ data, context }): Promise<{ resultados: BuscaResultado[] }> => {
     const termo = data.q.trim();
+    const porGrupo = data.limite;
     if (termo.length < 2) return { resultados: [] };
+
 
     const { resolveAccess } = await import("./guards.server");
     const { getPerm } = await import("./object-perms.server");
@@ -112,7 +123,7 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
           try {
             const { rows } = await clientesDb.listClientesPagina(inst, {
               q: termo,
-              porPagina: LIMITE_POR_GRUPO,
+              porPagina: porGrupo,
               pagina: 1,
               ...(permContas.view_all
                 ? {}
@@ -155,18 +166,24 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
             const { rows } = await propostasDb.listarPropostasPagina({
               organizacao: ORGANIZACAO[inst],
               q: termo,
-              porPagina: LIMITE_POR_GRUPO * 2,
+              porPagina: porGrupo * 2,
               pagina: 1,
+              // `numero_anterior` NÃO é coluna da tabela (fica em
+              // `totais->>numeroAnterior`): pedir aqui derrubava a consulta
+              // inteira com 400 e a busca nunca trazia propostas/pedidos.
               select:
-                "id,numero,numero_anterior,status,cliente_nome,cliente_doc,sap_ov_numero,created_at,organizacao",
+                "id,numero,totais,status,cliente_nome,cliente_doc,sap_ov_numero,numero_sap,created_at,organizacao",
               donoId: escopo.userId,
               donoSap: escopo.sap,
               donoDocs: escopo.docs,
-              somenteFavoritas: true,
             });
+
             const podeVer = !!permPropostas.view_all_fields;
+            const soNumeros = /^[\d.\-/]+$/.test(termo);
             for (const p of rows) {
               const ehPedido = PEDIDO_STATUS.has(String(p["status"] ?? "")) || !!p["sap_ov_numero"];
+              const totais = (p["totais"] ?? {}) as Record<string, unknown>;
+              const anterior = totais["numeroAnterior"];
               out.push({
                 tipo: ehPedido ? "pedido" : "proposta",
                 id: String(p.id),
@@ -175,6 +192,8 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
                   p["cliente_nome"],
                   p["status"],
                   p["sap_ov_numero"] ? `OV ${p["sap_ov_numero"]}` : "",
+                  p["numero_sap"] ? `SAP ${p["numero_sap"]}` : "",
+                  anterior ? `nº anterior ${anterior}` : "",
                   podeVer ? "" : "",
                 ]
                   .filter(Boolean)
@@ -184,15 +203,18 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
                   inst === "solar" ? "/solar/propostas" : "/carregadores/propostas/visualizar",
                 search:
                   inst === "solar" ? { ver: String(p.id) } : { id: String(p.id) },
-                score: pontuar(
-                  termo,
-                  p["numero"],
-                  p["numero_anterior"],
-                  p["sap_ov_numero"],
-                  p["cliente_nome"],
-                ),
+                score:
+                  pontuar(
+                    termo,
+                    p["numero"],
+                    anterior,
+                    p["sap_ov_numero"],
+                    p["numero_sap"],
+                    p["cliente_nome"],
+                  ) + (soNumeros ? 20 : 0),
               });
             }
+
           } catch {
             /* idem */
           }
@@ -210,7 +232,7 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
             const contatos = await contatosDb.buscarContatos(inst, {
               q: termo,
               docsCarteira: docs,
-              limite: LIMITE_POR_GRUPO,
+              limite: porGrupo,
             });
             const podeVer = !!permContatos.view_all_fields;
             for (const c of contatos) {
@@ -257,5 +279,5 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
       }
     resultados.sort((a, b) => b.score - a.score || a.titulo.localeCompare(b.titulo, "pt-BR"));
 
-    return { resultados: resultados.slice(0, 30) };
+    return { resultados: resultados.slice(0, porGrupo * 8) };
   });
