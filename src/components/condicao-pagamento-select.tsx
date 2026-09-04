@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { listCondicoesPagamento } from "@/lib/condicoes-pagamento.functions";
 import { getCreditoVigente } from "@/lib/credito.functions";
 import { condicaoPagamentoClienteFn } from "@/lib/clientes.functions";
 import { condicaoEhAPrazo, fmtBRL, limiteCobre } from "@/lib/credito";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useListaIncremental, normalizarBusca } from "@/hooks/use-lista-incremental";
 
 /**
  * Seletor de condição de pagamento do checkout.
@@ -106,6 +108,18 @@ export function CondicaoPagamentoSelect({
   const selecionada = opcoes.find((o) => o.value === value);
   const temBloqueada = opcoes.some((o) => o.bloqueada);
 
+  // Busca com debounce + renderização incremental: a lista só refiltra quando o
+  // usuário para de digitar e monta poucos itens por vez.
+  const [busca, setBusca] = useState("");
+  const termo = useDebouncedValue(busca.trim(), 250);
+  const filtradas = useMemo(() => {
+    const t = normalizarBusca(termo);
+    if (!t) return opcoes;
+    return opcoes.filter((o) => normalizarBusca(`${o.codigo} ${o.descricao}`).includes(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [termo, q.data, controlar, cobre, prazoLiberadoDias]);
+  const lista = useListaIncremental(filtradas, { passo: 30, chave: termo });
+
 
   return (
     <div className="space-y-1.5">
@@ -130,11 +144,17 @@ export function CondicaoPagamentoSelect({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-          <Command>
-            <CommandInput placeholder="Busque pela condição de pagamento" />
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Busque pela condição de pagamento"
+              value={busca}
+              onValueChange={setBusca}
+            />
             <CommandList className="max-h-72">
-              <CommandEmpty>Nenhuma condição encontrada.</CommandEmpty>
-              {opcoes.map((o) => (
+              <CommandEmpty>
+                {q.isLoading ? "Carregando…" : "Nenhuma condição encontrada."}
+              </CommandEmpty>
+              {lista.visiveis.map((o) => (
                 <CommandItem
                   key={o.value}
                   value={`${o.codigo} ${o.descricao}`}
@@ -155,6 +175,17 @@ export function CondicaoPagamentoSelect({
                   <span className={cn("truncate", o.bloqueada && "text-muted-foreground")}>{o.label}</span>
                 </CommandItem>
               ))}
+              {lista.temMais ? (
+                <div ref={lista.sentinelaRef} className="px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={lista.carregarMais}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Carregar mais ({lista.restantes})
+                  </button>
+                </div>
+              ) : null}
             </CommandList>
           </Command>
         </PopoverContent>

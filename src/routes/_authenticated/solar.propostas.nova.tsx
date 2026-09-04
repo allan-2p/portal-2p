@@ -8,6 +8,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useListaIncremental, normalizarBusca } from "@/hooks/use-lista-incremental";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1997,7 +1998,9 @@ function NovaPropostaSolarPage() {
                   }))}
                   busca={buscaCliente}
                   onBuscaChange={setBuscaCliente}
-                  carregando={clientesQ.isLoading}
+                  carregando={clientesQ.isLoading || clientesQ.carregandoMais}
+                  temMaisRemoto={clientesQ.temMais}
+                  onCarregarMais={clientesQ.carregarMais}
                   placeholder="Digite para pesquisar no cadastro de clientes"
                   vazio="Nenhum cliente encontrado."
                 />
@@ -3539,11 +3542,19 @@ function NovaPropostaSolarPage() {
 function useQueryClientes(busca: string, docSelecionado: string) {
   const buscar = useServerFn(listClientesPaginaFn);
   const termo = useDebouncedValue(busca.trim(), 300);
+  const PASSO = 25;
+  // Carregamento incremental: começa com uma página e cresce sob demanda,
+  // reiniciando sempre que o termo pesquisado muda.
+  const [porPagina, setPorPagina] = useState(PASSO);
+  useEffect(() => {
+    setPorPagina(PASSO);
+  }, [termo]);
 
   const lista = useQuery({
-    queryKey: ["clientes-busca", "solar", termo],
+    queryKey: ["clientes-busca", "solar", termo, porPagina],
     queryFn: () =>
-      buscar({ data: { instancia: "solar", q: termo || undefined, pagina: 1, porPagina: 25 } }),
+      buscar({ data: { instancia: "solar", q: termo || undefined, pagina: 1, porPagina } }),
+    placeholderData: (anterior) => anterior,
     staleTime: 60_000,
   });
 
@@ -3567,7 +3578,17 @@ function useQueryClientes(busca: string, docSelecionado: string) {
     ? [selecionado, ...rows]
     : rows;
 
-  return { data, selecionado, isLoading: lista.isLoading || lista.isFetching };
+  const total = Number((lista.data as any)?.total ?? 0);
+  const temMais = total > 0 ? rows.length < total : rows.length >= porPagina;
+
+  return {
+    data,
+    selecionado,
+    isLoading: lista.isLoading || lista.isFetching,
+    temMais,
+    carregandoMais: lista.isFetching && !lista.isLoading,
+    carregarMais: () => setPorPagina((n) => n + PASSO),
+  };
 }
 
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
@@ -3588,6 +3609,8 @@ function SeletorPesquisavel({
   busca,
   onBuscaChange,
   carregando,
+  temMaisRemoto,
+  onCarregarMais,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -3598,10 +3621,41 @@ function SeletorPesquisavel({
   busca?: string;
   onBuscaChange?: (busca: string) => void;
   carregando?: boolean;
+  /** Paginação vinda do servidor (busca remota). */
+  temMaisRemoto?: boolean;
+  onCarregarMais?: () => void;
 }) {
   const [aberto, setAberto] = useState(false);
   const selecionada = opcoes.find((o) => o.value === value);
   const remoto = typeof onBuscaChange === "function";
+  // Busca local com debounce + lista incremental: catálogos com centenas de
+  // materiais não travam a digitação nem montam tudo de uma vez.
+  const [buscaLocal, setBuscaLocal] = useState("");
+  const termoLocal = useDebouncedValue(buscaLocal.trim(), 250);
+  const filtradas = useMemo(() => {
+    if (remoto) return opcoes;
+    const t = normalizarBusca(termoLocal);
+    if (!t) return opcoes;
+    return opcoes.filter((o) => normalizarBusca(o.label).includes(t));
+  }, [opcoes, termoLocal, remoto]);
+  const lista = useListaIncremental(filtradas, {
+    passo: 40,
+    chave: `${remoto ? busca ?? "" : termoLocal}`,
+  });
+  const sentinelaRemota = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!remoto || !temMaisRemoto || !onCarregarMais) return;
+    const el = sentinelaRemota.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting) && !carregando) onCarregarMais();
+      },
+      { rootMargin: "120px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [remoto, temMaisRemoto, onCarregarMais, carregando, opcoes.length]);
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
@@ -3617,16 +3671,16 @@ function SeletorPesquisavel({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command shouldFilter={!remoto}>
+        <Command shouldFilter={false}>
           <CommandInput
             placeholder={placeholder}
-            value={remoto ? busca : undefined}
-            onValueChange={remoto ? onBuscaChange : undefined}
+            value={remoto ? busca : buscaLocal}
+            onValueChange={remoto ? onBuscaChange : setBuscaLocal}
           />
           <CommandList>
             <CommandEmpty>{carregando ? "Buscando..." : vazio}</CommandEmpty>
 
-            {opcoes.map((opcao) => (
+            {lista.visiveis.map((opcao) => (
               <CommandItem
                 key={opcao.value}
                 value={opcao.label}
@@ -3639,6 +3693,29 @@ function SeletorPesquisavel({
                 <span className="truncate">{opcao.label}</span>
               </CommandItem>
             ))}
+            {remoto ? (
+              temMaisRemoto && onCarregarMais ? (
+                <div ref={sentinelaRemota} className="px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={onCarregarMais}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {carregando ? "Carregando…" : "Carregar mais resultados"}
+                  </button>
+                </div>
+              ) : null
+            ) : lista.temMais ? (
+              <div ref={lista.sentinelaRef} className="px-3 py-2">
+                <button
+                  type="button"
+                  onClick={lista.carregarMais}
+                  className="w-full text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Carregar mais ({lista.restantes})
+                </button>
+              </div>
+            ) : null}
           </CommandList>
         </Command>
       </PopoverContent>

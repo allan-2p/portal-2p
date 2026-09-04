@@ -42,6 +42,7 @@ import { getClienteLogo } from "@/lib/cliente-logos.functions";
 import { PropostaIndicacao } from "@/components/proposta-indicacao";
 import { CepInput } from "@/components/cep-input";
 import { FreteCotacao } from "@/components/frete-cotacao";
+import { ComboboxBusca } from "@/components/combobox-busca";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath } from "@/lib/produto-imagens";
 
@@ -197,6 +198,14 @@ function PropostaCarregadoresPage() {
   const invalidate = useCarregadoresInvalidate();
 
   const produtos = useMemo(() => (produtosQ.data ?? []).filter((p) => p.ativo), [produtosQ.data]);
+  const opcoesProduto = useMemo(
+    () =>
+      produtos.map((p) => ({
+        value: p.id,
+        label: `${p.codigo ? `${p.codigo} — ` : ""}${p.nome}`,
+      })),
+    [produtos],
+  );
   const fotosQ = useImagensPorPath(produtos.map((p) => p.imagem_path));
   const fotoDoProduto = (produtoId?: string) => {
     const path = produtos.find((p) => p.id === produtoId)?.imagem_path;
@@ -506,22 +515,31 @@ function PropostaCarregadoresPage() {
     cidade: (c["cidade"] as string) ?? "",
   });
 
+  // Carregamento incremental: uma página por vez, crescendo sob demanda.
+  const PASSO_CLIENTES = 25;
+  const [porPaginaCliente, setPorPaginaCliente] = useState(PASSO_CLIENTES);
+  useEffect(() => {
+    setPorPaginaCliente(PASSO_CLIENTES);
+  }, [termoCliente]);
+
   const clientesBuscaQ = useQuery({
-    queryKey: ["carregadores-clientes-busca", termoCliente],
+    queryKey: ["carregadores-clientes-busca", termoCliente, porPaginaCliente],
     queryFn: async () => {
       const res = await listClientes({
         data: {
           instancia: "carregadores",
           q: termoCliente || undefined,
           pagina: 1,
-          porPagina: 25,
+          porPagina: porPaginaCliente,
         },
       });
-      return ((res.clientes ?? []) as Record<string, any>[])
+      const linhas = ((res.clientes ?? []) as Record<string, any>[])
         .filter((c) => c["ativo"] !== false)
         .map(mapearCliente)
         .sort((a, b) => a.cliente_nome.localeCompare(b.cliente_nome, "pt-BR"));
+      return { linhas, total: Number((res as any)?.total ?? 0), brutos: (res.clientes ?? []).length };
     },
+    placeholderData: (anterior) => anterior,
     staleTime: 60_000,
   });
 
@@ -539,7 +557,7 @@ function PropostaCarregadoresPage() {
   });
 
   const clientesQ = useMemo(() => {
-    const rows = clientesBuscaQ.data ?? [];
+    const rows = clientesBuscaQ.data?.linhas ?? [];
     const sel =
       rows.find((c) => (c.cliente_doc ?? "").replace(/\D/g, "") === docSelecionado) ??
       (clienteSelecionadoQ.data ?? []).find(
@@ -547,11 +565,15 @@ function PropostaCarregadoresPage() {
       ) ??
       null;
     const data = sel && !rows.some((c) => c.id === sel.id) ? [sel, ...rows] : rows;
+    const total = clientesBuscaQ.data?.total ?? 0;
+    const brutos = clientesBuscaQ.data?.brutos ?? 0;
     return {
       data,
       isLoading: clientesBuscaQ.isLoading || clientesBuscaQ.isFetching,
+      temMais: total > 0 ? brutos < total : brutos >= porPaginaCliente,
+      carregarMais: () => setPorPaginaCliente((n) => n + PASSO_CLIENTES),
     };
-  }, [clientesBuscaQ.data, clientesBuscaQ.isLoading, clientesBuscaQ.isFetching, clienteSelecionadoQ.data, docSelecionado]);
+  }, [clientesBuscaQ.data, clientesBuscaQ.isLoading, clientesBuscaQ.isFetching, clienteSelecionadoQ.data, docSelecionado, porPaginaCliente]);
 
 
   // Revalida o cadastro do cliente ao abrir uma proposta existente (nunca usa dados antigos)
@@ -1793,6 +1815,17 @@ function PropostaCarregadoresPage() {
                               </CommandItem>
                             ))}
                           </CommandGroup>
+                          {clientesQ.temMais ? (
+                            <div className="px-3 py-2">
+                              <button
+                                type="button"
+                                onClick={clientesQ.carregarMais}
+                                className="w-full text-xs text-muted-foreground hover:text-foreground"
+                              >
+                                {clientesQ.isLoading ? "Carregando…" : "Carregar mais resultados"}
+                              </button>
+                            </div>
+                          ) : null}
                         </CommandList>
                       </Command>
                     </PopoverContent>
@@ -2159,10 +2192,18 @@ function PropostaCarregadoresPage() {
                         />
                       </div>
                       <Field label="Produto">
-                        <Select
+                        <ComboboxBusca
                           value={it.produtoId}
                           disabled={!!it.produtoId}
-                          onValueChange={(v) => {
+                          carregando={produtosQ.isLoading}
+                          opcoes={opcoesProduto}
+                          placeholder="Selecione o produto"
+                          buscaPlaceholder="Busque por código ou nome…"
+                          vazio="Nenhum produto encontrado."
+                          className={cn(
+                            semProduto && "border-destructive focus-visible:ring-destructive",
+                          )}
+                          onChange={(v) => {
                             const sugerido = precoSugeridoItem(v, state);
                             setItem(
                               it.key,
@@ -2171,24 +2212,7 @@ function PropostaCarregadoresPage() {
                                 : { produtoId: v },
                             );
                           }}
-                        >
-                          <SelectTrigger
-                            className={cn(
-                              semProduto && "border-destructive focus-visible:ring-destructive",
-                              it.produtoId && "disabled:opacity-100 disabled:cursor-not-allowed",
-                            )}
-                          >
-                            <SelectValue placeholder="Selecione o produto" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {produtos.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.codigo ? `${p.codigo} — ` : ""}
-                                {p.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        />
                         {it.produtoId ? (
                           <p className="text-[11px] text-muted-foreground mt-1">
                             Para trocar o produto, exclua o item e adicione outro.
