@@ -254,6 +254,38 @@ function TarefasPage() {
 
   const hojeKey = fmtKey(today);
 
+  const SegmentoIcone = ({ t }: { t: SalesforceTask }) => {
+    if (t.isLead)
+      return (
+        <span
+          className="h-8 px-1.5 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold bg-[color:var(--atlas)]/15 text-[color:var(--atlas)]"
+          title="Lead (sem segmentação)"
+        >
+          Lead
+        </span>
+      );
+    const conta = t.whatId?.startsWith("001");
+    return (
+      <span
+        className={cn(
+          "h-8 w-8 rounded-lg shrink-0 flex items-center justify-center text-xs font-bold",
+          conta && t.segment
+            ? "bg-success/15 text-success"
+            : "bg-surface-2 text-muted-foreground/60",
+        )}
+        title={
+          conta
+            ? t.segment
+              ? `Segmento ${t.segment}`
+              : "Sem segmentação"
+            : "Sem conta vinculada"
+        }
+      >
+        {conta && t.segment ? t.segment : "–"}
+      </span>
+    );
+  };
+
   const SegmentoBadge = ({ t }: { t: SalesforceTask }) => {
     if (t.isLead)
       return (
