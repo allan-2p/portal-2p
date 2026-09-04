@@ -35,6 +35,13 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Banco de dados
+- **Revisão em massa do catálogo (planilha de itens)**: 100 itens ficaram ativos e 322 inativos no catálogo 2P Solar; em 2P Carregadores 5 ficaram ativos e 1 inativo. 272 materiais que só existiam no espelho do SAP foram trazidos para o catálogo do portal. Nada de preço, custo, NCM ou permissão foi alterado.
+
+### Alterado
+- **Opções padrão da Calculadora 2P**: parafuso do microinversor passa a ser o M8*25 (200000657), o kit de parafusos Smart passa a ser 100000210 e o suporte Zipado passa a usar 200000658.
+
+
 ### Adicionado
 - **Prévia do PDF com zoom e conferência de folhas** (Solar e Carregadores, na criação da proposta e no detalhe do pedido): visor único com zoom (−/+/ajustar à largura), contagem de folhas A4, marcas tracejadas nas quebras de página e um selo indicando se algum bloco pode ser cortado entre folhas ou se o conteúdo está mais largo que a página.
 - **Alíquotas visíveis na proposta de carregadores**: IPI, ICMS e PIS/COFINS aparecem por item na prévia e com o percentual ao lado do valor no resumo de impostos, no mesmo formato usado no PDF (duas casas, padrão pt-BR).
