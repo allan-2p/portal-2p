@@ -206,7 +206,12 @@ export function remessaSap(dados: any): string | null {
 /** Próximo status conforme as regras da plataforma antiga (só avança). */
 export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
   const idxAtual = ORDEM.indexOf(atual as StatusNf);
-  const base = idxAtual < 0 ? 0 : idxAtual;
+  // Status terminal ("Entregue") ou desconhecido nunca "avança": sem esta
+  // guarda, reconsultar um Entregue devolvia "Coletado" (transição inválida)
+  // e disparava re-sync do Salesforce a cada ciclo.
+  if (idxAtual < 0) return null;
+  const base = idxAtual;
+
 
   let alvo = base;
   const picking = (c.picking ?? "").toUpperCase();
