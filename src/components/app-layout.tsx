@@ -46,7 +46,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
-  const [buscaOpen, setBuscaOpen] = useState(false);
+  const buscaRef = useRef<GlobalSearchHandle | null>(null);
   // Menus/toggles lembram o estado durante a navegação (e entre sessões).
   const [clientesOpen, toggleClientes] = useStickyOpen(CLIENTES_OPEN_KEY, true);
   const [dashboardsOpen, toggleDashboards] = useStickyOpen(DASHBOARDS_OPEN_KEY, true);
@@ -300,7 +300,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setBuscaOpen((v) => !v);
+        buscaRef.current?.focar();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -635,23 +635,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          {/* Busca global do menu (⌘K) — centralizada na barra, independente do conteúdo das laterais */}
-          <button
-            onClick={() => setBuscaOpen(true)}
-            className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2 h-9 w-[min(420px,32vw)] rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground hover:bg-surface-2"
-          >
-            <Search className="h-4 w-4 shrink-0" />
-            <span className="truncate">Buscar telas…</span>
-            <kbd className="ml-auto text-[10px] rounded border border-border px-1 py-0.5">⌘K</kbd>
-          </button>
+          {/* Busca global (⌘K) — campo de verdade, centralizado na barra */}
+          <GlobalSearch
+            ref={buscaRef}
+            itensNavegacao={itensBusca}
+            className="hidden lg:block absolute left-1/2 -translate-x-1/2 w-[min(520px,38vw)]"
+          />
 
 
           <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
             <button
-              onClick={() => setBuscaOpen(true)}
+              onClick={() => navigate({ to: "/busca", search: {} as any })}
               className="lg:hidden h-9 w-9 rounded-lg border border-border bg-surface hover:bg-surface-2 flex items-center justify-center"
-              aria-label="Buscar telas"
-            >
+              aria-label="Buscar">
               <Search className="h-4 w-4" />
             </button>
             {user && roles.length === 0 && (
@@ -851,7 +847,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       <AtlasWidget />
 
-      <GlobalSearch open={buscaOpen} onOpenChange={setBuscaOpen} itensNavegacao={itensBusca} />
     </div>
   );
 }
