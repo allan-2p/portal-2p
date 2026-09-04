@@ -156,6 +156,7 @@ export function lerConsulta(doc: any): ConsultaSap {
     // Mantemos os aliases anteriores como fallback.
     nfChave: num(
       achar(dados, "CHNFE") ??
+      achar(doc, "CHNFE") ??
       achar(dados, "CHAVE_NFE") ??
       achar(dados, "CHAVE") ??
       achar(dados, "NFE_CHAVE"),
@@ -777,7 +778,9 @@ export async function reprocessarFretefyFaturados(limite = 50): Promise<NfResult
     select:
       "id,numero,status,created_by,sap_ov_numero,nf_numero,nf_chave,nf_serie,danfe_path,created_at,fretefy_oferta_id,nf_fretefy_em,expedido_em",
     order: "asc",
-    naoVazio: ["sap_ov_numero"],
+    // Sem carga na Fretefy não há documento para empurrar (frete dedicado/
+    // manual e legados) — ficariam gerando ruído todo ciclo.
+    naoVazio: ["sap_ov_numero", "fretefy_oferta_id"],
     nulo: ["nf_fretefy_em"],
     limit: 20000,
   });
