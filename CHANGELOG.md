@@ -39,6 +39,10 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Painel "Pedidos parados com OV no SAP"** (Admin › Logs › Monitor de Sync SAP): lista os pedidos com ordem de venda criada que estão há N dias (padrão 1) em "Aguardando Pagamento" ou "Processando" sem avançar, com o **último desfecho da consulta ao SAP** por pedido — "SAP sem progresso" (esperar o ERP) ou "consulta com erro" (bug a tratar).
 - **Auditoria por pedido no cron do SAP**: cada consulta ao `ZNFE_OV_CONSULTAR` agora grava um evento em Logs › Integrações (`cron.sap-nfs`): `avancou` (de → para), `consulta-vazia` (SAP não devolveu picking/expedição/NF) ou `consulta-erro` (falha da chamada), com OV, picking, remessa, NF e data de expedição. O resultado do gatilho passa a trazer também os contadores **vazios** e **erros**.
 
+### Corrigido
+- **Imposto por item na proposta Solar**: IPI, ICMS e PIS/COFINS de cada material passam a vir da **simulação do SAP** (valor real, que muda entre item nacional e importado) em vez das alíquotas genéricas 5% / 4% / 9,25%. Os percentuais são gravados junto com a proposta, então **prévia, resumo, PDF e reimpressão mostram sempre os mesmos números**; propostas antigas sem esse registro continuam usando o cálculo por NCM como aproximação.
+- **Resumo da proposta Solar** passou a exibir IPI, ICMS e PIS/COFINS por item, iguais aos do PDF.
+
 ### Alterado
 - **Agenda de tarefas mais enxuta**: cada tarefa virou uma linha única com título clicável (abre em pop up), ações **Interação / Adiar / Concluir** à direita e o botão "Abrir" removido. A linha mostra a **segmentação (A–D) do cliente** e marca claramente quando o vínculo é um **Lead**, que não tem segmentação.
 - **"Aguardando Pagamento" só para cobrança em aberto**: assim que a ordem de venda é criada no SAP, pedidos de **cartão e boleto a prazo** passam direto para **Processando** — o rótulo "Aguardando Pagamento" fica reservado a **pix e boleto à vista** ainda não pagos. O motor do cron segue daí (Separação/Faturado/Coletado).
