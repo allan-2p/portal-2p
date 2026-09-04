@@ -34,12 +34,6 @@ import { useStickyOpen } from "@/hooks/use-sticky-open";
 import { toast } from "sonner";
 import { AtlasIcon } from "@/components/atlas/atlas-icon";
 import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
 } from "@/components/ui/command";
 
 const CLIENTES_OPEN_KEY = "portal2p-clientes-open";
