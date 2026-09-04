@@ -10,6 +10,7 @@ alter table public.propostas
   add column if not exists nf_numero text,
   add column if not exists nf_serie text,
   add column if not exists nf_chave text,
+  add column if not exists nf_fretefy_em timestamptz,
   add column if not exists danfe_path text,
   -- frete bonificado: envia INCO2 = "CIF BONIFICADO" e o frete vira desconto
   add column if not exists frete_bonificado boolean not null default false,
@@ -19,3 +20,4 @@ alter table public.propostas
 
 create index if not exists propostas_nf_numero_idx on public.propostas (nf_numero);
 create index if not exists propostas_status_sap_ov_idx on public.propostas (status, sap_ov_numero);
+create index if not exists propostas_nf_fretefy_em_idx on public.propostas (nf_fretefy_em) where nf_fretefy_em is null;

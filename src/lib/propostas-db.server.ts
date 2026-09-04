@@ -46,6 +46,8 @@ export type ListarPropostasOpts = {
   order?: "asc" | "desc";
   /** Colunas que precisam estar preenchidas (filtro no banco, não em memória). */
   naoVazio?: string[];
+  /** Colunas que precisam estar nulas (filtro no banco, não em memória). */
+  nulo?: string[];
 };
 
 /** Teto de linhas por resposta do PostgREST. */
@@ -59,6 +61,7 @@ export async function listarPropostas(opts: ListarPropostasOpts = {}): Promise<P
   if (opts.organizacao) params.set("organizacao", `eq.${opts.organizacao}`);
   if (opts.statusIn?.length) params.set("status", `in.(${opts.statusIn.map((s) => `"${s}"`).join(",")})`);
   for (const col of opts.naoVazio ?? []) params.append(col, "not.is.null");
+  for (const col of opts.nulo ?? []) params.append(col, "is.null");
 
   // Busca em blocos: o PostgREST corta a resposta em 1000 linhas mesmo com
   // `limit` maior, então quem precisa da lista completa pagina por Range.
