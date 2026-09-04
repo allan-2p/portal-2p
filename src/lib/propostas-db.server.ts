@@ -340,6 +340,23 @@ export async function getPropostaPorOfertaFretefy(cargaId: string): Promise<Prop
 }
 
 /**
+ * Pedido pela ordem de venda do SAP (`sap_ov_numero`). Cargas criadas na
+ * plataforma antiga levam a OV no `pedidoEmbarcador`, então o rastreio casa
+ * por aqui mesmo sem CargaId conhecida no portal.
+ */
+export async function getPropostaPorOv(ov: string): Promise<PropostaRow | null> {
+  const num = String(ov ?? "").replace(/\D/g, "").replace(/^0+/, "");
+  if (!num) return null;
+  const params = new URLSearchParams({ select: "*", sap_ov_numero: `eq.${num}`, limit: "1" });
+  const rows = (await rest(`propostas?${params}`)) ?? [];
+  if (rows[0]) return rows[0];
+  // Alguns registros gravam a OV com zeros à esquerda.
+  const alt = new URLSearchParams({ select: "*", sap_ov_numero: `like.*${num}`, limit: "1" });
+  const rows2 = (await rest(`propostas?${alt}`)) ?? [];
+  return rows2[0] ?? null;
+}
+
+/**
  * Espelha o JSON `itens` em `proposta_itens` (linha a linha). Best effort:
  * um problema no espelho nunca derruba a gravação do pedido.
  */
