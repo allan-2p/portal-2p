@@ -119,6 +119,8 @@ export type ConsultaSap = {
   danfeBase64: string | null;
   /** Previsão de despacho devolvida pelo SAP (DATA_EXPEDICAO), formato AAAA-MM-DD. */
   dataExpedicao: string | null;
+  /** Documento de remessa (VBELN_VL / STATUS_REMESSA) — pedido já liberado. */
+  remessa: string | null;
 };
 
 
@@ -159,6 +161,17 @@ export function lerConsulta(doc: any): ConsultaSap {
     nfChave: num(achar(dados, "CHAVE_NFE") ?? achar(dados, "CHAVE") ?? achar(dados, "NFE_CHAVE")),
     danfeBase64: txt(achar(doc, "E_DANFE") ?? achar(doc, "DANFE")),
     dataExpedicao: dataExp,
+    remessa: (() => {
+      const s = txt(
+        achar(dados, "VBELN_VL") ??
+          achar(dados, "REMESSA") ??
+          achar(dados, "STATUS_REMESSA") ??
+          achar(dados, "NUM_REMESSA"),
+      );
+      if (!s) return null;
+      // Zeros/vazio = sem remessa; textos (ex.: "OK") valem como sinal.
+      return /^\d+$/.test(s) ? (documentoValido(s) ? s : null) : s;
+    })(),
   };
 }
 
@@ -176,6 +189,11 @@ export function proximoStatus(atual: string, c: ConsultaSap): StatusNf | null {
   // NOK = liberada mas ainda não separada → Processando.
   if (picking) alvo = Math.max(alvo, ORDEM.indexOf("Processando"));
   if (picking === "AOK" || picking === "OK") alvo = Math.max(alvo, ORDEM.indexOf("Separação"));
+  // Liberação/expedição agendada no SAP: o pedido não pode continuar em
+  // "Aguardando Pagamento" só porque o picking ainda não foi confirmado.
+  if (c.dataExpedicao) alvo = Math.max(alvo, ORDEM.indexOf("Processando"));
+  // Remessa criada (St Remessa verde na tela de expedição) = separação em curso.
+  if (c.remessa) alvo = Math.max(alvo, ORDEM.indexOf("Separação"));
   if (c.nfNumero) alvo = Math.max(alvo, ORDEM.indexOf("Faturado"));
   if ((c.romaneio ?? "").toUpperCase() === "OK") alvo = Math.max(alvo, ORDEM.indexOf("Coletado"));
 
@@ -482,10 +500,12 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
       /* best effort */
     }
     // Faturou: a carga na Fretefy troca o documento placeholder pela NF real.
-    if (c.nfNumero && String(row["fretefy_oferta_id"] ?? "").trim()) {
+    // Se a oferta não existe (falhou na etapa da OV, token off), cria agora e
+    // só então empurra a NF — as duas chamadas são idempotentes.
+    if (c.nfNumero) {
       try {
         const { runJob } = await import("./job-runs.server");
-        const { atualizarDocumentoOferta } = await import("./fretefy-oferta.server");
+        const { atualizarDocumentoOferta, criarOfertaCarga } = await import("./fretefy-oferta.server");
         await runJob(
           {
             job: "fretefy.oferta-carga",
@@ -493,12 +513,17 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
             payload: { propostaId: id, acao: "documento" },
             refId: id,
           },
-          () =>
-            atualizarDocumentoOferta(id, {
+          async () => {
+            if (!String(row["fretefy_oferta_id"] ?? "").trim()) {
+              const criada = await criarOfertaCarga(id);
+              if (!criada.ofertaId) return { ...criada, documento: "sem oferta de carga" };
+            }
+            return await atualizarDocumentoOferta(id, {
               nfNumero: c.nfNumero,
               nfSerie: c.nfSerie,
               nfChave: c.nfChave,
-            }),
+            });
+          },
         );
       } catch {
         /* best effort */

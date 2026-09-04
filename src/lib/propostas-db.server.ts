@@ -328,6 +328,18 @@ export async function getPropostaPorNumero(numero: string): Promise<PropostaRow 
 }
 
 /**
+ * Pedido pela carga da Fretefy (`fretefy_oferta_id` = CargaId do webhook).
+ * É por aqui que o rastreio casa o callback, já que a Fretefy manda só o GUID.
+ */
+export async function getPropostaPorOfertaFretefy(cargaId: string): Promise<PropostaRow | null> {
+  const id = String(cargaId ?? "").trim();
+  if (!id) return null;
+  const params = new URLSearchParams({ select: "*", fretefy_oferta_id: `eq.${id}`, limit: "1" });
+  const rows = (await rest(`propostas?${params}`)) ?? [];
+  return rows[0] ?? null;
+}
+
+/**
  * Espelha o JSON `itens` em `proposta_itens` (linha a linha). Best effort:
  * um problema no espelho nunca derruba a gravação do pedido.
  */

@@ -12,6 +12,8 @@ export type FretefyEventoTipo = "entregue" | "coletado" | "em_transito" | "ocorr
 
 export type FretefyEvento = {
   pedido: string | null;
+  /** GUID da carga (`data.CargaId`) — contrato real do callback da Fretefy. */
+  cargaId: string | null;
   tipo: FretefyEventoTipo;
   descricao: string | null;
   ocorridoEm: string | null;
@@ -85,5 +87,9 @@ export function interpretarEventoFretefy(payload: Record<string, unknown>): Fret
 
   const eventoId = str(pick(payload, ["idEvento", "id_evento", "eventId", "protocolo", "id"])) || null;
 
-  return { pedido, tipo, descricao: bruto[0] ?? null, ocorridoEm, eventoId };
+  // Contrato real do callback: { "data": { "CargaId": "<GUID>" } }.
+  const cargaId =
+    str(pick(payload, ["CargaId", "cargaId", "carga_id", "idCarga", "ofertaCargaId", "ofertaId"])) || null;
+
+  return { pedido, cargaId, tipo, descricao: bruto[0] ?? null, ocorridoEm, eventoId };
 }
