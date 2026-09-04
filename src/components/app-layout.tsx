@@ -900,6 +900,8 @@ type TabItem = {
   to?: AppPath;
   active: boolean;
   destaque?: boolean;
+  /** Ação de criação exibida no topo do dropdown (padrão Salesforce). */
+  novo?: { label: string; to: AppPath; hash?: string };
   items?: { to: AppPath; label: string; icon: typeof Home; active: boolean }[];
 };
 
