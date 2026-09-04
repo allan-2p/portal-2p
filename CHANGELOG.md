@@ -40,6 +40,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 - **Números do portal forçados no Salesforce**: novo gatilho "Salesforce • Forçar número do portal" (e hook `POST /api/public/hooks/salesforce-numeros`) que percorre todas as propostas com oportunidade vinculada e regrava o nome da oportunidade no padrão "número do portal - nome do pedido". Só o nome é alterado; oportunidades já corretas são ignoradas. Execução inicial: 30.478 oportunidades renumeradas, 4.315 já corretas e 735 recusadas pela org (validação de motivo de perda).
 
+- **Limpeza das propostas zeradas da plataforma antiga**: as 5.085 propostas legadas em rascunho e sem valor foram tratadas — as 673 com oportunidade no Salesforce ficaram como **Oportunidade Perdida** com o motivo "Oportunidade Mecanicamente Perdida" (registrado também no portal) e as 4.412 sem vínculo no Salesforce foram excluídas do banco.
+
 ### Alterado
 - **Busca global estilo Salesforce**: o campo do topo deixou de abrir pop-up — agora é um campo de verdade, centralizado, que mostra as sugestões abaixo enquanto você digita (setas ↑↓ e Enter para abrir). O Enter sem seleção, ou "Ver todos os resultados", leva à nova tela **/busca**, com os resultados completos agrupados e filtros por Propostas, Pedidos, Clientes e Contatos. ⌘K/Ctrl+K passa a focar o campo; no mobile o botão de lupa abre a tela de busca.
 - **Sugestões do Atlas e Radar viraram uma tela só**: agora tudo fica em **Radar do Atlas**, com as abas **Alertas** (clientes em risco) e **Sugestões** (as 10 melhores hipóteses e as ações de Pix). Links antigos para `/solar/clientes/sugestoes` redirecionam para o Radar.
