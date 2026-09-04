@@ -772,8 +772,9 @@ function PropostaPdfAcoes({ proposta }: { proposta: Record<string, any> }) {
             </DialogTitle>
           </DialogHeader>
           <div className="min-h-0 flex-1 bg-muted/40">
-            <iframe title="Prévia da proposta" srcDoc={previa ?? ""} className="h-full w-full border-0 bg-white" />
+            <PropostaPdfPreview html={previa ?? ""} titulo="Prévia da proposta" className="h-full" />
           </div>
+
         </DialogContent>
       </Dialog>
     </>
