@@ -40,6 +40,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Auditoria por pedido no cron do SAP**: cada consulta ao `ZNFE_OV_CONSULTAR` agora grava um evento em Logs › Integrações (`cron.sap-nfs`): `avancou` (de → para), `consulta-vazia` (SAP não devolveu picking/expedição/NF) ou `consulta-erro` (falha da chamada), com OV, picking, remessa, NF e data de expedição. O resultado do gatilho passa a trazer também os contadores **vazios** e **erros**.
 
 ### Alterado
+- **Agenda de tarefas mais enxuta**: cada tarefa virou uma linha única com título clicável (abre em pop up), ações **Interação / Adiar / Concluir** à direita e o botão "Abrir" removido. A linha mostra a **segmentação (A–D) do cliente** e marca claramente quando o vínculo é um **Lead**, que não tem segmentação.
 - **"Aguardando Pagamento" só para cobrança em aberto**: assim que a ordem de venda é criada no SAP, pedidos de **cartão e boleto a prazo** passam direto para **Processando** — o rótulo "Aguardando Pagamento" fica reservado a **pix e boleto à vista** ainda não pagos. O motor do cron segue daí (Separação/Faturado/Coletado).
 
 ### Adicionado
