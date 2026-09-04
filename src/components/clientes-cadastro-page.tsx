@@ -265,7 +265,7 @@ const UFS = [
   "PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
 ];
 
-export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
+export function ClientesCadastroPage({ instancia, buscaInicial }: { instancia: Instancia; buscaInicial?: string }) {
   const qc = useQueryClient();
   const listar = useServerFn(listClientesPaginaFn);
   const verificarDoc = useServerFn(verificarDocFn);
@@ -278,7 +278,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [integracoesDe, setIntegracoesDe] = useState<Cliente | null>(null);
   // Campos SAP sensíveis (tabela de preço / condições) só para Administrador do Sistema.
   const ehAdmin = podeExcluir;
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(buscaInicial ?? "");
   const [fUf, setFUf] = useState("todas");
   const [fStatus, setFStatus] = useState("ativos");
   const [fFiscal, setFFiscal] = useState("todos");
@@ -287,7 +287,7 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(10);
   // A busca vai ao banco: espera o usuário parar de digitar.
-  const [qBusca, setQBusca] = useState("");
+  const [qBusca, setQBusca] = useState(buscaInicial ?? "");
   useEffect(() => {
     const t = setTimeout(() => setQBusca(q.trim()), 350);
     return () => clearTimeout(t);

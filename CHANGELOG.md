@@ -35,6 +35,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Adicionado
+- **Busca global (⌘K / Ctrl+K)**: a busca do topo passa a procurar também **clientes, contatos, propostas e pedidos** das unidades a que o usuário tem acesso, além das telas do portal. Os resultados vêm agrupados por tipo, com a unidade indicada, e levam direto ao registro (perfil do cliente, proposta ou pedido). A busca respeita as permissões: quem não tem "ver todos os registros" só encontra o que está na própria carteira, e sem "ver todos os campos" documentos e e-mails aparecem mascarados.
+
 ### Corrigido
 - **Seletor de instância cortado**: o menu do seletor (Solar/Carregadores/Marketing/Financeiro) abria alinhado pela direita do botão e, como ele fica no canto esquerdo da barra de abas, parte da lista saía da tela. Agora abre alinhado pela esquerda, sempre visível por inteiro.
 

@@ -3,6 +3,8 @@ import { AppLayout } from "@/components/app-layout";
 import { ClientesCadastroPage } from "@/components/clientes-cadastro-page";
 
 export const Route = createFileRoute("/_authenticated/carregadores/clientes/cadastros")({
+  validateSearch: (s: Record<string, unknown>): { q?: string } =>
+    typeof s.q === "string" ? { q: s.q } : {},
   head: () => ({
     meta: [
       { title: "Cadastro de clientes — Portal 2P Carregadores" },
@@ -13,9 +15,14 @@ export const Route = createFileRoute("/_authenticated/carregadores/clientes/cada
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => (
-    <AppLayout>
-      <ClientesCadastroPage instancia="carregadores" />
-    </AppLayout>
-  ),
+  component: CadastrosCarregadoresPage,
 });
+
+function CadastrosCarregadoresPage() {
+  const { q } = Route.useSearch();
+  return (
+    <AppLayout>
+      <ClientesCadastroPage instancia="carregadores" buscaInicial={q} />
+    </AppLayout>
+  );
+}

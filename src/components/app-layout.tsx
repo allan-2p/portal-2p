@@ -33,14 +33,7 @@ import { useStickyOpen } from "@/hooks/use-sticky-open";
 
 import { toast } from "sonner";
 import { AtlasIcon } from "@/components/atlas/atlas-icon";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { GlobalSearch } from "@/components/global-search";
 
 const CLIENTES_OPEN_KEY = "portal2p-clientes-open";
 const DASHBOARDS_OPEN_KEY = "portal2p-dashboards-open";
@@ -865,30 +858,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       <AtlasWidget />
 
-      <CommandDialog open={buscaOpen} onOpenChange={setBuscaOpen}>
-        <CommandInput placeholder="Buscar telas do portal…" />
-        <CommandList>
-          <CommandEmpty>Nenhuma tela encontrada.</CommandEmpty>
-          <CommandGroup heading="Navegação">
-            {itensBusca.map((i) => {
-              const Icon = i.icon;
-              return (
-                <CommandItem
-                  key={i.to + i.label}
-                  value={i.label}
-                  onSelect={() => {
-                    setBuscaOpen(false);
-                    void navigate({ to: i.to });
-                  }}
-                >
-                  <Icon className="mr-2 h-4 w-4" />
-                  {i.label}
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+      <GlobalSearch open={buscaOpen} onOpenChange={setBuscaOpen} itensNavegacao={itensBusca} />
     </div>
   );
 }
