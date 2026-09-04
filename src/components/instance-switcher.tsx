@@ -69,7 +69,7 @@ export function InstanceSwitcher() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-50 w-64 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute left-0 top-11 z-50 w-64 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
             <div className="px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
               Instância
             </div>
