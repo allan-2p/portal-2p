@@ -4,6 +4,8 @@
 import type { AppPath } from "@/lib/routes";
 import solarLogoRaw from "@/assets/2p-logo-sm.webp";
 import carregadoresAsset from "@/assets/2p-carregadores-logo.png.asset.json";
+import marketingLogoAsset from "@/assets/2p-logo-amarelo.png.asset.json";
+import financeiroLogoAsset from "@/assets/2p-logo-verde.png.asset.json";
 
 export type InstanceId = "solar" | "carregadores" | "marketing" | "financeiro";
 
@@ -148,7 +150,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     label: "Marketing",
     short: "MKT",
     description: "Consolidação de marketing de Solar e Carregadores.",
-    logo: solarLogoRaw,
+    logo: marketingLogoAsset.url,
     swatch: "oklch(0.78 0.14 90)",
     routes: [
       "marketing.home",
@@ -172,7 +174,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     label: "Financeiro",
     short: "FIN",
     description: "Controles financeiros do Grupo 2P — condições de pagamento.",
-    logo: solarLogoRaw,
+    logo: financeiroLogoAsset.url,
     swatch: "oklch(0.55 0.13 165)",
     routes: [
       "financeiro.home",
