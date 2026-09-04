@@ -440,6 +440,8 @@ export type NfAplicacao = {
   de: string;
   para: string | null;
   nf: string | null;
+  /** true quando o SAP não devolveu nenhum sinal de progresso para a OV. */
+  vazio?: boolean;
 };
 
 async function processarProposta(row: Record<string, any>): Promise<NfAplicacao> {
@@ -561,17 +563,48 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
     }
   }
 
-  return { proposta_id: id, numero: row["numero"] ?? null, de, para, nf: c.nfNumero };
+  // Auditoria por pedido: sem isso, "SAP ainda não liberou" e "consulta com
+  // erro" viram a mesma coisa (silêncio) e o backlog cresce no escuro.
+  const vazio = !para && !c.picking && !c.dataExpedicao && !c.remessa && !c.nfNumero && !c.romaneio;
+  await logIntegrationEvent({
+    slug: "cron.sap-nfs",
+    level: vazio ? "info" : "info",
+    event: para ? "avancou" : vazio ? "consulta-vazia" : "consulta-sem-avanco",
+    message: para
+      ? `${row["numero"] ?? id}: ${de} → ${para}`
+      : vazio
+        ? `${row["numero"] ?? id}: SAP não devolveu progresso (OV ${ov}).`
+        : `${row["numero"] ?? id}: SAP devolveu sinal já refletido no status ${de}.`,
+    detail: {
+      proposta_id: id,
+      numero: row["numero"] ?? null,
+      ov,
+      de,
+      para,
+      picking: c.picking ?? null,
+      romaneio: c.romaneio ?? null,
+      remessa: c.remessa ?? null,
+      nfNumero: c.nfNumero ?? null,
+      dataExpedicao: c.dataExpedicao ?? null,
+    },
+  });
+
+  return { proposta_id: id, numero: row["numero"] ?? null, de, para, nf: c.nfNumero, vazio };
 }
 
 export type NfResultado = {
   verificados: number;
   atualizados: number;
+  /** Consultas em que o SAP não devolveu nenhum progresso (pedido aguardando o ERP). */
+  vazios: number;
+  /** Consultas que falharam (SOAP fault, timeout, OV divergente). */
+  erros_total: number;
   detalhes: NfAplicacao[];
   erros?: { proposta_id: string; erro: string }[];
   skipped?: boolean;
   motivo?: string;
 };
+
 
 /** Seleciona uma janela circular para que nenhum pedido fique fora do lote. */
 export function selecionarFilaRotativa<T>(rows: T[], limite: number, rodada: number): T[] {
@@ -587,7 +620,7 @@ export function selecionarFilaRotativa<T>(rows: T[], limite: number, rodada: num
  */
 export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado> {
   if (!sapNfsConfigurado()) {
-    return { verificados: 0, atualizados: 0, detalhes: [], skipped: true, motivo: "SAP_NFS_URL/credencial não configurada." };
+    return { verificados: 0, atualizados: 0, vazios: 0, erros_total: 0, detalhes: [], skipped: true, motivo: "SAP_NFS_URL/credencial não configurada." };
   }
 
   // Ordenação e filtro no banco: com backlog grande, ordenar em memória
@@ -636,7 +669,7 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
       await logIntegrationEvent({
         slug: "cron.sap-nfs",
         level: "error",
-        event: "consulta",
+        event: "consulta-erro",
         message: erro,
         detail: {
           proposta_id: String(row["id"]),
@@ -648,5 +681,13 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
   }
 
   const atualizados = detalhes.filter((d) => d.para).length;
-  return { verificados: fila.length, atualizados, detalhes, ...(erros.length ? { erros } : {}) };
+  const vazios = detalhes.filter((d) => d.vazio).length;
+  return {
+    verificados: fila.length,
+    atualizados,
+    vazios,
+    erros_total: erros.length,
+    detalhes,
+    ...(erros.length ? { erros } : {}),
+  };
 }

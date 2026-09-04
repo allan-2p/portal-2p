@@ -15,6 +15,11 @@
 - [ ] camila@2pgroup.com.br está bloqueada por hard bounce até 02/10 — verificar a caixa postal com a TI.
 - [x] Reenviar e confirmar recebimento do cancelamento unificado (pedido 60134/60138) após publicação.
 
+## Status de pedidos (SAP)
+- [x] Log por pedido no cron `cron.sap-nfs` (`avancou`/`consulta-vazia`/`consulta-erro`) + contadores no job.
+- [x] Painel de pedidos parados com OV há N dias (Admin › Logs › Monitor de Sync SAP).
+- [x] Opção A: OV criada (cartão/boleto a prazo) → status "Processando" no ato.
+
 ## Entrega
 - [x] CloseDate do Salesforce = data real de fechamento do pedido (`finalizado_em`), não a previsão/criação.
 - [x] Baixa de entrega: validação de data por dia-calendário (não bloquear o dia de hoje).

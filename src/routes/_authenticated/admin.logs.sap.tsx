@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { SapSyncMonitor } from "@/components/admin/sap-sync-monitor";
+import { SapPresosPanel } from "@/components/admin/sap-presos-panel";
 
 export const Route = createFileRoute("/_authenticated/admin/logs/sap")({
   head: () => ({
@@ -36,6 +37,7 @@ function MonitorSapPage() {
               individual ou em lote.
             </p>
           </header>
+          <SapPresosPanel />
           <SapSyncMonitor />
         </div>
       </AppLayout>
