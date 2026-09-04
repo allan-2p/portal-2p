@@ -169,7 +169,7 @@ export const CAMPOS_ACCOUNT: CampoOrigem[] = [
     chave: "nome_fantasia",
     rotulo: "Nome fantasia",
     origem: "Cadastro de cliente › Nome fantasia",
-    sfPadrao: null,
+    sfPadrao: "Nome_Fantasia__c",
     tipo: "texto",
     valor: (c) => ouNulo(c["nome_fantasia"]),
   },
@@ -185,11 +185,12 @@ export const CAMPOS_ACCOUNT: CampoOrigem[] = [
     chave: "email",
     rotulo: "E-mail principal",
     origem: "Cadastro de cliente › E-mail",
-    ajuda: "Account não tem campo padrão de e-mail; mapeie para um campo customizado da org.",
-    sfPadrao: null,
+    ajuda: "Account não tem campo padrão de e-mail; a org usa o customizado `Email__c`.",
+    sfPadrao: "Email__c",
     tipo: "email",
     valor: (c) => ouNulo(c["email"]),
   },
+
   {
     chave: "site",
     rotulo: "Site",
