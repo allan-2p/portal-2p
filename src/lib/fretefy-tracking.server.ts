@@ -75,13 +75,15 @@ export async function processarWebhookFretefy(
   }
 
 
+  base.tipo = ev.tipo;
+
   if (ev.tipo !== "entregue") {
     await logIntegrationEvent({
       slug: "fretefy",
       level: ev.tipo === "ocorrencia" ? "warn" : "info",
       event: "rastreio",
-      message: `${ev.descricao ?? ev.tipo} • pedido ${ev.pedido}`,
-      detail: { proposta_id: id, status: de, evento: ev.tipo, payload },
+      message: `${ev.descricao ?? ev.tipo} • pedido ${ev.pedido ?? proposta["numero"] ?? ev.cargaId}`,
+      detail: { proposta_id: id, carga_id: ev.cargaId, status: de, evento: ev.tipo, payload },
     });
     return { ...base, proposta_id: id, de, skipped: true, motivo: `Evento de rastreio "${ev.tipo}" — apenas auditado.` };
   }
@@ -100,8 +102,9 @@ export async function processarWebhookFretefy(
       slug: "fretefy",
       level: "warn",
       event: de === "Coletado" ? "rastreio" : "entrega-pendente",
-      message: `Entrega recusada para o pedido ${ev.pedido}: ${r.motivo}`,
-      detail: { proposta_id: id, status: de, payload },
+      message: `Entrega recusada para o pedido ${ev.pedido ?? proposta["numero"] ?? ev.cargaId}: ${r.motivo}`,
+      // `carga_id` fica no log para a reconciliação casar mesmo sem número.
+      detail: { proposta_id: id, carga_id: ev.cargaId, status: de, payload },
     });
     return { ...base, proposta_id: id, de, skipped: true, motivo: r.motivo };
   }
