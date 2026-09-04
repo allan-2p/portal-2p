@@ -143,13 +143,13 @@ function AcompanhamentoSolarPage() {
   return (
     <AppLayout>
       <div className="max-w-[1700px] mx-auto space-y-5">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Propostas</div>
-            <h1 className="text-3xl font-bold mt-1">Acompanhamento</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mt-1 truncate">Acompanhamento</h1>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:w-auto">
               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={search}
@@ -164,11 +164,11 @@ function AcompanhamentoSolarPage() {
               options={vend.names}
               allLabel="Todos os vendedores"
             />
-            <div className="flex bg-surface rounded-lg p-1 border border-border">
+            <div className="flex w-full sm:w-auto bg-surface rounded-lg p-1 border border-border">
               <button
                 onClick={() => setView("kanban")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors",
+                  "flex-1 sm:flex-none justify-center px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors",
                   view === "kanban"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -179,7 +179,7 @@ function AcompanhamentoSolarPage() {
               <button
                 onClick={() => setView("list")}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors",
+                  "flex-1 sm:flex-none justify-center px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors",
                   view === "list"
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground",
