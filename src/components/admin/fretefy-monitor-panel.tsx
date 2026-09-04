@@ -206,6 +206,27 @@ export function FretefyMonitorPanel() {
         </p>
       </div>
 
+      <div className="rounded-xl border border-border bg-card p-3">
+        <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+          <RefreshCw className="h-4 w-4" /> Reenvio de documentos pendentes
+        </div>
+        <Button onClick={() => backfill.mutate()} disabled={backfill.isPending}>
+          {backfill.isPending ? (
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-1 h-4 w-4" />
+          )}
+          Reenviar agora
+        </Button>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Varre os pedidos faturados/Coletado/Entregue que ainda não tiveram a NF enviada à Fretefy e
+          empurra o documento. Roda direto no portal, sem depender de chave externa. A execução fica
+          registrada nos gatilhos.
+        </p>
+      </div>
+
+
+
       <div className="rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between gap-2 border-b border-border p-3">
           <div className="text-sm font-medium">Pendências de entrega</div>
