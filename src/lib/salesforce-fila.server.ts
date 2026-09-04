@@ -72,10 +72,11 @@ export async function processarFilaSalesforce(limite = 25): Promise<FilaSalesfor
   const total = Math.max(1, Math.floor(limite));
   const cotas = cotasFilaSalesforce(total);
   const select = "id,numero,sf_status,sf_opp_id,created_at,updated_at";
-  // `not.like` devolve NULL (e a linha some) quando a mensagem é nula: por
-  // isso o `or` com `is.null`.
-  const SEM_BACKFILL = "(sf_mensagem.is.null,sf_mensagem.not.like.*backfill*)";
-  const COM_BACKFILL = "like.*backfill*";
+  // A faixa "novas" é decidida pela DATA de criação, não pela marca de
+  // backfill: o lote histórico carimbou `(backfill)` também em propostas
+  // criadas no portal, que ficavam presas atrás de milhares de registros de
+  // 2022 ordenados por `created_at.asc` e nunca chegavam ao CRM.
+  const corte = new Date(Date.now() - JANELA_NOVAS_DIAS * 86_400_000).toISOString();
 
   /** Busca uma faixa priorizando `pendente` e completando com `erro`. */
   async function faixa(filtros: Record<string, string>, order: string, vagas: number) {
@@ -98,15 +99,16 @@ export async function processarFilaSalesforce(limite = 25): Promise<FilaSalesfor
     cotas.vinculadas,
   );
   const novas = await faixa(
-    { sf_opp_id: "is.null", or: SEM_BACKFILL },
+    { sf_opp_id: "is.null", created_at: `gte.${corte}` },
     "created_at.desc",
     cotas.novas + (cotas.vinculadas - vinculadas.length),
   );
   const backfill = await faixa(
-    { sf_opp_id: "is.null", sf_mensagem: COM_BACKFILL },
-    "created_at.asc",
+    { sf_opp_id: "is.null", created_at: `lt.${corte}` },
+    "created_at.desc",
     total - vinculadas.length - novas.length,
   );
+
   const pendentes = [...vinculadas, ...novas, ...backfill].slice(0, total);
 
 
