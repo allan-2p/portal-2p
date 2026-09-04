@@ -18,6 +18,11 @@ import { logIntegrationEvent } from "./integration-logs.server";
 export type FretefyTrackingResultado = Record<string, unknown> & { skipped?: boolean };
 
 async function acharProposta(ev: FretefyEvento): Promise<Record<string, any> | null> {
+  // Contrato real: a Fretefy manda só o GUID da carga.
+  if (ev.cargaId) {
+    const porCarga = await db.getPropostaPorOfertaFretefy(ev.cargaId);
+    if (porCarga) return porCarga as Record<string, any>;
+  }
   if (!ev.pedido) return null;
   const porNumero = await db.getPropostaPorNumero(ev.pedido);
   if (porNumero) return porNumero as Record<string, any>;
@@ -34,15 +39,41 @@ export async function processarWebhookFretefy(
   payload: Record<string, unknown>,
 ): Promise<FretefyTrackingResultado> {
   const ev = interpretarEventoFretefy(payload ?? {});
-  const base = { pedido: ev.pedido, tipo: ev.tipo, evento_id: ev.eventoId };
+  const base = { pedido: ev.pedido, carga_id: ev.cargaId, tipo: ev.tipo, evento_id: ev.eventoId };
 
-  if (!ev.pedido) return { ...base, skipped: true, motivo: "Payload sem número do pedido." };
+  if (!ev.pedido && !ev.cargaId)
+    return { ...base, skipped: true, motivo: "Payload sem número do pedido nem CargaId." };
 
   const proposta = await acharProposta(ev);
-  if (!proposta) return { ...base, skipped: true, motivo: `Nenhum pedido encontrado para "${ev.pedido}".` };
+  if (!proposta)
+    return {
+      ...base,
+      skipped: true,
+      motivo: `Nenhum pedido encontrado para "${ev.cargaId ?? ev.pedido}".`,
+    };
 
   const id = String(proposta["id"]);
   const de = String(proposta["status"] ?? "");
+
+  // O callback real não traz texto de status: a baixa vem da reconsulta da
+  // carga (`GET carga/{id}` → entrega.eventoRota.dhEvento).
+  if (ev.tipo !== "entregue" && ev.cargaId) {
+    try {
+      const { getStatusCarga, lerEntregaCarga, fretefyConfigurado } = await import("./fretefy-client.server");
+      if (fretefyConfigurado()) {
+        const res = await getStatusCarga(ev.cargaId);
+        const dh = res.ok ? lerEntregaCarga(res.json) : null;
+        if (dh) {
+          ev.tipo = "entregue";
+          ev.ocorridoEm = dh;
+          ev.descricao = ev.descricao ?? "Entrega confirmada pela Fretefy.";
+        }
+      }
+    } catch {
+      /* best effort — sem reconsulta o evento é só auditado */
+    }
+  }
+
 
   if (ev.tipo !== "entregue") {
     await logIntegrationEvent({
