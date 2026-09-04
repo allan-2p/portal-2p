@@ -315,7 +315,8 @@ function TarefasPage() {
     const cliente = t.what ?? t.who;
     return (
       <div className="rounded-xl border border-border bg-background px-3 py-2.5 hover:border-primary/40 transition-colors">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:flex lg:items-center">
+        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3 lg:flex lg:items-center">
+          <SegmentoIcone t={t} />
           <div
             className={cn(
               "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
