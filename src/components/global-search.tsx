@@ -217,9 +217,11 @@ export const GlobalSearch = forwardRef<
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate font-medium">{r.titulo}</span>
+                      <span className="max-w-[45%] shrink-0 truncate font-medium">
+                        {r.titulo}
+                      </span>
                       {r.subtitulo && (
-                        <span className="truncate text-xs text-muted-foreground">
+                        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
                           {r.subtitulo}
                         </span>
                       )}

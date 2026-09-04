@@ -639,7 +639,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <GlobalSearch
             ref={buscaRef}
             itensNavegacao={itensBusca}
-            className="hidden lg:block absolute left-1/2 -translate-x-1/2 w-[min(520px,38vw)]"
+            className="hidden lg:block absolute left-1/2 -translate-x-1/2 z-50 w-[min(520px,38vw)]"
           />
 
 
