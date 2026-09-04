@@ -2727,6 +2727,8 @@ function PropostaCarregadoresPage() {
                   <ResumoLinha k="Total dos itens" v={fmtBRL(d.valorItens)} />
                   <ResumoLinha k={`IPI destacado (${fmtAliquota(config.ipi)})`} v={fmtBRL(d.ipiValor)} />
                   <ResumoLinha k="Itens sem IPI (base fiscal)" v={fmtBRL(d.valorItem)} />
+                  <ResumoLinha k={`ICMS efetivo (${fmtAliquota(d.icmsRate)})`} v={fmtBRL(d.icms)} />
+                  <ResumoLinha k={`PIS/COFINS (${fmtAliquota(d.pisCofinsRate)})`} v={fmtBRL(d.pisCofins)} />
                   <ResumoLinha k="Valor líquido (sem IPI/ICMS/PIS-COFINS)" v={fmtBRL(d.rl)} />
                   <ResumoLinha
                     k={`Frete (${state.freteMod || "—"})`}
