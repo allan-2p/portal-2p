@@ -35,6 +35,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Corrigido
+- **Seletor de instância cortado**: o menu do seletor (Solar/Carregadores/Marketing/Financeiro) abria alinhado pela direita do botão e, como ele fica no canto esquerdo da barra de abas, parte da lista saía da tela. Agora abre alinhado pela esquerda, sempre visível por inteiro.
+
 ### Alterado
 - **Abas do topo com dropdown estilo Salesforce**: clicar no nome da aba (Tarefas, Clientes, Propostas, Cupons) já abre a página principal; a setinha ao lado abre o menu, que começa sempre pela ação de criação ("Nova tarefa", "Novo cliente", "Nova proposta", "Novo cupom") e depois lista as telas secundárias (ex.: Acompanhamento). Em Clientes, "Cadastros" passa a se chamar **Clientes** e é a página principal da aba.
 - **Navegação no topo (estilo Salesforce Lightning)**: o menu lateral fixo dá lugar a uma **barra superior** (logo, busca global de telas com ⌘K, tema, notificações, administração e perfil) e uma **barra de abas** iniciada pelo seletor de instância. A ordem da Solar passa a ser Home, Tarefas, Clientes, Propostas, Cupons e Dashboards, com os submenus funcionando sobre o conteúdo. O Atlas sai da lateral e concentra chat, tela completa, radar e sugestões no canto direito da **barra inferior**. As telas ganham a largura inteira; no mobile o menu continua na gaveta lateral, e a área do Grupo 2P mantém o menu lateral próprio.
