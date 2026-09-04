@@ -168,6 +168,10 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
       nome: txt(i['nome']) || "Item",
       qtd: num(i['qtd']),
       valor: num(i['valor']),
+      // Snapshot fiscal gravado no salvamento (simulação do SAP).
+      ipiRate: num(i['aliq_ipi']) || null,
+      icmsRate: num(i['aliq_icms']) || null,
+      pisCofinsRate: num(i['aliq_pis_cofins']) || null,
     })),
     subtotal,
     desconto: num(totais['desconto']),

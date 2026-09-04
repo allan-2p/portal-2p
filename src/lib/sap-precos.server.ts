@@ -40,6 +40,14 @@ export type SimulacaoValores = {
   vlCofins: number;
   vlIcms: number;
   vlIpi: number;
+  /**
+   * Alíquotas REAIS do item, em fração (0,04 = 4%). É a fonte oficial do
+   * imposto por item (varia nacional × importado); o SAP manda `ALIQ_*` em
+   * percentual e PIS/COFINS só em valor — o percentual é derivado do líquido.
+   */
+  aliqIcms: number | null;
+  aliqIpi: number | null;
+  aliqPisCofins: number | null;
 };
 
 const URL_PADRAO =
@@ -262,6 +270,12 @@ export async function simularSap(
     const vlCofins = num(reg["VL_COFINS"], "VL_COFINS");
     const vlIcms = num(reg["VL_ICMS"], "VL_ICMS");
     const vlIpi = num(reg["VL_IPI"], "VL_IPI");
+    // O SAP manda ALIQ_* em percentual ("4.00"); o portal trabalha em fração.
+    const pct = (chave: string) => {
+      if (reg[chave] === undefined) return null;
+      const v = num(reg[chave], chave);
+      return Number.isFinite(v) && v > 0 ? v / 100 : null;
+    };
     mapa.set(codigo, {
       pesoLiquido,
       pesoBruto,
@@ -274,6 +288,10 @@ export async function simularSap(
       vlCofins,
       vlIcms,
       vlIpi,
+      aliqIcms: pct("ALIQ_ICMS"),
+      aliqIpi: pct("ALIQ_IPI"),
+      // O SAP não devolve % de PIS/COFINS: derivamos dos valores sobre o líquido.
+      aliqPisCofins: liquido > 0 ? (vlPis + vlCofins) / liquido : null,
     });
   }
 

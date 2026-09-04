@@ -321,7 +321,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       clienteDoc: String(data.cliente.doc ?? ""),
     });
 
-    const { precos, avisos, fallback } = await precosSolar(
+    const { precos, avisos, fallback, aliquotas } = await precosSolar(
       data.itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId)!;
         return { codigo: String(p.codigo), quantidade: i.qtd };
@@ -387,6 +387,10 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       const cod = normCod(p.codigo);
       // Preço vem SÓ do SAP — nunca do preço sugerido do catálogo.
       const valor = money2(precos[cod] ?? 0);
+      // Snapshot fiscal: as alíquotas reais do item na simulação do SAP ficam
+      // gravadas com a proposta para que prévia, resumo, PDF e reimpressão
+      // mostrem sempre o mesmo imposto.
+      const aliq = aliquotas[cod];
       return {
         produtoId: i.produtoId,
         codigo: p.codigo ?? null,
@@ -395,6 +399,9 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
         valor,
         total: money2(valor * i.qtd),
         valorManual: false,
+        aliq_ipi: aliq?.ipi ?? null,
+        aliq_icms: aliq?.icms ?? null,
+        aliq_pis_cofins: aliq?.pisCofins ?? null,
       };
     });
 
