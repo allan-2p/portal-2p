@@ -8,7 +8,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { JobRunRow } from "@/lib/job-runs.functions";
+import type { JobRunRow, JsonValue } from "@/lib/job-runs.functions";
 
 export const JOBS_FRETEFY = ["webhook.fretefy", "fretefy.oferta-carga"] as const;
 
@@ -226,6 +226,6 @@ export const reprocessarCargaFretefy = createServerFn({ method: "POST" })
       ok: run.ok,
       runId: run.runId,
       error: run.ok ? null : run.error,
-      resultado: JSON.parse(JSON.stringify(run.ok ? run.result : {})) as Record<string, unknown>,
+      resultado: JSON.parse(JSON.stringify(run.ok ? run.result : {})) as Record<string, JsonValue>,
     };
   });
