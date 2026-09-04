@@ -132,6 +132,9 @@ function TarefasPage() {
   });
   const [view, setView] = useState<"calendario" | "lista">("lista");
   const [busca, setBusca] = useState("");
+  const [ordem, setOrdem] = useState<"data-asc" | "data-desc" | "prioridade" | "cliente">(
+    "data-asc",
+  );
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const { ownerId, setOwnerId, ownerParam, dataEnabled } = useScopedOwner("all");
 
@@ -143,9 +146,14 @@ function TarefasPage() {
   const today = new Date();
 
   const range = useMemo(() => {
-    const start = fmtKey(new Date(year, month, 1));
+    const inicioMes = new Date(year, month, 1);
+    // Puxa também as tarefas em aberto dos últimos 120 dias, para que as
+    // atrasadas apareçam no topo quando a lista é ordenada por data.
+    const janelaAtraso = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 120);
+    const start = fmtKey(inicioMes < janelaAtraso ? inicioMes : janelaAtraso);
     const end = fmtKey(new Date(year, month, daysInMonth));
     return { start, end };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month, daysInMonth]);
 
   const fetchTasks = useServerFn(getSalesforceTasks);
