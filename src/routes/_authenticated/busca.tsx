@@ -13,8 +13,12 @@ import { GRUPO_BUSCA, UNIDADE_BUSCA, agruparResultados } from "@/components/glob
 type BuscaSearch = { q?: string };
 
 export const Route = createFileRoute("/_authenticated/busca")({
-  validateSearch: (search: Record<string, unknown>): BuscaSearch =>
-    typeof search["q"] === "string" ? { q: search["q"] } : {},
+  // O parser do router converte "60012" em número: normalizamos para texto,
+  // senão a página quebra ao chamar .trim().
+  validateSearch: (search: Record<string, unknown>): BuscaSearch => {
+    const q = search["q"];
+    return q === undefined || q === null || q === "" ? {} : { q: String(q) };
+  },
 
   head: () => ({
     meta: [
