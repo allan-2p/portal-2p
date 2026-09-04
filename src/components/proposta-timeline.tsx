@@ -92,7 +92,7 @@ export function PropostaTimeline({
                   <span
                     className="w-1 flex-1 rounded-full"
                     style={{
-                      backgroundColor: atual > i && atual !== -1 ? s.bg : "var(--border)",
+                      backgroundColor: concluida(etapa, i + 1) ? s.bg : "var(--border)",
                     }}
                   />
                 )}
@@ -116,7 +116,7 @@ export function PropostaTimeline({
       <div className="hidden items-start sm:flex">
 
         {ETAPAS_ANDAMENTO.map((etapa, i) => {
-          const done = atual >= i && atual !== -1;
+          const done = concluida(etapa, i);
           const s = propostaStatusStyle(etapa);
           return (
             <div key={etapa} className="flex-1 min-w-0">
@@ -139,7 +139,10 @@ export function PropostaTimeline({
                     i === ETAPAS_ANDAMENTO.length - 1 && "opacity-0",
                   )}
                   style={{
-                    backgroundColor: atual > i && atual !== -1 ? s.bg : "var(--border)",
+                    backgroundColor:
+                      i + 1 < ETAPAS_ANDAMENTO.length && concluida(ETAPAS_ANDAMENTO[i + 1]!, i + 1)
+                        ? s.bg
+                        : "var(--border)",
                   }}
                 />
               </div>
