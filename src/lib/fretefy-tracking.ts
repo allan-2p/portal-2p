@@ -65,7 +65,19 @@ export function classificarEventoFretefy(texto: string): FretefyEventoTipo {
 
 export function interpretarEventoFretefy(payload: Record<string, unknown>): FretefyEvento {
   const pedido =
-    str(pick(payload, ["pedido", "numero", "numeroPedido", "numero_pedido", "nroped", "documento", "pedidoCliente"])) ||
+    str(
+      pick(payload, [
+        "pedido",
+        "numero",
+        "numeroPedido",
+        "numero_pedido",
+        "nroped",
+        "documento",
+        "pedidoCliente",
+        "pedidoEmbarcador",
+        "pedido_embarcador",
+      ]),
+    ) ||
     null;
 
   const bruto = [
