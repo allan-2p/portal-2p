@@ -1121,8 +1121,35 @@ export async function criarOrdemVendaSap(
 
 
 
+  // Alíquotas do SAP mandam no VALOR_PROD: o líquido enviado tem que voltar ao
+  // preço fechado com o cliente quando o SAP recolocar os impostos por cima.
+  if (valorProdAtivo(row)) {
+    const diffs = await sincronizarAliquotasComSap(row);
+    if (diffs.length) {
+      await logIntegrationEvent({
+        ...base,
+        event: "ov.aliquotas",
+        level: "warn",
+        message:
+          `Alíquotas da proposta ajustadas para as do SAP em ${diffs.length} item(ns) antes de criar a ordem.`.slice(
+            0,
+            500,
+          ),
+        detail: { proposta_id: propostaId, numero: row["numero"] ?? null, itens: diffs },
+      });
+      if (!testrun) {
+        try {
+          await db.atualizarProposta(propostaId, { itens: row["itens"] });
+        } catch {
+          /* snapshot é observabilidade: não bloqueia a ordem */
+        }
+      }
+    }
+  }
+
   const peso = await pesosDoPedido(itens);
   const corpo = envelope(row, peso, testrun);
+
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
