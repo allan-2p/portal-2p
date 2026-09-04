@@ -409,14 +409,28 @@ function TarefasPage() {
 
         {view === "lista" ? (
           <div className="glass rounded-2xl p-4 space-y-4">
-            <div className="relative max-w-md">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Buscar por assunto, cliente, contato ou responsável…"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-              />
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Buscar por assunto, cliente, contato ou responsável…"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                />
+              </div>
+              <Select value={ordem} onValueChange={(v) => setOrdem(v as typeof ordem)}>
+                <SelectTrigger className="w-[230px] gap-2">
+                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="data-asc">Data: atrasadas primeiro</SelectItem>
+                  <SelectItem value="data-desc">Data: mais distantes primeiro</SelectItem>
+                  <SelectItem value="prioridade">Prioridade: alta primeiro</SelectItem>
+                  <SelectItem value="cliente">Cliente (A–Z)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {tasksQuery.isLoading && (
@@ -424,33 +438,17 @@ function TarefasPage() {
                 Carregando tarefas…
               </div>
             )}
-            {!tasksQuery.isLoading && gruposLista.length === 0 && (
+            {!tasksQuery.isLoading && listaFiltrada.length === 0 && (
               <div className="text-sm text-muted-foreground py-10 text-center">
                 Nenhuma tarefa encontrada para {monthName}.
               </div>
             )}
 
-            {gruposLista.map(([dia, itens]) => (
-              <section key={dia} className="space-y-2">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      dia === fmtKey(today) && "text-primary",
-                    )}
-                  >
-                    {fmtDia(dia)}
-                  </span>
-                  <span className="h-px flex-1 bg-border" />
-                  <span>{itens.length} tarefa(s)</span>
-                </div>
-                <div className="grid gap-2 lg:grid-cols-2">
-                  {itens.map((t) => (
-                    <CardTarefa key={t.id} t={t} />
-                  ))}
-                </div>
-              </section>
-            ))}
+            <div className="flex flex-col gap-2">
+              {listaFiltrada.map((t) => (
+                <CardTarefa key={t.id} t={t} />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="glass rounded-2xl overflow-hidden">
