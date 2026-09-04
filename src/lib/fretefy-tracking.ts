@@ -12,6 +12,8 @@ export type FretefyEventoTipo = "entregue" | "coletado" | "em_transito" | "ocorr
 
 export type FretefyEvento = {
   pedido: string | null;
+  /** GUID da carga (`data.CargaId`) — contrato real do callback da Fretefy. */
+  cargaId: string | null;
   tipo: FretefyEventoTipo;
   descricao: string | null;
   ocorridoEm: string | null;
