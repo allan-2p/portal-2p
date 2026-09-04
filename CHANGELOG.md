@@ -42,6 +42,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 - **Limpeza das propostas zeradas da plataforma antiga**: as 5.085 propostas legadas em rascunho e sem valor foram tratadas — as 673 com oportunidade no Salesforce ficaram como **Oportunidade Perdida** com o motivo "Oportunidade Mecanicamente Perdida" (registrado também no portal) e as 4.412 sem vínculo no Salesforce foram excluídas do banco.
 
+### Adicionado
+- **Monitor da Fretefy** (Admin › Logs › Monitor da Fretefy): mostra todas as chamadas do webhook de rastreio e das ofertas de carga com **taxa de falha em 24h e 7 dias**, a lista de **pedidos com carga criada e ainda sem baixa de entrega** e o **reprocessamento por CargaId** — que roda o mesmo motor do webhook (acha o pedido pela carga, reconsulta a entrega na Fretefy e dá a baixa), com payload e resultado visíveis em cada linha.
+
 ### Alterado
 - **Pedido liberado no SAP não fica mais em "Aguardando Pagamento"**: além do picking, o portal passa a avançar o status quando o SAP informa **remessa criada** ou **data de expedição** — o pedido vai para **Processando** (ou **Separação**, com remessa) no próximo ciclo, sem esperar a confirmação do picking. O motor continua só andando para frente.
 - **Fretefy: aviso da NF mesmo sem carga criada**: ao faturar um pedido CIF/dedicado sem oferta de carga na Fretefy (falha na etapa da ordem de venda ou integração desligada), o portal agora **cria a carga e então envia a NF real**, em vez de ignorar. O gatilho fica registrado e pode ser reprocessado pelo painel de monitoramento.
