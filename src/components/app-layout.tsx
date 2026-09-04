@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Search } from "lucide-react";
+import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto-sm.webp";
@@ -201,17 +201,25 @@ export function AppLayout({ children }: { children: ReactNode }) {
    */
   const tabs: TabItem[] = [];
   if (show("home")) tabs.push({ id: "home", label: "Home", icon: Home, to: "/", active: pathname === "/" });
-  if (show("tarefas")) tabs.push({ id: "tarefas", label: "Tarefas", icon: Calendar, to: "/solar/tarefas", active: pathname.startsWith("/solar/tarefas") });
+  if (show("tarefas")) tabs.push({ id: "tarefas", label: "Tarefas", icon: Calendar, to: "/solar/tarefas", active: pathname.startsWith("/solar/tarefas"), novo: { label: "Nova tarefa", to: "/solar/tarefas" as AppPath, hash: "novo" } });
   if (show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.ranking")) {
+    const principal = (show("clientes.cadastros")
+      ? "/solar/clientes/cadastros"
+      : show("clientes.segmentacao")
+        ? "/solar/clientes/segmentacao"
+        : show("clientes.perfil")
+          ? "/solar/clientes/perfil"
+          : "/solar/clientes/ranking") as AppPath;
     tabs.push({
       id: "clientes",
       label: "Clientes",
       icon: Layers,
       active: clientesActive,
+      to: principal,
+      novo: show("clientes.cadastros")
+        ? { label: "Novo cliente", to: "/solar/clientes/cadastros" as AppPath, hash: "novo" }
+        : undefined,
       items: [
-        ...(show("clientes.cadastros")
-          ? [{ to: "/solar/clientes/cadastros" as AppPath, label: "Cadastros", icon: ClipboardList, active: pathname.startsWith("/solar/clientes/cadastros") }]
-          : []),
         ...(show("clientes.segmentacao") || show("clientes.perfil")
           ? [{
               to: (show("clientes.segmentacao") ? "/solar/clientes/segmentacao" : "/solar/clientes/perfil") as AppPath,
@@ -232,27 +240,29 @@ export function AppLayout({ children }: { children: ReactNode }) {
       label: "Propostas",
       icon: ClipboardList,
       active: propostasSolarActive,
+      to: "/solar/propostas",
+      novo: { label: "Nova proposta", to: "/solar/propostas/nova" as AppPath },
       items: [
-        { to: "/solar/propostas", label: "Propostas", icon: ClipboardList, active: pathname.startsWith("/solar/propostas") },
         ...(show("pedidos")
           ? [{ to: "/solar/pedidos" as AppPath, label: "Acompanhamento", icon: KanbanSquare, active: pathname.startsWith("/solar/pedidos") }]
           : []),
       ],
     });
   }
-  if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons") });
+  if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons"), novo: { label: "Novo cupom", to: "/solar/cupons" as AppPath, hash: "novo" } });
   if (show("carregadores.home")) tabs.push({ id: "carreg-home", label: "Home", icon: Home, to: "/carregadores", active: pathname === "/carregadores" });
   if (show("carregadores.visao-geral")) tabs.push({ id: "carreg-visao", label: "Visão Geral", icon: BarChart3, to: "/carregadores/visao-geral", active: pathname.startsWith("/carregadores/visao-geral") });
-  if (show("carregadores.tarefas")) tabs.push({ id: "carreg-tarefas", label: "Tarefas", icon: Calendar, to: "/carregadores/tarefas", active: pathname.startsWith("/carregadores/tarefas") });
-  if (show("carregadores.clientes")) tabs.push({ id: "carreg-clientes", label: "Clientes", icon: Users, to: "/carregadores/clientes/cadastros", active: pathname.startsWith("/carregadores/clientes") });
+  if (show("carregadores.tarefas")) tabs.push({ id: "carreg-tarefas", label: "Tarefas", icon: Calendar, to: "/carregadores/tarefas", active: pathname.startsWith("/carregadores/tarefas"), novo: { label: "Nova tarefa", to: "/carregadores/tarefas" as AppPath, hash: "novo" } });
+  if (show("carregadores.clientes")) tabs.push({ id: "carreg-clientes", label: "Clientes", icon: Users, to: "/carregadores/clientes/cadastros", active: pathname.startsWith("/carregadores/clientes"), novo: { label: "Novo cliente", to: "/carregadores/clientes/cadastros" as AppPath, hash: "novo" } });
   if (show("carregadores.propostas")) {
     tabs.push({
       id: "propostas-carregadores",
       label: "Propostas",
       icon: Zap,
       active: propostasCarregadoresActive,
+      to: "/carregadores/propostas",
+      novo: { label: "Nova proposta", to: "/carregadores/propostas/nova" as AppPath },
       items: [
-        { to: "/carregadores/propostas", label: "Propostas", icon: Zap, active: pathname.startsWith("/carregadores/propostas") },
         ...(show("carregadores.pedidos")
           ? [{ to: "/carregadores/pedidos" as AppPath, label: "Acompanhamento", icon: ShoppingCart, active: pathname.startsWith("/carregadores/pedidos") }]
           : []),
@@ -288,13 +298,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
 
   /** Itens "planos" para a busca global (command palette) — só o menu, sem dados. */
-  const itensBusca = tabs.flatMap((t) =>
-    t.items?.length
-      ? t.items.map((i) => ({ to: i.to, label: `${t.label} › ${i.label}`, icon: i.icon }))
-      : t.to
-        ? [{ to: t.to, label: t.label, icon: t.icon }]
-        : [],
-  );
+  const itensBusca = tabs.flatMap((t) => [
+    ...(t.to ? [{ to: t.to, label: t.label, icon: t.icon }] : []),
+    ...(t.items ?? []).map((i) => ({ to: i.to, label: `${t.label} › ${i.label}`, icon: i.icon })),
+  ]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -482,7 +489,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   {clientesOpen && (
                     <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
                       {show("clientes.cadastros") && (
-                        <SubLink to="/solar/clientes/cadastros" label="Cadastros" icon={ClipboardList} active={pathname.startsWith("/solar/clientes/cadastros")} />
+                        <SubLink to="/solar/clientes/cadastros" label="Clientes" icon={ClipboardList} active={pathname.startsWith("/solar/clientes/cadastros")} />
                       )}
                       {(show("clientes.segmentacao") || show("clientes.perfil")) && (
                         <SubLink
@@ -893,16 +900,23 @@ type TabItem = {
   to?: AppPath;
   active: boolean;
   destaque?: boolean;
+  /** Ação de criação exibida no topo do dropdown (padrão Salesforce). */
+  novo?: { label: string; to: AppPath; hash?: string };
   items?: { to: AppPath; label: string; icon: typeof Home; active: boolean }[];
 };
 
 const TAB_CLS =
   "relative flex items-center gap-1.5 px-3 h-11 text-sm whitespace-nowrap border-b-2 transition-colors";
 
-/** Aba do menu de topo: link direto, ou botão com submenu quando tem filhos. */
+/**
+ * Aba do menu de topo no padrão Salesforce: o rótulo é sempre um link direto
+ * para a página principal; a setinha ao lado abre o dropdown com a ação de
+ * criação ("Nova proposta"…) e as páginas secundárias.
+ */
 function TopTab({ tab }: { tab: TabItem }) {
   const [open, setOpen] = useState(false);
   const Icon = tab.icon;
+  const temMenu = Boolean(tab.novo) || Boolean(tab.items?.length);
   const cls = cn(
     TAB_CLS,
     tab.active
@@ -910,7 +924,7 @@ function TopTab({ tab }: { tab: TabItem }) {
       : "border-transparent text-muted-foreground hover:text-foreground hover:bg-surface-2",
   );
 
-  if (!tab.items?.length) {
+  if (!temMenu || !tab.to) {
     return (
       <Link to={tab.to!} preload="intent" className={cls}>
         <Icon className={cn("h-4 w-4", tab.destaque && !tab.active && "text-primary")} />
@@ -920,26 +934,37 @@ function TopTab({ tab }: { tab: TabItem }) {
   }
 
   return (
-    <div className="relative">
-      <button onClick={() => setOpen((v) => !v)} className={cls}>
+    <div className="relative flex items-stretch">
+      <Link to={tab.to} preload="intent" className={cn(cls, "pr-1.5")}>
         <Icon className={cn("h-4 w-4", tab.destaque && !tab.active && "text-primary")} />
         {tab.label}
+      </Link>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label={`Mais opções de ${tab.label}`}
+        aria-expanded={open}
+        className={cn(cls, "px-1.5")}
+      >
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-11 z-50 w-60 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden p-1">
-            {tab.to && (
-              <Link
-                to={tab.to}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-surface-2"
-              >
-                <Icon className="h-4 w-4" /> {tab.label}
-              </Link>
+            {tab.novo && (
+              <>
+                <Link
+                  to={tab.novo.to}
+                  hash={tab.novo.hash}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-surface-2"
+                >
+                  <Plus className="h-4 w-4" /> {tab.novo.label}
+                </Link>
+                {!!tab.items?.length && <div className="my-1 h-px bg-border" />}
+              </>
             )}
-            {tab.items.map((i) => {
+            {(tab.items ?? []).map((i) => {
               const ItemIcon = i.icon;
               return (
                 <Link

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useHashAction } from "@/hooks/use-hash-action";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -60,6 +61,7 @@ function CarregadoresTarefas() {
   const [vendedor, setVendedor] = useState("__all__");
   const vend = useCarregadoresVendedores();
   const [open, setOpen] = useState(false);
+  useHashAction("novo", () => setOpen(true));
   const [form, setForm] = useState({ titulo: "", descricao: "", cliente_nome: "", due_date: "", prioridade: "media" });
 
   const { data: tasks = [], isLoading } = useQuery({

@@ -1,4 +1,5 @@
 import { cidadeUf } from "@/lib/local-format";
+import { useHashAction } from "@/hooks/use-hash-action";
 import { useCan, useCanDelete } from "@/components/permission-gate";
 import { useEffect, useMemo, useState } from "react";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
@@ -563,6 +564,8 @@ export function ClientesCadastroPage({ instancia }: { instancia: Instancia }) {
     setOpen(true);
     setBaseForm(JSON.stringify([vazio(), "", consultoresQ.data?.eu.sap ?? null]));
   };
+  useHashAction("novo", abrirNovo);
+
   const abrirEdicao = (c: Cliente) => {
     const { id: _id, ...rest } = c;
     setEditId(c.id);

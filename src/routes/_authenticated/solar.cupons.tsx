@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useHashAction } from "@/hooks/use-hash-action";
 import { useState } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,7 @@ function CuponsPage() {
   }));
   const [salvando, setSalvando] = useState(false);
   const [open, setOpen] = useState(false);
+  useHashAction("novo", () => setOpen(true));
 
   // filtros
   const [busca, setBusca] = useState("");
