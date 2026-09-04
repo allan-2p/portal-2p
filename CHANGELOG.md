@@ -41,6 +41,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ### Alterado
 - **Sugestões do Atlas e Radar viraram uma tela só**: agora tudo fica em **Radar do Atlas**, com as abas **Alertas** (clientes em risco) e **Sugestões** (as 10 melhores hipóteses e as ações de Pix). Links antigos para `/solar/clientes/sugestoes` redirecionam para o Radar.
 - **Logo acompanha o tema da instância**: Marketing passa a usar o logo 2P **amarelo** e Financeiro o logo 2P **verde**, ambos sem fundo (antes todas as instâncias usavam o logo laranja da Solar).
+- **Lista de Tarefas em lista única com ordenação**: a visão em lista deixa de dividir as tarefas em blocos por dia e vira uma lista contínua, com seletor de ordenação — por **data (atrasadas primeiro)**, data mais distante primeiro, **prioridade** ou **cliente (A–Z)**. Cada card mostra a data da tarefa, destacando "Atrasada" em vermelho e "Hoje" na cor da instância. A busca no Salesforce passa a incluir tarefas em aberto dos últimos 120 dias, para que as atrasadas apareçam no topo. A visão de calendário não mudou.
 
 ### Corrigido
 - **Busca global do topo fora do centro**: o campo "Buscar telas…" era centralizado apenas no espaço que sobrava entre o logo e os botões da direita. Agora fica centralizado de verdade na barra superior.
