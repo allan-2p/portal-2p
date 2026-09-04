@@ -614,7 +614,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex flex-col bg-background">
       {/* ---------- Barra superior (identidade + utilidades) ---------- */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-lg">
-        <div className="flex items-center gap-2 px-3 sm:px-4 md:px-6 h-14">
+        <div className="relative flex items-center gap-2 px-3 sm:px-4 md:px-6 h-14">
+
           <button
             onClick={() => setMobileNavOpen(true)}
             className="md:hidden h-10 w-10 -ml-1 shrink-0 rounded-lg border border-border bg-surface flex items-center justify-center"
