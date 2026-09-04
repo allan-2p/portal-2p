@@ -500,10 +500,12 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
       /* best effort */
     }
     // Faturou: a carga na Fretefy troca o documento placeholder pela NF real.
-    if (c.nfNumero && String(row["fretefy_oferta_id"] ?? "").trim()) {
+    // Se a oferta não existe (falhou na etapa da OV, token off), cria agora e
+    // só então empurra a NF — as duas chamadas são idempotentes.
+    if (c.nfNumero) {
       try {
         const { runJob } = await import("./job-runs.server");
-        const { atualizarDocumentoOferta } = await import("./fretefy-oferta.server");
+        const { atualizarDocumentoOferta, criarOfertaCarga } = await import("./fretefy-oferta.server");
         await runJob(
           {
             job: "fretefy.oferta-carga",
@@ -511,12 +513,17 @@ async function processarProposta(row: Record<string, any>): Promise<NfAplicacao>
             payload: { propostaId: id, acao: "documento" },
             refId: id,
           },
-          () =>
-            atualizarDocumentoOferta(id, {
+          async () => {
+            if (!String(row["fretefy_oferta_id"] ?? "").trim()) {
+              const criada = await criarOfertaCarga(id);
+              if (!criada.ofertaId) return { ...criada, documento: "sem oferta de carga" };
+            }
+            return await atualizarDocumentoOferta(id, {
               nfNumero: c.nfNumero,
               nfSerie: c.nfSerie,
               nfChave: c.nfChave,
-            }),
+            });
+          },
         );
       } catch {
         /* best effort */
