@@ -365,12 +365,11 @@ function TarefasPage() {
                 <User className="h-3 w-3 shrink-0" />
               )}
               <span className="truncate">{cliente ?? "Sem cliente vinculado"}</span>
-              <SegmentoBadge t={t} />
               {t.owner && <span className="truncate opacity-70 hidden sm:inline">· {t.owner}</span>}
             </div>
           </div>
 
-          <AcoesTarefa t={t} className="col-span-2 justify-end lg:shrink-0" />
+          <AcoesTarefa t={t} className="col-span-3 justify-end lg:shrink-0" />
         </div>
       </div>
     );
