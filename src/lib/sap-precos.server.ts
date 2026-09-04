@@ -40,6 +40,14 @@ export type SimulacaoValores = {
   vlCofins: number;
   vlIcms: number;
   vlIpi: number;
+  /**
+   * Alíquotas REAIS do item, em fração (0,04 = 4%). É a fonte oficial do
+   * imposto por item (varia nacional × importado); o SAP manda `ALIQ_*` em
+   * percentual e PIS/COFINS só em valor — o percentual é derivado do líquido.
+   */
+  aliqIcms: number | null;
+  aliqIpi: number | null;
+  aliqPisCofins: number | null;
 };
 
 const URL_PADRAO =
