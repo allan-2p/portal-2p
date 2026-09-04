@@ -175,10 +175,10 @@ function PerfilPage() {
                   ← Voltar à lista
                 </button>
                 <Link
-                  to="/solar/clientes/sugestoes"
+                  to="/atlas-ia/radar"
                   className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/15 text-primary hover:bg-primary/20 text-sm font-medium"
                 >
-                  <Sparkles className="h-4 w-4" /> Sugestões do Atlas
+                  <Sparkles className="h-4 w-4" /> Radar do Atlas
                 </Link>
               </>
             )}
