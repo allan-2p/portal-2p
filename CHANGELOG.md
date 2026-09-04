@@ -36,6 +36,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## [Não publicado]
 
 ### Banco de dados
+- **Carregadores DC 40 kW e AC 7,4 kW**: os dois passaram a usar a classificação fiscal com ICMS de 4% (importados), alinhando o portal ao que o SAP calcula. Os impostos do pedido 60292 foram recalculados (ICMS R$ 1.660,95).
 - **Revisão em massa do catálogo (planilha de itens)**: 100 itens ficaram ativos e 322 inativos no catálogo 2P Solar; em 2P Carregadores 5 ficaram ativos e 1 inativo. 272 materiais que só existiam no espelho do SAP foram trazidos para o catálogo do portal. Nada de preço, custo, NCM ou permissão foi alterado.
 
 ### Alterado
