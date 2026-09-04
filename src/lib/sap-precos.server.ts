@@ -270,6 +270,12 @@ export async function simularSap(
     const vlCofins = num(reg["VL_COFINS"], "VL_COFINS");
     const vlIcms = num(reg["VL_ICMS"], "VL_ICMS");
     const vlIpi = num(reg["VL_IPI"], "VL_IPI");
+    // O SAP manda ALIQ_* em percentual ("4.00"); o portal trabalha em fração.
+    const pct = (chave: string) => {
+      if (reg[chave] === undefined) return null;
+      const v = num(reg[chave], chave);
+      return Number.isFinite(v) && v > 0 ? v / 100 : null;
+    };
     mapa.set(codigo, {
       pesoLiquido,
       pesoBruto,
