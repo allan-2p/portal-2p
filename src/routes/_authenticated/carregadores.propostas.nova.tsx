@@ -3065,13 +3065,10 @@ function PropostaCarregadoresPage() {
                 onCheckedChange={setUsarLogoCliente}
               />
             </div>
-            <div className="rounded-xl border border-border overflow-hidden bg-white">
-              <iframe
-                title="Proposta em PDF"
-                srcDoc={pdfHtml}
-                className="w-full h-[65vh]"
-              />
+            <div className="rounded-xl border border-border overflow-hidden">
+              <PropostaPdfPreview html={pdfHtml} titulo="Proposta em PDF" alturaVisor="60vh" />
             </div>
+
 
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setPreviewAberto(false)}>
