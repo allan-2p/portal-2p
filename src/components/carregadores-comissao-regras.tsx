@@ -71,8 +71,8 @@ export function CarregadoresComissaoRegras() {
           <Campo label="PIS/COFINS (%)" value={pisCofins} onChange={setPisCofins} step={0.01} />
         </div>
 
-        <div className="rounded-xl border border-border/60 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-xl border border-border/60 overflow-x-auto">
+          <table className="w-full min-w-max text-sm">
             <tbody>
               <Linha label="Venda (com IPI)" valor={brl(r.venda)} />
               <Linha label="Valor NF (sem IPI)" valor={brl(r.valorSemIpi)} />

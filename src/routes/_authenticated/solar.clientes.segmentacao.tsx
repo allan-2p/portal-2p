@@ -287,7 +287,7 @@ function SegmentacaoPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar cliente…"
-                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-56 focus:outline-none focus:border-primary/50"
+                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-full sm:w-56 focus:outline-none focus:border-primary/50"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -682,7 +682,7 @@ function ClientDetailModal({ client, onClose }: { client: Client & { rank?: numb
             </button>
           </div>
 
-          <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+          <div className="p-4 sm:p-6 space-y-5 max-h-[70vh] overflow-y-auto">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <Detail label="Projeção" value={fmt(client.projection)} />
               <Detail label="Geração" value={fmt(client.generation)} sub={`${generationPct}%`} />

@@ -379,25 +379,25 @@ function TarefasPage() {
   return (
     <AppLayout>
       <div className="max-w-[1500px] mx-auto space-y-5">
-        <div className="flex items-end justify-between flex-wrap gap-3">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <div className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               Salesforce
               {tasksQuery.isFetching && <Loader2 className="h-3 w-3 animate-spin" />}
             </div>
-            <h1 className="text-3xl font-bold mt-1">Tarefas do mês</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mt-1">Tarefas do mês</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {tasksQuery.data
                 ? `${tasksQuery.data.totalSize} tarefa(s) sincronizada(s) para ${monthName}.`
                 : "Carregando tarefas sincronizadas do Salesforce…"}
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex rounded-lg border border-border overflow-hidden">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <div className="flex w-full sm:w-auto rounded-lg border border-border overflow-hidden">
               <button
                 onClick={() => setView("lista")}
                 className={cn(
-                  "px-3 py-2 text-sm flex items-center gap-1.5",
+                  "flex-1 sm:flex-none justify-center px-3 py-2 text-sm flex items-center gap-1.5",
                   view === "lista" ? "bg-primary text-primary-foreground" : "bg-surface hover:bg-surface-2",
                 )}
               >
@@ -406,7 +406,7 @@ function TarefasPage() {
               <button
                 onClick={() => setView("calendario")}
                 className={cn(
-                  "px-3 py-2 text-sm flex items-center gap-1.5",
+                  "flex-1 sm:flex-none justify-center px-3 py-2 text-sm flex items-center gap-1.5",
                   view === "calendario"
                     ? "bg-primary text-primary-foreground"
                     : "bg-surface hover:bg-surface-2",

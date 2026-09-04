@@ -118,13 +118,13 @@ function CarregadoresTarefas() {
 
   return (
     <AppLayout>
-      <div className="p-6 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+      <div className="p-4 sm:p-6 space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-display font-bold">Tarefas</h1>
             <p className="text-sm text-muted-foreground">Agenda própria da unidade de carregadores.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <VendedorNamesFilter
               value={vendedor}
               onChange={setVendedor}
@@ -132,7 +132,7 @@ function CarregadoresTarefas() {
               allLabel="Todos os vendedores"
             />
             <Select value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-40 min-w-0"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="aberta">Abertas</SelectItem>
                 <SelectItem value="concluida">Concluídas</SelectItem>
@@ -142,7 +142,7 @@ function CarregadoresTarefas() {
             <Dialog open={open} onOpenChange={setOpen}>
               <PermissionGate feature="carregadores.tarefas" action="editar" mode="disable">
                 <DialogTrigger asChild>
-                  <Button><Plus className="h-4 w-4 mr-1.5" /> Nova tarefa</Button>
+                  <Button className="w-full sm:w-auto"><Plus className="h-4 w-4 mr-1.5" /> Nova tarefa</Button>
                 </DialogTrigger>
               </PermissionGate>
               <DialogContent>

@@ -1832,7 +1832,7 @@ function TabelasPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por oportunidade, cliente, vendedor…"
-              className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-80 focus:outline-none focus:border-primary/50"
+              className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-full sm:w-80 focus:outline-none focus:border-primary/50"
             />
           </div>
         </div>

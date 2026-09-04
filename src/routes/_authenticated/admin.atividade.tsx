@@ -104,7 +104,7 @@ function AtividadePage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar usuário…"
-                className="pl-8 w-56"
+                className="pl-8 w-full sm:w-56"
               />
             </div>
             <Select value={event} onValueChange={(v) => setEvent(v as typeof event)}>
