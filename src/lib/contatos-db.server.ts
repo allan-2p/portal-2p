@@ -210,3 +210,60 @@ export async function emailsCobrancaPorDoc(clienteDoc: string): Promise<string[]
     return [];
   }
 }
+
+/**
+ * Busca contatos por texto (nome, cargo, e-mail ou telefone) dentro de uma
+ * unidade. O escopo do consultor é aplicado no próprio banco: quando
+ * `docsCarteira` é uma lista, só voltam contatos de clientes daquela carteira;
+ * `null` significa "vê tudo".
+ */
+export async function buscarContatos(
+  instancia: ClientesInstance,
+  opts: { q: string; docsCarteira: string[] | null; limite?: number },
+): Promise<ContatoRow[]> {
+  const termo = (opts.q ?? "").trim().replace(/[,()*]/g, " ").trim();
+  if (termo.length < 2) return [];
+  const limite = Math.min(Math.max(opts.limite ?? 5, 1), 25);
+  const docs = opts.docsCarteira;
+  if (docs && docs.length === 0) return [];
+
+  const digitos = termo.replace(/\D/g, "");
+  const alvos = [
+    `nome.ilike.*${termo}*`,
+    `cargo.ilike.*${termo}*`,
+    `emails.cs.{"${termo}"}`,
+  ];
+  if (digitos.length >= 4) alvos.push(`telefones.cs.{"${digitos}"}`);
+
+  const lotes: Array<string[] | null> = [];
+  if (!docs) lotes.push(null);
+  else for (let i = 0; i < docs.length; i += 300) lotes.push(docs.slice(i, i + 300));
+
+  const partes = await Promise.all(
+    lotes.map(async (lote) => {
+      const params = new URLSearchParams({
+        select: "id,cliente_id,cliente_doc,nome,cargo,emails,telefones,tipo,ativo,instancia",
+        instancia: `eq.${instancia}`,
+        or: `(${alvos.join(",")})`,
+        order: "nome.asc",
+        limit: String(limite),
+      });
+      if (lote) params.set("cliente_doc", `in.(${lote.join(",")})`);
+      try {
+        return ((await rest(`contatos?${params}`)) ?? []) as ContatoRow[];
+      } catch {
+        return [] as ContatoRow[];
+      }
+    }),
+  );
+
+  const vistos = new Set<string>();
+  const out: ContatoRow[] = [];
+  for (const parte of partes)
+    for (const c of parte) {
+      if (vistos.has(c.id)) continue;
+      vistos.add(c.id);
+      out.push(c);
+    }
+  return out.slice(0, limite);
+}
