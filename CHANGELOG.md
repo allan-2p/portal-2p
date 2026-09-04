@@ -36,6 +36,13 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## [Não publicado]
 
 ### Adicionado
+- **Painel "Pedidos parados com OV no SAP"** (Admin › Logs › Monitor de Sync SAP): lista os pedidos com ordem de venda criada que estão há N dias (padrão 1) em "Aguardando Pagamento" ou "Processando" sem avançar, com o **último desfecho da consulta ao SAP** por pedido — "SAP sem progresso" (esperar o ERP) ou "consulta com erro" (bug a tratar).
+- **Auditoria por pedido no cron do SAP**: cada consulta ao `ZNFE_OV_CONSULTAR` agora grava um evento em Logs › Integrações (`cron.sap-nfs`): `avancou` (de → para), `consulta-vazia` (SAP não devolveu picking/expedição/NF) ou `consulta-erro` (falha da chamada), com OV, picking, remessa, NF e data de expedição. O resultado do gatilho passa a trazer também os contadores **vazios** e **erros**.
+
+### Alterado
+- **"Aguardando Pagamento" só para cobrança em aberto**: assim que a ordem de venda é criada no SAP, pedidos de **cartão e boleto a prazo** passam direto para **Processando** — o rótulo "Aguardando Pagamento" fica reservado a **pix e boleto à vista** ainda não pagos. O motor do cron segue daí (Separação/Faturado/Coletado).
+
+### Adicionado
 - **Busca global (⌘K / Ctrl+K)**: a busca do topo passa a procurar também **clientes, contatos, propostas e pedidos** das unidades a que o usuário tem acesso, além das telas do portal. Os resultados vêm agrupados por tipo, com a unidade indicada, e levam direto ao registro (perfil do cliente, proposta ou pedido). A busca respeita as permissões: quem não tem "ver todos os registros" só encontra o que está na própria carteira, e sem "ver todos os campos" documentos e e-mails aparecem mascarados.
 
 - **Números do portal forçados no Salesforce**: novo gatilho "Salesforce • Forçar número do portal" (e hook `POST /api/public/hooks/salesforce-numeros`) que percorre todas as propostas com oportunidade vinculada e regrava o nome da oportunidade no padrão "número do portal - nome do pedido". Só o nome é alterado; oportunidades já corretas são ignoradas. Para as oportunidades **perdidas**, a rotina também preenche o "Detalhamento (Motivo de Perda)" com "Oportunidade Mecanicamente Perdida" quando o campo está vazio, com lixo ou com texto curto demais para a regra de validação da org — nesses casos o texto padrão é anexado ao que o vendedor escreveu, sem apagar nada. Resultado final: todas as 36.900+ oportunidades vinculadas com o número correto do portal, sem falhas.
