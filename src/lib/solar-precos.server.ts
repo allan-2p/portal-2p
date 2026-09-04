@@ -19,6 +19,12 @@ export type PrecoResultado = {
   fallback: string[];
   /** Mensagens do SAP que explicam preços zerados (CNPJ sem parceiro, etc). */
   avisos: string[];
+  /**
+   * Alíquotas REAIS por código de material, em fração (0,04 = 4%), tal como o
+   * SAP devolveu na simulação. É a fonte única do imposto por item mostrado na
+   * prévia, no resumo, no PDF e na reimpressão.
+   */
+  aliquotas: Record<string, { ipi: number | null; icms: number | null; pisCofins: number | null }>;
 };
 
 
@@ -64,7 +70,8 @@ export async function precosSolar(
   const precos: Record<string, number> = {};
   const fallback: string[] = [];
   const avisos: string[] = [];
-  if (!itens.length) return { precos, fallback, avisos };
+  const aliquotas: PrecoResultado["aliquotas"] = {};
+  if (!itens.length) return { precos, fallback, avisos, aliquotas };
 
   /** Valor unitário por código, preenchido pela primeira filial que precificar. */
   const unitario = new Map<string, number>();
@@ -72,7 +79,16 @@ export async function precosSolar(
 
   for (const filial of FILIAIS) {
     if (!pendentes.length) break;
-    let sim = new Map<string, { valor: number | null; valorSemIcmsIpi?: number | null }>();
+    let sim = new Map<
+      string,
+      {
+        valor: number | null;
+        valorSemIcmsIpi?: number | null;
+        aliqIpi?: number | null;
+        aliqIcms?: number | null;
+        aliqPisCofins?: number | null;
+      }
+    >();
     const tentativaItens = pendentes.map((i) => ({ codigo: i.codigo, quantidade: i.quantidade }));
     const iniciado = Date.now();
     const errosTentativa: string[] = [];
@@ -85,7 +101,7 @@ export async function precosSolar(
         ...(opts.empresaCnpj ? { empresaCnpj: opts.empresaCnpj } : {}),
         filial,
       });
-      sim = r.valores as unknown as Map<string, { valor: number | null; valorSemIcmsIpi?: number | null }>;
+      sim = r.valores as unknown as typeof sim;
       for (const m of [...r.erros, ...(r.motivo ? [r.motivo] : [])]) {
         errosTentativa.push(m);
         if (!filialInvalida(m) && !avisos.includes(m)) avisos.push(m);
@@ -126,6 +142,14 @@ export async function precosSolar(
       const valorLinha = opts.kitFotovoltaico
         ? (reg?.valorSemIcmsIpi ?? reg?.valor ?? null)
         : (reg?.valor ?? null);
+      if (reg && aliquotas[codigo] === undefined && (reg.aliqIpi != null || reg.aliqIcms != null || reg.aliqPisCofins != null))
+        aliquotas[codigo] = {
+          // Kit fotovoltaico é isento de ICMS e IPI — o imposto exibido tem que
+          // acompanhar o preço praticado.
+          ipi: opts.kitFotovoltaico ? 0 : (reg.aliqIpi ?? null),
+          icms: opts.kitFotovoltaico ? 0 : (reg.aliqIcms ?? null),
+          pisCofins: reg.aliqPisCofins ?? null,
+        };
       if (valorLinha && valorLinha > 0) unitario.set(codigo, money2(valorLinha / qtd));
       else restantes.push(item);
     }
@@ -148,7 +172,7 @@ export async function precosSolar(
     const aviso = `O SAP não devolveu preço para: ${[...new Set(fallback)].join(", ")}. Os valores NÃO foram completados com o preço de catálogo — informe o valor manualmente ou corrija a condição de preço no SAP.`;
     if (!avisos.includes(aviso)) avisos.push(aviso);
   }
-  return { precos, fallback, avisos };
+  return { precos, fallback, avisos, aliquotas };
 }
 
 
