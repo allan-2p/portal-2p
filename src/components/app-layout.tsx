@@ -908,10 +908,15 @@ type TabItem = {
 const TAB_CLS =
   "relative flex items-center gap-1.5 px-3 h-11 text-sm whitespace-nowrap border-b-2 transition-colors";
 
-/** Aba do menu de topo: link direto, ou botão com submenu quando tem filhos. */
+/**
+ * Aba do menu de topo no padrão Salesforce: o rótulo é sempre um link direto
+ * para a página principal; a setinha ao lado abre o dropdown com a ação de
+ * criação ("Nova proposta"…) e as páginas secundárias.
+ */
 function TopTab({ tab }: { tab: TabItem }) {
   const [open, setOpen] = useState(false);
   const Icon = tab.icon;
+  const temMenu = Boolean(tab.novo) || Boolean(tab.items?.length);
   const cls = cn(
     TAB_CLS,
     tab.active
@@ -919,7 +924,7 @@ function TopTab({ tab }: { tab: TabItem }) {
       : "border-transparent text-muted-foreground hover:text-foreground hover:bg-surface-2",
   );
 
-  if (!tab.items?.length) {
+  if (!temMenu || !tab.to) {
     return (
       <Link to={tab.to!} preload="intent" className={cls}>
         <Icon className={cn("h-4 w-4", tab.destaque && !tab.active && "text-primary")} />
@@ -929,26 +934,37 @@ function TopTab({ tab }: { tab: TabItem }) {
   }
 
   return (
-    <div className="relative">
-      <button onClick={() => setOpen((v) => !v)} className={cls}>
+    <div className="relative flex items-stretch">
+      <Link to={tab.to} preload="intent" className={cn(cls, "pr-1.5")}>
         <Icon className={cn("h-4 w-4", tab.destaque && !tab.active && "text-primary")} />
         {tab.label}
+      </Link>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label={`Mais opções de ${tab.label}`}
+        aria-expanded={open}
+        className={cn(cls, "px-1.5")}
+      >
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-11 z-50 w-60 bg-card text-card-foreground border border-border rounded-lg shadow-xl overflow-hidden p-1">
-            {tab.to && (
-              <Link
-                to={tab.to}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-surface-2"
-              >
-                <Icon className="h-4 w-4" /> {tab.label}
-              </Link>
+            {tab.novo && (
+              <>
+                <Link
+                  to={tab.novo.to}
+                  hash={tab.novo.hash}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-surface-2"
+                >
+                  <Plus className="h-4 w-4" /> {tab.novo.label}
+                </Link>
+                {!!tab.items?.length && <div className="my-1 h-px bg-border" />}
+              </>
             )}
-            {tab.items.map((i) => {
+            {(tab.items ?? []).map((i) => {
               const ItemIcon = i.icon;
               return (
                 <Link
