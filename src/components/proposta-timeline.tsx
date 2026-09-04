@@ -49,29 +49,35 @@ export function PropostaTimeline({
   const cancelado = status === "Cancelado";
   const atual = ETAPAS_ANDAMENTO.indexOf(status as PropostaStatus);
 
-  if (cancelado) {
-    const s = propostaStatusStyle("Cancelado");
-    return (
-      <div
-        className={cn("rounded-xl border border-border px-4 py-3 text-sm font-medium", className)}
-        style={{ color: s.bg }}
-      >
-        Pedido cancelado
-        {dataDoStatus("Cancelado", proposta) ? (
-          <span className="ml-2 font-normal text-muted-foreground">
-            em {dataDoStatus("Cancelado", proposta)}
-          </span>
-        ) : null}
-      </div>
-    );
-  }
+  /** Cancelado: as etapas concluídas são as que têm data carimbada. */
+  const concluida = (etapa: PropostaStatus, i: number) =>
+    cancelado ? !!dataDoStatus(etapa, proposta) : atual >= i && atual !== -1;
+  const cancelStyle = propostaStatusStyle("Cancelado");
 
   return (
     <div className={cn("w-full", className)}>
+      {cancelado ? (
+        <div
+          className="mb-3 rounded-xl border px-4 py-3 text-sm font-medium"
+          style={{ color: cancelStyle.bg, borderColor: cancelStyle.bg }}
+        >
+          Pedido cancelado
+          {dataDoStatus("Cancelado", proposta) ? (
+            <span className="ml-2 font-normal text-muted-foreground">
+              em {dataDoStatus("Cancelado", proposta)}
+            </span>
+          ) : null}
+          <p className="mt-1 text-xs font-normal text-muted-foreground">
+            O andamento abaixo mostra até onde o pedido chegou antes do cancelamento.
+          </p>
+        </div>
+      ) : null}
+
+      <div className={cn(cancelado && "opacity-60")}>
       {/* Mobile: linha do tempo vertical (cabe na tela sem apertar o texto) */}
       <ol className="space-y-0 sm:hidden">
         {ETAPAS_ANDAMENTO.map((etapa, i) => {
-          const done = atual >= i && atual !== -1;
+          const done = concluida(etapa, i);
           const s = propostaStatusStyle(etapa);
           const ultimo = i === ETAPAS_ANDAMENTO.length - 1;
           return (
