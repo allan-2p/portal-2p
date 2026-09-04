@@ -3477,79 +3477,26 @@ function NovaPropostaSolarPage() {
 
       {/* Prévia da proposta em PDF — painel lateral, atualiza em tempo real */}
       {previewAberto && (
-        <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-[640px] flex-col border-l border-border bg-background shadow-2xl">
+        <div className="fixed right-0 top-0 z-50 flex h-screen w-full max-w-[720px] flex-col border-l border-border bg-background shadow-2xl">
           <div className="flex items-start justify-between gap-3 border-b border-border p-4">
             <div>
               <div className="font-semibold">Prévia da proposta</div>
               <div className="text-xs text-muted-foreground">
-                Atualiza em tempo real conforme você edita — {previewPaginas}{" "}
-                {previewPaginas === 1 ? "página" : "páginas"} (A4)
+                Atualiza em tempo real conforme você edita
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setPreviewZoom((z) => Math.max(0.4, Number((z - 0.1).toFixed(2))))}
-                aria-label="Diminuir zoom"
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="w-12 text-center text-xs tabular-nums">
-                {Math.round(previewZoom * 100)}%
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setPreviewZoom((z) => Math.min(1.5, Number((z + 0.1).toFixed(2))))}
-                aria-label="Aumentar zoom"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setPreviewAberto(false)}
-                aria-label="Fechar prévia"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setPreviewAberto(false)}
+              aria-label="Fechar prévia"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
 
-          <div className="flex-1 overflow-auto bg-muted/40 p-4">
-            <div
-              style={{
-                width: 794 * previewZoom,
-                height: 1123 * previewPaginas * previewZoom,
-                margin: "0 auto",
-              }}
-            >
-              <iframe
-                title="Proposta 2P Solar"
-                srcDoc={pdfHtml}
-                onLoad={(e) => {
-                  const doc = e.currentTarget.contentDocument;
-                  if (!doc) return;
-                  const altura = Math.max(
-                    doc.body?.scrollHeight ?? 0,
-                    doc.documentElement?.scrollHeight ?? 0,
-                  );
-                  // A4 útil ≈ 1123px (96dpi) menos as margens @page de 10mm.
-                  const paginas = Math.max(1, Math.ceil(altura / 1047));
-                  setPreviewPaginas((p) => (p === paginas ? p : paginas));
-                }}
-                style={{
-                  width: 794,
-                  height: 1123 * previewPaginas,
-                  border: 0,
-                  background: "#fff",
-                  transform: `scale(${previewZoom})`,
-                  transformOrigin: "top left",
-                }}
-              />
-            </div>
-          </div>
+          <PropostaPdfPreview html={pdfHtml} titulo="Proposta 2P Solar" className="min-h-0 flex-1" />
+
 
           <div className="flex justify-end gap-2 border-t border-border p-4">
             <Button variant="outline" onClick={() => setPreviewAberto(false)}>
