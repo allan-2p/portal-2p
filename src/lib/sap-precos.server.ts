@@ -288,6 +288,10 @@ export async function simularSap(
       vlCofins,
       vlIcms,
       vlIpi,
+      aliqIcms: pct("ALIQ_ICMS"),
+      aliqIpi: pct("ALIQ_IPI"),
+      // O SAP não devolve % de PIS/COFINS: derivamos dos valores sobre o líquido.
+      aliqPisCofins: liquido > 0 ? (vlPis + vlCofins) / liquido : null,
     });
   }
 
