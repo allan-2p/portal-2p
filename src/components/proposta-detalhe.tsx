@@ -641,15 +641,35 @@ function labelFinalidade(v: unknown) {
   return map[String(v ?? "")] ?? "—";
 }
 
-function Campo({ label, value }: { label: string; value: string }) {
+function Campo({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string;
+  href?: string;
+}) {
+  const conteudo = href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-medium break-words sm:truncate text-primary hover:underline"
+      title={`${value} — abrir no WhatsApp`}
+    >
+      {value}
+    </a>
+  ) : (
+    <div className="font-medium break-words sm:truncate" title={value}>
+      {value}
+    </div>
+  );
   return (
     <div className="min-w-0">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-medium break-words sm:truncate" title={value}>
-        {value}
-      </div>
+      {conteudo}
     </div>
-
   );
 }
 
