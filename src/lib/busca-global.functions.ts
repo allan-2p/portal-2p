@@ -123,7 +123,7 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
           try {
             const { rows } = await clientesDb.listClientesPagina(inst, {
               q: termo,
-              porPagina: LIMITE_POR_GRUPO,
+              porPagina: porGrupo,
               pagina: 1,
               ...(permContas.view_all
                 ? {}
