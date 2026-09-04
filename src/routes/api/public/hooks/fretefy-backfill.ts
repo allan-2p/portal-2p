@@ -5,8 +5,8 @@ export const Route = createFileRoute("/api/public/hooks/fretefy-backfill")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = request.headers.get("x-backfill-secret")?.trim();
-        const expected = process.env["FRETEFY_BACKFILL_SECRET"]?.trim();
+        const secret = request.headers.get("x-cron-secret")?.trim() ?? request.headers.get("x-backfill-secret")?.trim();
+        const expected = process.env["CRON_HOOK_SECRET_V2"]?.trim() ?? process.env["CRON_HOOK_SECRET"]?.trim();
         if (!expected || secret !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
