@@ -1179,6 +1179,27 @@ export async function criarOrdemVendaSap(
       sap_vendedor_nome: String(row["consultor_nome"] ?? "").trim() || null,
     });
 
+    // Pedido colocado no SAP não é "Aguardando Pagamento": só pix e boleto à
+    // vista (cobrança genuinamente em aberto) continuam nesse rótulo. Cartão e
+    // boleto a prazo passam a "Processando" assim que a OV existe — daí o cron
+    // do SAP segue com Separação/Faturado/Coletado.
+    {
+      const forma = String(row["forma_pagamento"] ?? "").toLowerCase();
+      const aguardaCobranca = forma.includes("pix") || forma === "boleto_vista";
+      if (!aguardaCobranca && String(row["status"] ?? "") === "Aguardando Pagamento") {
+        try {
+          const { aplicarTransicao } = await import("./proposta-transicao.server");
+          await aplicarTransicao(propostaId, "Processando", "sap-ov", {
+            de: "Aguardando Pagamento",
+          });
+        } catch {
+          /* best effort: o cron do SAP também avança o pedido */
+        }
+      }
+    }
+
+
+
 
     // Reserva local do estoque (espelha a reserva do SAP até o próximo sync).
     const itensPedido = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
