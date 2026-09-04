@@ -273,6 +273,14 @@ function NovaPropostaSolarPage() {
   const [ehKit, setEhKit] = useState<boolean>(false);
   /** Recusas do SAP na precificação (ex.: CNPJ sem parceiro) — bloqueiam o avanço. */
   const [avisosPreco, setAvisosPreco] = useState<string[]>([]);
+  /**
+   * Alíquotas REAIS por código de material vindas da simulação do SAP (fração).
+   * É a fonte única do imposto por item — a engine de NCM só entra como
+   * fallback de exibição quando o SAP não devolveu a alíquota daquele item.
+   */
+  const [aliqSap, setAliqSap] = useState<
+    Record<string, { ipi: number | null; icms: number | null; pisCofins: number | null }>
+  >({});
   /** Listas independentes: o que está na calculadora não reflete na lista manual. */
   const [itensCalc, setItensCalc] = useState<Item[]>([]);
   const [itensLista, setItensLista] = useState<Item[]>([]);
@@ -1072,6 +1080,9 @@ function NovaPropostaSolarPage() {
             : null,
         },
       });
+      const aliq = ((r as { aliquotas?: Record<string, { ipi: number | null; icms: number | null; pisCofins: number | null }> })
+        .aliquotas ?? {});
+      setAliqSap((prev) => ({ ...prev, ...aliq }));
       const semPreco: string[] = [];
       setter((prev) =>
         prev.map((i) => {
@@ -1773,6 +1784,22 @@ function NovaPropostaSolarPage() {
     });
   }
 
+  /**
+   * Imposto do item: SAP primeiro (valor real do material, muda entre nacional
+   * e importado); engine de NCM só como fallback quando o SAP não devolveu.
+   */
+  function aliquotasDaLinha(i: Item) {
+    const p = produtos.find((x) => x.id === i.produtoId);
+    const cod = normCod(i.avulso?.codigo ?? p?.codigo ?? "");
+    const sap = cod ? aliqSap[cod] : undefined;
+    const fb = aliquotasItem(p?.ncm_id ?? null);
+    return {
+      ipi: sap?.ipi ?? fb?.ipi ?? null,
+      icms: sap?.icms ?? fb?.icms ?? null,
+      pisCofins: sap?.pisCofins ?? fb?.pisCofins ?? null,
+    };
+  }
+
   function montarPdfDados() {
     const linhasEnd = (o: Record<string, any>) =>
       [
@@ -1799,15 +1826,15 @@ function NovaPropostaSolarPage() {
       consultor: String(cliente?.['created_by_nome'] ?? ""),
       itens: itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId);
-        const aliq = aliquotasItem(p?.ncm_id ?? null);
+        const aliq = aliquotasDaLinha(i);
         return {
           codigo: i.avulso?.codigo ?? p?.codigo ?? null,
           nome: i.avulso?.descricao ?? p?.descricao ?? "Item",
           qtd: i.qtd,
           valor: i.valor,
-          ipiRate: aliq?.ipi ?? null,
-          icmsRate: aliq?.icms ?? null,
-          pisCofinsRate: aliq?.pisCofins ?? null,
+          ipiRate: aliq.ipi,
+          icmsRate: aliq.icms,
+          pisCofinsRate: aliq.pisCofins,
         };
       }),
 
@@ -3118,6 +3145,9 @@ function NovaPropostaSolarPage() {
                     <tr className="text-xs uppercase text-muted-foreground border-b border-border">
                       <th className="text-left px-4 py-2.5">Produto</th>
                       <th className="text-center px-4 py-2.5">Qtd.</th>
+                      <th className="text-center px-4 py-2.5">IPI</th>
+                      <th className="text-center px-4 py-2.5">ICMS</th>
+                      <th className="text-center px-4 py-2.5">PIS/COFINS</th>
                       <th className="text-right px-4 py-2.5">Unitário</th>
                       <th className="text-right px-4 py-2.5">Total</th>
                     </tr>
@@ -3136,6 +3166,15 @@ function NovaPropostaSolarPage() {
 
                           </td>
                           <td className="px-4 py-2.5 text-center tabular-nums">{i.qtd}</td>
+                          <td className="px-4 py-2.5 text-center tabular-nums text-muted-foreground">
+                            {fmtAliq(aliquotasDaLinha(i).ipi)}
+                          </td>
+                          <td className="px-4 py-2.5 text-center tabular-nums text-muted-foreground">
+                            {fmtAliq(aliquotasDaLinha(i).icms)}
+                          </td>
+                          <td className="px-4 py-2.5 text-center tabular-nums text-muted-foreground">
+                            {fmtAliq(aliquotasDaLinha(i).pisCofins)}
+                          </td>
                           <td className="px-4 py-2.5 text-right tabular-nums">{fmtBRL(i.valor)}</td>
                           <td className="px-4 py-2.5 text-right font-semibold tabular-nums">
                             {fmtBRL(i.valor * i.qtd)}
