@@ -201,7 +201,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
    */
   const tabs: TabItem[] = [];
   if (show("home")) tabs.push({ id: "home", label: "Home", icon: Home, to: "/", active: pathname === "/" });
-  if (show("tarefas")) tabs.push({ id: "tarefas", label: "Tarefas", icon: Calendar, to: "/solar/tarefas", active: pathname.startsWith("/solar/tarefas") });
+  if (show("tarefas")) tabs.push({ id: "tarefas", label: "Tarefas", icon: Calendar, to: "/solar/tarefas", active: pathname.startsWith("/solar/tarefas"), novo: { label: "Nova tarefa", to: "/solar/tarefas" as AppPath, hash: "novo" } });
   if (show("clientes.cadastros") || show("clientes.segmentacao") || show("clientes.perfil") || show("clientes.ranking")) {
     const principal = (show("clientes.cadastros")
       ? "/solar/clientes/cadastros"
