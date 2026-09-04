@@ -694,23 +694,48 @@ function Total({ label, value, destaque }: { label: string; value: string; desta
 /** Prévia e impressão da proposta em PDF (Solar e Carregadores). */
 function PropostaPdfAcoes({ proposta }: { proposta: Record<string, any> }) {
   const [previa, setPrevia] = useState<string | null>(null);
+  const [itensFiscais, setItensFiscais] = useState<Record<string, any>[] | null>(null);
+  const completarAliquotas = useServerFn(garantirAliquotasProposta);
 
-  const gerar = () => {
+  /**
+   * Propostas salvas antes do snapshot fiscal não têm as alíquotas do SAP.
+   * Antes de montar o PDF, completa uma única vez com a simulação oficial.
+   */
+  const comFiscal = async (): Promise<Record<string, any>> => {
+    const itens = (Array.isArray(proposta['itens']) ? proposta['itens'] : []) as Record<string, any>[];
+    const falta = itens.some(
+      (i) => i['aliq_ipi'] == null && i['aliq_icms'] == null && i['aliq_pis_cofins'] == null,
+    );
+    if (!falta) return proposta;
+    if (itensFiscais) return { ...proposta, itens: itensFiscais };
     try {
-      return propostaPdfDaLinha(proposta);
+      const r = await completarAliquotas({ data: { id: String(proposta['id']) } });
+      if (r?.itens) {
+        setItensFiscais(r.itens);
+        return { ...proposta, itens: r.itens };
+      }
+    } catch {
+      /* sem imposto atualizado, imprime o que já existe */
+    }
+    return proposta;
+  };
+
+  const gerar = (row: Record<string, any>) => {
+    try {
+      return propostaPdfDaLinha(row);
     } catch {
       toast.error("Não foi possível montar a proposta em PDF.");
       return null;
     }
   };
 
-  const abrirPrevia = () => {
-    const r = gerar();
+  const abrirPrevia = async () => {
+    const r = gerar(await comFiscal());
     if (r) setPrevia(r.html);
   };
 
-  const imprimir = () => {
-    const r = gerar();
+  const imprimir = async () => {
+    const r = gerar(await comFiscal());
     if (!r) return;
     const w = window.open("", "_blank");
     if (!w) return toast.error("Permita pop-ups para gerar o PDF.");
@@ -720,6 +745,7 @@ function PropostaPdfAcoes({ proposta }: { proposta: Record<string, any> }) {
     w.focus();
     setTimeout(() => w.print(), 600);
   };
+
 
   return (
     <>
