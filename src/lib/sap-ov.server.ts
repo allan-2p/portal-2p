@@ -250,9 +250,13 @@ function observacoes(row: Record<string, any>): string[] {
   const texto = String(row["observacoes"] ?? "").trim();
   if (texto) obs.push(...texto.split(/\r?\n/).filter(Boolean));
 
+  const projeto = String(row["nome"] ?? "").trim();
+  if (projeto) obs.push(`Projeto: ${projeto}`);
+
   const contatoNome = String(row["cliente_contato"] ?? row["cliente_nome"] ?? "").trim();
   const tel = String(row["cliente_telefone"] ?? "").trim();
   if (contatoNome || tel) obs.push(`Contato: ${contatoNome}${tel ? ` Telefone ${tel}` : ""}`);
+
 
   if (row["entrega_diferente"]) {
     const e = (row["entrega"] ?? {}) as Record<string, any>;
