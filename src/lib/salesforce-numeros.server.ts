@@ -171,18 +171,40 @@ export async function forcarNumerosSalesforce(
       const r = await sf(`/composite/sobjects`, { method: "PATCH", body: JSON.stringify(body) });
       const lista = Array.isArray(r) ? r : [];
       if (lista.length === paraGravar.length) {
-        lista.forEach((x: any, idx: number) => {
-          if (x?.success) res.corrigidos += 1;
-          else {
-            res.falhas += 1;
-            if (res.erros.length < 30)
-              res.erros.push({
-                id: paraGravar[idx]!.Id,
-                numero: so(esperado.get(paraGravar[idx]!.Id)?.row["numero"]),
-                mensagem: JSON.stringify(x?.errors ?? x).slice(0, 300),
-              });
+        for (let idx = 0; idx < lista.length; idx++) {
+          const x: any = lista[idx];
+          const reg = paraGravar[idx]!;
+          if (x?.success) {
+            res.corrigidos += 1;
+            continue;
           }
-        });
+          // Regra da org recusou o detalhamento curto: anexa o texto padrão
+          // ao que o vendedor escreveu e tenta de novo, uma por uma.
+          const codigo = String(x?.errors?.[0]?.statusCode ?? "");
+          const info = atuais.get(reg.Id);
+          if (codigo === "FIELD_CUSTOM_VALIDATION_EXCEPTION" && info?.perdida && !reg.Descri_o_do_Motivo_de_Perda__c) {
+            try {
+              const detalhe = info.detalhe
+                ? `${info.detalhe} — ${DETALHAMENTO_PERDA_PADRAO}`
+                : DETALHAMENTO_PERDA_PADRAO;
+              await sf(`/sobjects/Opportunity/${reg.Id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ Name: reg.Name, Descri_o_do_Motivo_de_Perda__c: detalhe }),
+              });
+              res.corrigidos += 1;
+              continue;
+            } catch (err) {
+              x.errors = [{ statusCode: codigo, message: (err as Error).message }];
+            }
+          }
+          res.falhas += 1;
+          if (res.erros.length < 30)
+            res.erros.push({
+              id: reg.Id,
+              numero: so(esperado.get(reg.Id)?.row["numero"]),
+              mensagem: JSON.stringify(x?.errors ?? x).slice(0, 300),
+            });
+        }
         continue;
       }
       throw new Error("Resposta inesperada do composite.");
