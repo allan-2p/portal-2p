@@ -51,6 +51,8 @@ export function classificarEventoFretefy(texto: string): FretefyEventoTipo {
   const s = norm(texto);
   if (!s) return "desconhecido";
   if (/(nao|sem|falha|insucesso|tentativa)\s+(de\s+)?entreg/.test(s)) return "ocorrencia";
+  // Envelope real do callback: { type: "carga.finalizada" }.
+  if (/carga\.?\s*finaliz|finalizad/.test(s)) return "entregue";
   // "saiu para entrega" / "em rota de entrega" ainda NÃO é entrega concluída.
   if (/saiu para|em rota|a caminho|previsao de entreg|rota de entreg/.test(s)) return "em_transito";
   if (/entreg|delivered|comprovante|canhoto|pod\b/.test(s)) return "entregue";
