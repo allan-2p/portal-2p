@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useHashAction } from "@/hooks/use-hash-action";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -206,6 +207,7 @@ function TarefasPage() {
   const [completeTask, setCompleteTask] = useState<SalesforceTask | null>(null);
   const [rescheduleTask, setRescheduleTask] = useState<SalesforceTask | null>(null);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
+  useHashAction("novo", () => setNewTaskOpen(true));
 
   const AcoesTarefa = ({ t, compact }: { t: SalesforceTask; compact?: boolean }) => (
     <div className="flex items-center gap-1.5 flex-wrap">
