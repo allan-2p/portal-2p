@@ -635,15 +635,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          {/* Busca global do menu (⌘K) */}
+          {/* Busca global do menu (⌘K) — centralizada na barra, independente do conteúdo das laterais */}
           <button
             onClick={() => setBuscaOpen(true)}
-            className="hidden lg:flex items-center gap-2 mx-auto h-9 w-[min(420px,32vw)] rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground hover:bg-surface-2"
+            className="hidden lg:flex items-center gap-2 absolute left-1/2 -translate-x-1/2 h-9 w-[min(420px,32vw)] rounded-lg border border-border bg-surface px-3 text-sm text-muted-foreground hover:bg-surface-2"
           >
             <Search className="h-4 w-4 shrink-0" />
             <span className="truncate">Buscar telas…</span>
             <kbd className="ml-auto text-[10px] rounded border border-border px-1 py-0.5">⌘K</kbd>
           </button>
+
 
           <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
             <button
