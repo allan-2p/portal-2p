@@ -119,6 +119,8 @@ export type ConsultaSap = {
   danfeBase64: string | null;
   /** Previsão de despacho devolvida pelo SAP (DATA_EXPEDICAO), formato AAAA-MM-DD. */
   dataExpedicao: string | null;
+  /** Documento de remessa (VBELN_VL / STATUS_REMESSA) — pedido já liberado. */
+  remessa: string | null;
 };
 
 
