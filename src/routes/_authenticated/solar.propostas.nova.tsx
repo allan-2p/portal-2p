@@ -78,6 +78,7 @@ import { ResultadoConclusaoDialog, type ResultadoConclusao } from "@/components/
 import { ConclusaoProgresso, type ConclusaoFase } from "@/components/conclusao-progresso";
 import { useConfirmarSaida } from "@/components/confirmar-saida";
 import { salvarPropostaSolar, KIT_FOTOVOLTAICO_MATERIAL } from "@/lib/propostas-solar.functions";
+import { PropostaPdfPreview } from "@/components/proposta-pdf-preview";
 import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { cnpjValido, cpfValido } from "@/lib/cnpj";
 import { contribuinteDeEnrich } from "@/lib/contribuinte";
