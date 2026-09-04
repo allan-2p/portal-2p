@@ -166,15 +166,18 @@ export const buscaGlobalFn = createServerFn({ method: "POST" })
             const { rows } = await propostasDb.listarPropostasPagina({
               organizacao: ORGANIZACAO[inst],
               q: termo,
-              porPagina: LIMITE_POR_GRUPO * 2,
+              porPagina: porGrupo * 2,
               pagina: 1,
+              // `numero_anterior` NÃO é coluna da tabela (fica em
+              // `totais->>numeroAnterior`): pedir aqui derrubava a consulta
+              // inteira com 400 e a busca nunca trazia propostas/pedidos.
               select:
-                "id,numero,numero_anterior,status,cliente_nome,cliente_doc,sap_ov_numero,created_at,organizacao",
+                "id,numero,totais,status,cliente_nome,cliente_doc,sap_ov_numero,numero_sap,created_at,organizacao",
               donoId: escopo.userId,
               donoSap: escopo.sap,
               donoDocs: escopo.docs,
-              somenteFavoritas: true,
             });
+
             const podeVer = !!permPropostas.view_all_fields;
             for (const p of rows) {
               const ehPedido = PEDIDO_STATUS.has(String(p["status"] ?? "")) || !!p["sap_ov_numero"];
