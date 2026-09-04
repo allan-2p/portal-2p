@@ -17,6 +17,14 @@ import { numeroExibicao } from "./proposta-variacoes";
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/salesforce";
 const LOTE = 200;
 
+/**
+ * Oportunidades perdidas têm regra de validação na org que exige o campo
+ * "Detalhamento (Motivo de Perda)" preenchido em qualquer alteração. Quando o
+ * campo está vazio, até um update de `Name` é recusado. Nesses casos gravamos
+ * este texto padrão junto com o nome (autorizado pelo usuário).
+ */
+const DETALHAMENTO_PERDA_PADRAO = "Oportunidade Mecanicamente Perdida";
+
 const so = (v: unknown) => String(v ?? "").trim();
 
 function secrets() {
@@ -106,11 +114,22 @@ export async function forcarNumerosSalesforce(
   for (let i = 0; i < ids.length; i += LOTE) {
     const bloco = ids.slice(i, i + LOTE);
     // Nome atual na org (SOQL em lote) — evita PATCH desnecessário.
-    let atuais = new Map<string, string>();
+    let atuais = new Map<string, { nome: string; perdidaSemDetalhe: boolean }>();
     try {
-      const q = `SELECT Id, Name FROM Opportunity WHERE Id IN (${bloco.map((x) => `'${x}'`).join(",")})`;
+      const q = `SELECT Id, Name, IsClosed, IsWon, Descri_o_do_Motivo_de_Perda__c FROM Opportunity WHERE Id IN (${bloco.map((x) => `'${x}'`).join(",")})`;
       const r = await sf(`/query?q=${encodeURIComponent(q)}`);
-      atuais = new Map((r?.records ?? []).map((x: any) => [String(x.Id), String(x.Name ?? "")]));
+      atuais = new Map(
+        (r?.records ?? []).map((x: any) => [
+          String(x.Id),
+          {
+            nome: String(x.Name ?? ""),
+            perdidaSemDetalhe:
+              x.IsClosed === true &&
+              x.IsWon !== true &&
+              !String(x.Descri_o_do_Motivo_de_Perda__c ?? "").trim(),
+          },
+        ]),
+      );
     } catch (err) {
       res.falhas += bloco.length;
       res.erros.push({ id: bloco[0] ?? "", numero: "", mensagem: (err as Error).message });
