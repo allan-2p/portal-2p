@@ -45,6 +45,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 
 ### Adicionado
+- **Botão "Reenviar agora" dos documentos pendentes da Fretefy** (Monitoramento › Fretefy): reprocessa os pedidos faturados/Coletado/Entregue sem NF enviada. Passa a rodar direto no portal, com a permissão do usuário, em vez de sair por uma chamada externa autenticada por chave — o que causava o erro 401 no acionamento manual. A execução fica registrada nos gatilhos.
 - **Prévia do PDF com zoom e conferência de folhas** (Solar e Carregadores, na criação da proposta e no detalhe do pedido): visor único com zoom (−/+/ajustar à largura), contagem de folhas A4, marcas tracejadas nas quebras de página e um selo indicando se algum bloco pode ser cortado entre folhas ou se o conteúdo está mais largo que a página.
 - **Alíquotas visíveis na proposta de carregadores**: IPI, ICMS e PIS/COFINS aparecem por item na prévia e com o percentual ao lado do valor no resumo de impostos, no mesmo formato usado no PDF (duas casas, padrão pt-BR).
 - **Painel "Pedidos parados com OV no SAP"** (Admin › Logs › Monitor de Sync SAP): lista os pedidos com ordem de venda criada que estão há N dias (padrão 1) em "Aguardando Pagamento" ou "Processando" sem avançar, com o **último desfecho da consulta ao SAP** por pedido — "SAP sem progresso" (esperar o ERP) ou "consulta com erro" (bug a tratar).

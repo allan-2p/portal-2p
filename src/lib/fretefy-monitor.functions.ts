@@ -229,3 +229,47 @@ export const reprocessarCargaFretefy = createServerFn({ method: "POST" })
       resultado: JSON.parse(JSON.stringify(run.ok ? run.result : {})) as Record<string, JsonValue>,
     };
   });
+
+/**
+ * Reenvia à Fretefy os documentos (NF) pendentes dos pedidos já faturados.
+ * Roda o backfill **em processo** — mesmo motor do cron —, sem sair por HTTP,
+ * portanto não depende de segredo no Vault nem de URL de ambiente.
+ */
+export const backfillDocumentosFretefy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { limite?: number } | undefined) => {
+    const n = Number(input?.limite ?? 50);
+    return { limite: Number.isFinite(n) && n > 0 ? Math.min(Math.trunc(n), 500) : 50 };
+  })
+  .handler(async ({ data, context }) => {
+    await assertJobs(context, "editar");
+
+    const { runJob } = await import("@/lib/job-runs.server");
+    const { executorFor } = await import("@/lib/jobs-registry.server");
+
+    const { data: perfil } = await context.supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const payload = { limite: data.limite, manual: true } as Record<string, unknown>;
+
+    const run = await runJob(
+      {
+        job: "fretefy.backfill-documentos",
+        trigger: "manual",
+        payload,
+        actorId: context.userId,
+        actorEmail: (perfil as any)?.email ?? null,
+      },
+      () => executorFor("fretefy.backfill-documentos")(payload),
+    );
+
+    return {
+      ok: run.ok,
+      runId: run.runId,
+      error: run.ok ? null : run.error,
+      resultado: JSON.parse(JSON.stringify(run.ok ? run.result : {})) as Record<string, JsonValue>,
+    };
+  });
