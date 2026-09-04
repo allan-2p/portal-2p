@@ -450,6 +450,97 @@ export function itensSemAliquota(row: Record<string, any>): any[] {
   );
 }
 
+export type AliquotasItemSap = { ipi: number; icms: number; pisCofins: number };
+
+/**
+ * Alíquotas REAIS por material, lidas da simulação do SAP (`ZNFE_OV_SIMULAR`)
+ * para ESTE cliente e ESTE tipo de ordem.
+ *
+ * Motivo: o ICMS não é uma regra do portal, é do SAP e varia por material
+ * (nacional × importado) — no pedido 60127 o SAP aplicou 4% no carregador DC e
+ * 10% no AC, enquanto o portal usou 10% nos dois. Como o VALOR_PROD é o líquido
+ * (o SAP recoloca os impostos por cima), usar alíquota diferente da do SAP faz o
+ * total da ordem sair menor que o preço fechado com o cliente.
+ *
+ * Derivadas dos VALORES devolvidos, na mesma base da fórmula do portal:
+ *   semIpi = VALOR − VL_IPI · ICMS = VL_ICMS ÷ semIpi
+ *   PIS/COFINS = (VL_PIS + VL_COFINS) ÷ (semIpi − VL_ICMS)
+ */
+export async function aliquotasSapDosItens(
+  row: Record<string, any>,
+): Promise<Map<string, AliquotasItemSap>> {
+  const out = new Map<string, AliquotasItemSap>();
+  const itens = (Array.isArray(row["itens"]) ? (row["itens"] as any[]) : []).filter(
+    (i) => norm(i?.codigo) && Number(i?.qtd ?? 0) > 0,
+  );
+  if (!itens.length) return out;
+
+  const { simularSap } = await import("./sap-precos.server");
+  const c = constantes(String(row["organizacao"] ?? "carregadores"), row);
+  const doc = digitos(row["cliente_doc"]);
+  const r = await simularSap(
+    itens.map((i) => ({ codigo: String(i.codigo), quantidade: Number(i.qtd ?? 0) })),
+    { ...(doc ? { documento: doc } : {}), tipoOv: c.tpOv, filial: c.filial },
+  );
+
+  const r6 = (x: number) => Math.round(x * 1e6) / 1e6;
+  for (const [codigo, v] of r.valores) {
+    const total = Number(v.valor ?? 0);
+    const semIpi = total - (v.vlIpi || 0);
+    if (!(semIpi > 0)) continue;
+    const baseP = semIpi - (v.vlIcms || 0);
+    if (!(baseP > 0)) continue;
+    out.set(codigo, {
+      ipi: r6((v.vlIpi || 0) / semIpi),
+      icms: r6((v.vlIcms || 0) / semIpi),
+      pisCofins: r6(((v.vlPis || 0) + (v.vlCofins || 0)) / baseP),
+    });
+  }
+  return out;
+}
+
+/**
+ * Substitui as alíquotas fotografadas na proposta pelas do SAP antes de montar
+ * a ordem. Best effort: se a simulação falhar, mantém o que já estava gravado.
+ * Devolve as diferenças encontradas, para registro.
+ */
+export async function sincronizarAliquotasComSap(row: Record<string, any>): Promise<
+  { codigo: string; de: AliquotasItemSap; para: AliquotasItemSap }[]
+> {
+  const mudou: { codigo: string; de: AliquotasItemSap; para: AliquotasItemSap }[] = [];
+  let mapa: Map<string, AliquotasItemSap>;
+  try {
+    mapa = await aliquotasSapDosItens(row);
+  } catch {
+    return mudou;
+  }
+  if (!mapa.size) return mudou;
+
+  const itens = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
+  for (const item of itens) {
+    const sap = mapa.get(norm(item?.codigo));
+    if (!sap) continue;
+    const atual = {
+      ipi: aliqIpiDoItem(row, item) ?? 0,
+      icms: aliqIcmsDoItem(row, item) ?? 0,
+      pisCofins: aliqPisCofinsDoItem(row, item) ?? 0,
+    };
+    const difere = (a: number, b: number) => Math.abs(a - b) > 1e-6;
+    if (
+      difere(atual.ipi, sap.ipi) ||
+      difere(atual.icms, sap.icms) ||
+      difere(atual.pisCofins, sap.pisCofins)
+    ) {
+      mudou.push({ codigo: norm(item.codigo), de: atual, para: sap });
+    }
+    item["aliq_ipi"] = sap.ipi;
+    item["aliq_icms"] = sap.icms;
+    item["aliq_pis_cofins"] = sap.pisCofins;
+  }
+  return mudou;
+}
+
+
 
 
 function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): string {
@@ -1030,8 +1121,35 @@ export async function criarOrdemVendaSap(
 
 
 
+  // Alíquotas do SAP mandam no VALOR_PROD: o líquido enviado tem que voltar ao
+  // preço fechado com o cliente quando o SAP recolocar os impostos por cima.
+  if (valorProdAtivo(row)) {
+    const diffs = await sincronizarAliquotasComSap(row);
+    if (diffs.length) {
+      await logIntegrationEvent({
+        ...base,
+        event: "ov.aliquotas",
+        level: "warn",
+        message:
+          `Alíquotas da proposta ajustadas para as do SAP em ${diffs.length} item(ns) antes de criar a ordem.`.slice(
+            0,
+            500,
+          ),
+        detail: { proposta_id: propostaId, numero: row["numero"] ?? null, itens: diffs },
+      });
+      if (!testrun) {
+        try {
+          await db.atualizarProposta(propostaId, { itens: row["itens"] });
+        } catch {
+          /* snapshot é observabilidade: não bloqueia a ordem */
+        }
+      }
+    }
+  }
+
   const peso = await pesosDoPedido(itens);
   const corpo = envelope(row, peso, testrun);
+
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
