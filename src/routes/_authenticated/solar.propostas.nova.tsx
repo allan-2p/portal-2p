@@ -1788,6 +1788,9 @@ function NovaPropostaSolarPage() {
    * Imposto do item: SAP primeiro (valor real do material, muda entre nacional
    * e importado); engine de NCM só como fallback quando o SAP não devolveu.
    */
+  const fmtAliq = (v: number | null) =>
+    v == null ? "—" : `${(v * 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+
   function aliquotasDaLinha(i: Item) {
     const p = produtos.find((x) => x.id === i.produtoId);
     const cod = normCod(i.avulso?.codigo ?? p?.codigo ?? "");
