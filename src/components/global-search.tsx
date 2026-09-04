@@ -181,7 +181,7 @@ export const GlobalSearch = forwardRef<
       </div>
 
       {mostrar && (
-        <div className="absolute left-0 right-0 top-11 z-50 max-h-[70vh] overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+        <div className="absolute left-0 right-0 top-11 z-50 max-h-[70vh] overflow-y-auto rounded-lg border border-border bg-surface shadow-xl">
           {isFetching && (
             <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Buscando…
