@@ -269,8 +269,8 @@ function SocialPage() {
         {posts.length > 0 && (
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Posts recentes</div>
-            <div className="glass rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="glass rounded-2xl overflow-x-auto">
+              <table className="w-full min-w-max text-sm">
                 <thead>
                   <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-b border-border bg-surface-2/50">
                     <th className="text-left px-4 py-2.5">Rede</th>

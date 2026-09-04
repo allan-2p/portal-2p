@@ -929,8 +929,8 @@ function ProdutosPage() {
           </Select>
         </div>
 
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="border border-border rounded-lg overflow-x-auto">
+          <table className="w-full min-w-max text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="text-left px-3 py-2">Código</th>

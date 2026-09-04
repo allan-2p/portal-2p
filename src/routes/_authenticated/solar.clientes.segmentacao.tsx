@@ -287,7 +287,7 @@ function SegmentacaoPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar cliente…"
-                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-56 focus:outline-none focus:border-primary/50"
+                className="pl-9 pr-3 py-2 rounded-lg bg-surface border border-border text-sm w-full sm:w-56 focus:outline-none focus:border-primary/50"
               />
             </div>
             <div className="flex items-center gap-2">

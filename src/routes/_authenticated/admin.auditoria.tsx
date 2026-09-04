@@ -226,8 +226,8 @@ function AuditoriaPage() {
             <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando auditoria...
           </div>
         ) : (
-          <div className="border border-border rounded-lg overflow-hidden bg-card">
-            <table className="w-full text-sm">
+          <div className="border border-border rounded-lg overflow-x-auto bg-card">
+            <table className="w-full min-w-max text-sm">
               <thead className="bg-surface-2 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="text-left px-3 py-2">Instância</th>
