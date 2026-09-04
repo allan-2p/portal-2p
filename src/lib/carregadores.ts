@@ -322,40 +322,41 @@ export function difalSempreInformativoPorFinalidade(finalidade: CarregadoresFina
   return finalidade === "revenda";
 }
 
-/** Aviso de guia de DIFAL em compras para uso e consumo (independe de convênio ST). */
+/** Aviso curto de DIFAL em compras para uso e consumo (independe de convênio ST). */
 export function avisoDifalUsoConsumo(state: Pick<CarregadoresState, "contribuinte" | "ie" | "finalidadeUso"> & { uf?: string }) {
   if (operacaoInterna(state.uf ?? "")) return null;
   if (state.finalidadeUso !== "uso_consumo" || !difalEhInformativo(state)) return null;
-  return (
-    "DIFAL: por se tratar de aquisição para uso e consumo, o destinatário poderá receber guia de recolhimento " +
-    "do DIFAL no seu Estado, mesmo em UF sem convênio de ICMS-ST. Valor apresentado apenas em caráter informativo."
-  );
+  return OBSERVACAO_DIFAL_CONTRIBUINTE;
 }
 
 
-/** Texto padrão de observações incluído em toda nova proposta. */
-export const OBSERVACOES_PADRAO = "Valores dos itens expressos com IPI.";
+/** Texto padrão de observações incluído em toda nova proposta (sem textos fiscais). */
+export const OBSERVACOES_PADRAO = "";
 
-/** Ressalva de DIFAL — só faz sentido para cliente contribuinte. */
+/** Ressalva curta de DIFAL — só faz sentido para cliente contribuinte. */
 export const OBSERVACAO_DIFAL_CONTRIBUINTE =
-  "O DIFAL não é de responsabilidade da 2P, sendo o recolhimento de responsabilidade do destinatário.";
+  "DIFAL informativo: recolhimento por conta do destinatário.";
+
+/** Textos antigos e longos que devem ser removidos das observações salvas. */
+const OBSERVACOES_LEGADAS = [/^valores dos itens expressos com ipi/i, /^difal:/i, /^o difal não é de responsabilidade/i];
 
 /**
- * Monta as observações finais: remove qualquer ressalva de DIFAL existente e
- * só a inclui novamente quando o cliente for contribuinte.
+ * Monta as observações finais: limpa textos fiscais antigos/duplicados e
+ * inclui uma única ressalva de DIFAL quando o cliente for contribuinte.
  */
 export function observacoesComDifal(
   texto: string | null | undefined,
   state: Pick<CarregadoresState, "contribuinte" | "ie"> & { uf?: string },
 ) {
-  const base = (texto ?? "")
+  const linhas = (texto ?? "")
     .split(/\n+/)
     .map((l) => l.trim())
-    .filter((l) => l && l !== OBSERVACAO_DIFAL_CONTRIBUINTE)
-    .join("\n");
+    .filter((l) => l && !OBSERVACOES_LEGADAS.some((re) => re.test(l)));
+  const base = Array.from(new Set(linhas)).join("\n");
   if (!state.contribuinte || operacaoInterna(state.uf ?? "")) return base;
   return [base, OBSERVACAO_DIFAL_CONTRIBUINTE].filter(Boolean).join("\n");
 }
+
 
 
 export type CarregadoresResult = {
