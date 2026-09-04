@@ -35,7 +35,16 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Corrigido
+- **Atualização de status dos pedidos destravada**: a verificação automática no SAP deixou de reprocessar pedidos já entregues (milhares deles ocupavam a fila) e passou a olhar só os pedidos em andamento — um pedido recém-coletado agora avança em poucos minutos, não em ~2 dias.
+- **Pedido não congela mais em "Faturado"**: enviar a nota à transportadora não tira mais o pedido da verificação de status, então ele continua avançando para "Coletado".
+- **Fim do retrabalho em pedidos entregues**: pedidos já entregues não geram mais recusa de mudança de status nem reenvio desnecessário ao Salesforce a cada ciclo.
+- **Chave da nota fiscal**: a leitura passou a procurar a chave também fora do bloco principal do retorno do SAP.
+- **Reenvio de documentos à transportadora**: só considera pedidos que realmente têm carga na Fretefy, eliminando os avisos de "frete dedicado/manual".
+
 ### Banco de dados
+- **Agendamento `fretefy-backfill-documentos`**: reenvio automático dos documentos de nota fiscal à transportadora, de hora em hora (`cron.schedule`, migração deste release).
+
 - **Carregadores DC 40 kW e AC 7,4 kW**: os dois passaram a usar a classificação fiscal com ICMS de 4% (importados), alinhando o portal ao que o SAP calcula. Os impostos do pedido 60292 foram recalculados (ICMS R$ 1.660,95).
 - **Revisão em massa do catálogo (planilha de itens)**: 100 itens ficaram ativos e 322 inativos no catálogo 2P Solar; em 2P Carregadores 5 ficaram ativos e 1 inativo. 272 materiais que só existiam no espelho do SAP foram trazidos para o catálogo do portal. Nada de preço, custo, NCM ou permissão foi alterado.
 
