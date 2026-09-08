@@ -39,7 +39,9 @@ export type PropostaPdfData = {
   };
   /** Venda para a Zona Franca de Manaus (inscrição SUFRAMA aprovada). */
   suframa?: string | null;
+  suframaSituacao?: string | null;
   suframaAplicado?: boolean | null;
+  suframaTitular?: "cliente" | "cliente_final";
   /** Finalidade de uso herdada do cadastro do cliente (somente leitura). */
   finalidadeUso?: string | null;
   itens: PropostaPdfItem[];
@@ -194,6 +196,14 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
     </div>`
       : "";
 
+  const suframaHtml = p.suframa
+    ? `<div class="suframa ${p.suframaAplicado ? "ok" : "warn"}">
+        <div class="suframa-title">${p.suframaAplicado ? "Venda Zona Franca de Manaus" : "SUFRAMA com impedimento"}</div>
+        <div class="suframa-owner">Inscrição do ${p.suframaTitular === "cliente_final" ? "cliente final faturado" : "cliente da proposta"}: <b>${esc(p.suframa)}</b>${p.suframaSituacao ? ` · ${esc(p.suframaSituacao)}` : ""}</div>
+        <div class="suframa-rules">${p.suframaAplicado ? "Sem PIS/COFINS e IPI · ICMS de 4% em materiais importados · ICMS isento em materiais nacionais" : "Benefício fiscal não aplicado; proposta calculada com tributação normal."}</div>
+      </div>`
+    : "";
+
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
 <title>${esc(propostaPdfFileName({ ...p, numero }))}</title>
@@ -256,6 +266,12 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; margin-top:4mm; }
   .f label{ display:block; font-size:7.2px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; font-weight:600; }
   .f div{ font-size:9.8px; font-weight:500; word-break:break-word; }
+  .suframa{ margin-top:4mm; border:1.5px solid; border-left-width:4px; border-radius:7px; padding:3.2mm 4mm; break-inside:avoid; page-break-inside:avoid; }
+  .suframa.ok{ background:#ECFDF3; border-color:#16803C; color:#14532D; }
+  .suframa.warn{ background:#FFF7ED; border-color:#C2410C; color:#7C2D12; }
+  .suframa-title{ font-size:11px; font-weight:800; text-transform:uppercase; }
+  .suframa-owner{ margin-top:2px; font-size:9px; }
+  .suframa-rules{ margin-top:3px; font-size:8.5px; line-height:1.4; }
 
   /* TABLE */
   table{ width:100%; border-collapse:collapse; }
@@ -357,7 +373,6 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
           <div class="tag">${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}</div>
           <div class="tag ${p.cliente.contribuinte ? "on" : ""}">${p.cliente.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}</div>
           ${p.finalidadeUso ? `<div class="tag on">Finalidade: ${esc(p.finalidadeUso)}</div>` : ""}
-          ${p.suframaAplicado ? `<div class="tag on">Zona Franca de Manaus · SUFRAMA ${esc(p.suframa ?? "")}</div>` : ""}
         </div>
         <div class="grid">
           <div class="f"><label>CNPJ / CPF</label><div>${esc(p.cliente.doc) || "—"}</div></div>
@@ -367,6 +382,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
           <div class="f"><label>Finalidade de uso</label><div>${esc(p.finalidadeUso) || "—"}</div></div>
         </div>
       </div>
+      ${suframaHtml}
     </div>
 
     ${enderecosHtml}
