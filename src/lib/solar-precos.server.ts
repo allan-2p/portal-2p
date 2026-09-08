@@ -9,7 +9,7 @@
  */
 
 import { simularSap } from "./sap-precos.server";
-import { aliquotasSuframa, itemImportadoPorIcms } from "./suframa";
+import { precoUnitarioSuframa } from "./suframa";
 
 export type PrecoItem = { codigo: string; quantidade: number };
 
@@ -147,42 +147,36 @@ export async function precosSolar(
       const codigo = norm(item.codigo);
       const qtd = Math.max(1, Number(item.quantidade) || 1);
       const reg = sim.get(codigo);
-      // Zona Franca de Manaus: retira IPI e PIS/COFINS do preço e mantém o
-      // ICMS só nos importados (4%). Vale junto com o kit (que já é isento
-      // de ICMS/IPI) — nesse caso sobra o valor líquido puro.
-      const importado = itemImportadoPorIcms(reg?.aliqIcms ?? null);
-      const suframaLinha =
-        opts.suframa && reg?.valor != null
-          ? Math.max(
-              0,
-              reg.valor -
-                (reg.vlIpi ?? 0) -
-                (reg.vlPis ?? 0) -
-                (reg.vlCofins ?? 0) -
-                (importado && !opts.kitFotovoltaico ? 0 : (reg.vlIcms ?? 0)),
-            )
-          : null;
+      // Zona Franca de Manaus: o preço parte do valor LÍQUIDO do SAP e recompõe
+      // só o ICMS "por dentro" (sem IPI e sem PIS/COFINS), arredondando o
+      // unitário antes de multiplicar pela quantidade — igual à planilha.
+      if (opts.suframa && reg?.valorLiquido != null && reg.valorLiquido > 0) {
+        const icmsAliq = opts.kitFotovoltaico ? 0 : (reg.aliqIcms ?? 0);
+        const unit = precoUnitarioSuframa(reg.valorLiquido / qtd, icmsAliq);
+        if (unit > 0) {
+          unitario.set(codigo, unit);
+          aliquotas[codigo] = { ipi: 0, icms: icmsAliq, pisCofins: 0 };
+          continue;
+        }
+      }
       // Kit: usa o valor sem ICMS/IPI; se o SAP não devolveu os tributos,
       // cai para o valor cheio (nunca precifica zerado por falta do campo).
-      const valorLinha =
-        suframaLinha != null && suframaLinha > 0
-          ? suframaLinha
-          : opts.kitFotovoltaico
-            ? (reg?.valorSemIcmsIpi ?? reg?.valor ?? null)
-            : (reg?.valor ?? null);
+      const valorLinha = opts.kitFotovoltaico
+        ? (reg?.valorSemIcmsIpi ?? reg?.valor ?? null)
+        : (reg?.valor ?? null);
       if (reg && aliquotas[codigo] === undefined && (reg.aliqIpi != null || reg.aliqIcms != null || reg.aliqPisCofins != null)) {
-        const base = {
+        aliquotas[codigo] = {
           // Kit fotovoltaico é isento de ICMS e IPI — o imposto exibido tem que
           // acompanhar o preço praticado.
           ipi: opts.kitFotovoltaico ? 0 : (reg.aliqIpi ?? null),
           icms: opts.kitFotovoltaico ? 0 : (reg.aliqIcms ?? null),
           pisCofins: reg.aliqPisCofins ?? null,
         };
-        aliquotas[codigo] = opts.suframa ? aliquotasSuframa(base) : base;
       }
       if (valorLinha && valorLinha > 0) unitario.set(codigo, money2(valorLinha / qtd));
       else restantes.push(item);
     }
+
     pendentes = restantes;
   }
 
