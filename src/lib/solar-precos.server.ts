@@ -89,6 +89,7 @@ export async function precosSolar(
       string,
       {
         valor: number | null;
+        valorLiquido?: number | null;
         valorSemIcmsIpi?: number | null;
         vlIpi?: number | null;
         vlIcms?: number | null;
