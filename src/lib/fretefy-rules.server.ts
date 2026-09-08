@@ -26,6 +26,14 @@ export function detectarTrilho(codigosCarrinho: string[]): string | null {
   return null;
 }
 
+/** Todos os trilhos do carrinho presentes na lista oficial (sem repetição). */
+export function detectarTrilhos(codigosCarrinho: string[]): string[] {
+  const achados: string[] = [];
+  for (const c of codigosCarrinho)
+    if (COD_TRILHOS.includes(c) && !achados.includes(c)) achados.push(c);
+  return achados;
+}
+
 /**
  * false = transportadora bloqueada para o carrinho.
  * Basta um item bloqueado para a transportadora sair da lista.
@@ -38,10 +46,12 @@ export function filtraFretes(
   unidade?: UnidadeFrete,
 ): boolean {
   const regra = cfg.transportadoras[cnpj];
-  // Paridade com a plataforma antiga: os bloqueios olham APENAS o trilho
-  // detectado no carrinho, não todos os itens.
-  const trilho = detectarTrilho(codigosCarrinho);
-  const tem = (lista: string[]) => !!trilho && lista.includes(trilho);
+  // Todos os trilhos do carrinho contam: basta UM trilho proibido para a
+  // transportadora sair da lista (antes só o primeiro trilho era avaliado, e
+  // o resultado dependia da ordem dos itens).
+  const trilhos = detectarTrilhos(codigosCarrinho);
+  const tem = (lista: string[]) => trilhos.some((t) => lista.includes(t));
+
   // Regras de trilho valem na 2P Solar; a regra de potência vale nos carregadores.
   const usaTrilhos = unidade !== "carregadores";
   const usaCarregadores = unidade !== "solar";
