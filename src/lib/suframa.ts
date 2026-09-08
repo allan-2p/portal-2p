@@ -88,18 +88,25 @@ export type AliquotasFiscais = {
 };
 
 /**
- * Alíquotas efetivas de um item na venda SUFRAMA: sem IPI, sem PIS/COFINS e
- * ICMS de 4% só nos importados.
+ * Alíquotas efetivas de um item na venda SUFRAMA: sem IPI e sem PIS/COFINS.
+ * O ICMS da operação é mantido (4% nos importados, alíquota interestadual nos
+ * nacionais) — é assim que a planilha oficial monta o preço.
  */
 export function aliquotasSuframa<T extends AliquotasFiscais>(aliq: T): T {
-  const importado = itemImportadoPorIcms(aliq.icms);
-  return {
-    ...aliq,
-    ipi: 0,
-    icms: importado ? ICMS_SUFRAMA_IMPORTADO : 0,
-    pisCofins: 0,
-  };
+  return { ...aliq, ipi: 0, pisCofins: 0 };
 }
+
+/**
+ * Preço unitário na venda SUFRAMA: parte do valor líquido do SAP e recompõe
+ * apenas o ICMS "por dentro" (líquido ÷ (1 − ICMS)), arredondado a centavos.
+ */
+export function precoUnitarioSuframa(liquidoUnitario: number, icms: number | null | undefined): number {
+  const a = Number(icms);
+  const aliq = Number.isFinite(a) && a > 0 && a < 1 ? a : 0;
+  const v = Number(liquidoUnitario) || 0;
+  return Math.round((v / (1 - aliq)) * 100) / 100;
+}
+
 
 /** Rótulo curto usado em telas, resumo e PDF. */
 export const SUFRAMA_LABEL = "Venda SUFRAMA — Zona Franca de Manaus";
