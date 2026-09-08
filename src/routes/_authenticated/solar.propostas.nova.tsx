@@ -2253,6 +2253,15 @@ function NovaPropostaSolarPage() {
                       </span>
                     </div>
                   )}
+                  {fatTipoDoc === "cnpj" ? (
+                    <SuframaBanner
+                      className="md:col-span-2 lg:col-span-3"
+                      status={suframaStatus}
+                      inscricao={(suframaFonte.suframa as string) ?? null}
+                      situacao={(suframaFonte.suframa_situacao as string) ?? null}
+                      clienteFinal
+                    />
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Dados buscados automaticamente (CNPJ e CEP) continuam editáveis. Sem retorno das
