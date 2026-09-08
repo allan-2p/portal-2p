@@ -127,6 +127,14 @@
               "description": "Filtra por status da proposta (ex.: rascunho, enviada, aprovada).",
               "type": "string"
             },
+            "instancia": {
+              "description": "Instância usada para checar as permissões (padrão: solar).",
+              "type": "string",
+              "enum": [
+                "solar",
+                "carregadores"
+              ]
+            },
             "limit": {
               "description": "Número máximo de propostas retornadas (padrão 20, máximo 100).",
               "type": "integer",
