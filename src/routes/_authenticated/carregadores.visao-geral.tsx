@@ -34,7 +34,6 @@ const STATUS_VENDIDOS = [
 type PedidoVendido = {
   id: string;
   numero: string | null;
-  nome: string | null;
   cliente_nome: string;
   status: string;
   /** Valor dos produtos (sem frete). */
