@@ -16,6 +16,7 @@ import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/carregadores"
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtBRL, fmtPct } from "@/lib/carregadores";
+import { fmtMesReferencia } from "@/lib/carregadores-lotes.functions";
 import { BotaoDarPerda } from "@/components/propostas/dar-perda";
 import { faseDaProposta } from "@/lib/salesforce-stage";
 import { StatusDot } from "@/components/proposta-status-ui";
@@ -500,19 +501,23 @@ export function PropostaDetalhe({ id }: { id?: string }) {
 
       </div>
 
+      {/* Margem, comissão e receita líquida ficam só na Visão Geral (gestão);
+          aqui aparecem apenas os impostos. */}
       <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Indicadores internos
+          Impostos
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-sm">
-          <Campo label="Receita líquida" value={fmtBRL(totais['rl'] ?? 0)} />
-          <Campo label="Margem bruta" value={fmtPct(totais['mbPct'] ?? 0)} />
-          <Campo label="Comissão estimada" value={fmtBRL(totais['comissao'] ?? 0)} />
+          <Campo label="Valor dos itens" value={fmtBRL(totais['valor'] ?? subtotal)} />
           <Campo label="ICMS" value={fmtBRL(totais['icms'] ?? 0)} />
           <Campo label="IPI" value={fmtBRL(totais['ipi'] ?? 0)} />
           <Campo label="PIS/COFINS" value={fmtBRL(totais['pisCofins'] ?? 0)} />
-          <Campo label="Valor dos itens" value={fmtBRL(totais['valor'] ?? subtotal)} />
-          <Campo label="Margem bruta (R$)" value={fmtBRL(totais['mb'] ?? 0)} />
+          {p['entrega_lote_mes'] ? (
+            <Campo
+              label="Chegada da mercadoria"
+              value={`${fmtMesReferencia(String(p['entrega_lote_mes']))} · ${String(p['entrega_lote_nome'] ?? "")}`}
+            />
+          ) : null}
         </div>
       </div>
 

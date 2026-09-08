@@ -62,6 +62,8 @@ export type SalvarPropostaInput = {
   /** Proposta originada de indicação (Carregadores). */
   indicacao: boolean;
   padrinhoId: string | null;
+  /** Lote de chegada da mercadoria (obrigatório ao fechar o pedido). */
+  entregaLoteId?: string | null;
   itens: { produtoId: string; qtd: number; valor: number }[];
 };
 
@@ -216,6 +218,7 @@ function validar(input: any): SalvarPropostaInput {
     observacoesInternas: input.observacoesInternas ? String(input.observacoesInternas) : null,
     indicacao: !!input.indicacao,
     padrinhoId: input.padrinhoId ? String(input.padrinhoId) : null,
+    entregaLoteId: input.entregaLoteId ? String(input.entregaLoteId) : null,
     itens,
   };
 }
@@ -437,6 +440,17 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       padrinhoNome = (pad as any).nome as string;
     }
     if (data.indicacao && !padrinhoId) throw new Error("Selecione ou cadastre o padrinho da indicação.");
+    // Lote de chegada: valida que existe e fotografa mês/nome na proposta.
+    let lote: { id: string; mes_referencia: string; lote: string } | null = null;
+    if (data.entregaLoteId) {
+      const { data: lt } = await supabase
+        .from("carregadores_lotes")
+        .select("id, mes_referencia, lote, ativo")
+        .eq("id", data.entregaLoteId)
+        .maybeSingle();
+      if (!lt) throw new Error("Lote de entrega não encontrado.");
+      lote = { id: (lt as any).id, mes_referencia: (lt as any).mes_referencia, lote: (lt as any).lote };
+    }
     const { resolverCondicaoPagamento } = await import("./condicoes-pagamento.server");
     const cond = await resolverCondicaoPagamento(supabase, data.condicaoPagamento);
 
@@ -477,6 +491,9 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       indicacao: data.indicacao,
       padrinho_id: data.indicacao ? padrinhoId : null,
       padrinho_nome: data.indicacao ? padrinhoNome : null,
+      entrega_lote_id: lote?.id ?? null,
+      entrega_lote_mes: lote?.mes_referencia ?? null,
+      entrega_lote_nome: lote?.lote ?? null,
       itens: data.itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId)!;
         // Alíquotas fotografadas por linha: o IPI vem do NCM do cadastro do
@@ -1404,6 +1421,8 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     else if (exigeFinalidade && !String(row["finalidade_uso"] ?? "").trim())
       erro = "Finalidade de uso não informada.";
     else if (!String(row["frete_mod"] ?? "").trim()) erro = "Modalidade de frete não informada.";
+    else if (org === "carregadores" && !row["entrega_lote_id"])
+      erro = "Informe o mês de referência e o lote de chegada da mercadoria.";
     else if (Number(row["frete_valor"] ?? 0) < 0) erro = "Valor de frete inválido.";
     else if (!itens.length) erro = "A proposta não possui itens.";
     else if (itens.some((i) => Number(i?.qtd ?? 0) <= 0)) erro = "Existe item com quantidade inválida.";

@@ -385,6 +385,42 @@ export type Database = {
         }
         Relationships: []
       }
+      carregadores_lotes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          lote: string
+          mes_referencia: string
+          observacao: string | null
+          ordem: number
+          previsao_chegada: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          lote: string
+          mes_referencia: string
+          observacao?: string | null
+          ordem?: number
+          previsao_chegada?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          lote?: string
+          mes_referencia?: string
+          observacao?: string | null
+          ordem?: number
+          previsao_chegada?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       carregadores_metas: {
         Row: {
           ano: number
@@ -2172,6 +2208,9 @@ export type Database = {
           criado_por_nome: string | null
           entrega: Json
           entrega_diferente: boolean
+          entrega_lote_id: string | null
+          entrega_lote_mes: string | null
+          entrega_lote_nome: string | null
           faturamento: Json
           faturar_cliente_final: boolean
           finalidade_uso: string
@@ -2240,6 +2279,9 @@ export type Database = {
           criado_por_nome?: string | null
           entrega?: Json
           entrega_diferente?: boolean
+          entrega_lote_id?: string | null
+          entrega_lote_mes?: string | null
+          entrega_lote_nome?: string | null
           faturamento?: Json
           faturar_cliente_final?: boolean
           finalidade_uso?: string
@@ -2308,6 +2350,9 @@ export type Database = {
           criado_por_nome?: string | null
           entrega?: Json
           entrega_diferente?: boolean
+          entrega_lote_id?: string | null
+          entrega_lote_mes?: string | null
+          entrega_lote_nome?: string | null
           faturamento?: Json
           faturar_cliente_final?: boolean
           finalidade_uso?: string
@@ -2362,7 +2407,15 @@ export type Database = {
           uf?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "propostas_entrega_lote_id_fkey"
+            columns: ["entrega_lote_id"]
+            isOneToOne: false
+            referencedRelation: "carregadores_lotes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       propostas_conclusao_log: {
         Row: {
