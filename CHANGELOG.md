@@ -46,6 +46,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - `20260908132639`: tabela `carregadores_lotes` e campos de lote de entrega na proposta (`entrega_lote_id`, `entrega_lote_mes`, `entrega_lote_nome`).
 
 ### Corrigido
+- **Regra de trilhos por transportadora deixa de depender da ordem dos itens**: a cotação avaliava apenas o primeiro trilho do carrinho, então um pedido com trilho 2,40M + 4,80M liberava a Expresso São Miguel (que não leva o 4,80M) e podia deixar de cobrar o adicional TDE. Agora todos os trilhos do pedido são considerados: um trilho proibido já remove a transportadora, e o adicional é aplicado uma única vez por envio.
+- **Transportadora visível no pedido**: nome da transportadora passa a aparecer no detalhe do pedido e nos PDFs de 2P Solar e 2P Carregadores (antes o PDF de Carregadores não trazia essa informação).
+
 - **Cancelamentos param de travar no Salesforce**: motivo de cancelamento fora da lista oficial (inclusive o texto herdado da migração) é enviado como "Erro Interno", em vez de derrubar a atualização inteira da oportunidade.
 - **Pedido não falha mais por falta da conta do cliente**: se a conta ainda não existir no Salesforce, o portal sincroniza o cadastro do cliente na hora e segue com o pedido.
 - **Sem oportunidades duplicadas para pedidos antigos**: pedido importado da plataforma antiga nunca cria oportunidade nova — se não encontrar a existente, o envio é pulado e registrado.
