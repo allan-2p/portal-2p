@@ -511,7 +511,7 @@ function NovaPropostaSolarPage() {
       const fatPersistido = (p['faturamento'] as Record<string, string>) ?? {};
       // Compatibilidade com propostas salvas antes de o snapshot SUFRAMA fazer
       // parte do bloco de faturamento: restaura a validação fiscal da proposta.
-      const fatSalvo = {
+      const fatSalvo: Record<string, string> = {
         ...fatPersistido,
         suframa: fatPersistido['suframa'] || String(p['suframa'] ?? ""),
         suframa_situacao:
