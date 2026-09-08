@@ -134,6 +134,13 @@ function fmtDia(key: string) {
   });
 }
 
+function normalizarBusca(value: unknown) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR");
+}
+
 function TarefasPage() {
   const qc = useQueryClient();
   const [cursor, setCursor] = useState(() => {
@@ -184,12 +191,21 @@ function TarefasPage() {
   }, [tasksQuery.data]);
 
   const listaFiltrada = useMemo(() => {
-    const q = busca.trim().toLowerCase();
+    const q = normalizarBusca(busca.trim());
     const arr = [...(tasksQuery.data?.records ?? [])].filter((t) =>
       q
-        ? [t.subject, t.who, t.what, t.owner, t.status]
+        ? [
+            t.subject,
+            t.clientName,
+            t.tradeName,
+            t.corporateName,
+            t.who,
+            t.what,
+            t.owner,
+            t.status,
+          ]
             .filter(Boolean)
-            .some((v) => String(v).toLowerCase().includes(q))
+            .some((v) => normalizarBusca(v).includes(q))
         : true,
     );
     const prioPeso = (t: SalesforceTask) => ({ high: 0, medium: 1, low: 2 })[mapPriority(t.priority)];
@@ -488,7 +504,7 @@ function TarefasPage() {
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Buscar por assunto, cliente, contato ou responsável…"
+                  placeholder="Buscar por assunto, cliente, nome fantasia ou razão social…"
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
                 />

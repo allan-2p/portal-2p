@@ -147,3 +147,41 @@ export async function fetchAccountSegments(
   }
   return out;
 }
+
+export type AccountTaskSearchNames = {
+  razaoSocial: string | null;
+  nomeFantasia: string | null;
+};
+
+/** Nomes cadastrais usados para localizar tarefas vinculadas a contas. */
+export async function fetchAccountTaskSearchNames(
+  instance: AccountsInstance,
+  ids: string[],
+): Promise<Map<string, AccountTaskSearchNames>> {
+  const out = new Map<string, AccountTaskSearchNames>();
+  const clean = Array.from(new Set(ids.filter((id) => /^[a-zA-Z0-9]{15,18}$/.test(id))));
+  if (clean.length === 0) return out;
+  const cfg = configFor(instance);
+  if (!cfg) throw new Error(`Base de contas não configurada para ${instance}`);
+
+  for (let i = 0; i < clean.length; i += 200) {
+    const chunk = clean.slice(i, i + 200);
+    const params = new URLSearchParams({
+      select: "id,name,custom_fields",
+      id: `in.(${chunk.join(",")})`,
+      limit: String(chunk.length),
+    });
+    const res = await fetch(`${cfg.url}/rest/v1/account_sf?${params.toString()}`, {
+      headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}`, Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`Banco de contas ${instance} ${res.status}`);
+    for (const row of (await res.json()) as Pick<AccountDbRow, "id" | "name" | "custom_fields">[]) {
+      const fantasia = row.custom_fields?.Nome_Fantasia__c;
+      out.set(row.id, {
+        razaoSocial: row.name?.trim() || null,
+        nomeFantasia: typeof fantasia === "string" && fantasia.trim() ? fantasia.trim() : null,
+      });
+    }
+  }
+  return out;
+}
