@@ -175,6 +175,9 @@ export type CarregadoresFaturamento = CarregadoresEndereco & {
   /** IE habilitada na consulta — fonte única de "contribuinte". */
   ie_habilitada?: boolean | null;
   contribuinte: boolean;
+  /** Inscrição SUFRAMA do cliente final (consulta pública do CNPJ). */
+  suframa?: string;
+  suframa_situacao?: string;
 };
 
 export function novoFaturamento(uf = ""): CarregadoresFaturamento {
