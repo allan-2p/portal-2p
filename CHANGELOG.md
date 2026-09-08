@@ -479,3 +479,4 @@ Primeira versão consolidada do portal em produção (`portal.2pgroup.app`).
 - Estimativa de entrega (e demais datas) exibidas em formato americano em alguns casos: formatação pt-BR agora é feita manualmente, sem depender do Intl do runtime.
 
 - Venda SUFRAMA: preço do item passa a sair do valor líquido do SAP com o ICMS da operação recomposto "por dentro" (4% importado, alíquota interestadual nos nacionais), sem IPI e sem PIS/COFINS — igual à planilha oficial.
+- Catálogo: item 100000052 (2P-KIT PARAFUSOS SMART "N") sai do catálogo e entra o 100000210 (2P-KIT PARAFUSOS SMART), inclusive na calculadora Solar.
