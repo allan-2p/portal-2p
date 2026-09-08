@@ -15,7 +15,7 @@ import { podeMarcarEntregueProposta } from "@/lib/proposta-status";
 import { finalidadeUsoDoCadastro, labelFinalidadeUso } from "@/lib/carregadores";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { fmtBRL, fmtPct } from "@/lib/carregadores";
+import { fmtBRL } from "@/lib/carregadores";
 import { fmtMesReferencia } from "@/lib/carregadores-lotes.functions";
 import { BotaoDarPerda } from "@/components/propostas/dar-perda";
 import { faseDaProposta } from "@/lib/salesforce-stage";
