@@ -84,6 +84,13 @@ function CarregadoresTarefas() {
     [tasks, filter, vendedor, vend],
   );
 
+  const { pageItens: rowsPagina, props: paginacao } = usePaginacao(
+    rows,
+    25,
+    `${filter}|${vendedor}`,
+  );
+
+
   async function create() {
     if (!form.titulo.trim()) { toast.error("Informe o título da tarefa."); return; }
     const { error } = await supabase.from("carregadores_tarefas").insert({
