@@ -360,6 +360,16 @@ export function PropostaDetalhe({ id }: { id?: string }) {
                   }
                 />
                 <Campo label="Contribuinte" value={contribuinteNf ? "Sim" : "Não"} />
+                {(faturamento as Record<string, unknown>)['suframa'] ? (
+                  <Campo
+                    label="SUFRAMA (cliente final)"
+                    value={`${String((faturamento as Record<string, unknown>)['suframa'])}${
+                      p['suframa_aplicado']
+                        ? " · Zona Franca de Manaus (sem PIS/COFINS e IPI)"
+                        : ` · ${String((faturamento as Record<string, unknown>)['suframa_situacao'] ?? "") || "sem benefício"}`
+                    }`}
+                  />
+                ) : null}
                 <div className="col-span-2 md:col-span-4">
                   <div className="text-xs text-muted-foreground">Endereço de faturamento</div>
                   <div className="font-medium">{enderecoFaturamento || "—"}</div>
