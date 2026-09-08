@@ -96,7 +96,7 @@ export const SOLAR_CALC_CONFIG_FALLBACK: SolarCalcConfig = {
   cod_grampo_final: "2P-GFA",
   cod_terminal_aterramento: "2P-GAT",
   cod_juncao: "2P-J100",
-  cod_kit_parafuso_smart: "100000052",
+  cod_kit_parafuso_smart: "100000210",
   cod_terminal_m8: "2P-M8",
   cod_terminal_zmi: "2P-ZMI",
   cod_terminal_zmil: "2P-ZMIL",
