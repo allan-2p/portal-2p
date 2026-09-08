@@ -1,4 +1,5 @@
 import { decomporPrecoCarregadores } from "./carregadores-impostos";
+import { aliquotasSuframa } from "./suframa";
 // ============================================================================
 // Motor de cálculo e tipos do módulo de propostas (Portal 2P Carregadores).
 // Base: planilhas "Precificação Carregadores — Memória Cálculo",
@@ -242,6 +243,11 @@ export type CarregadoresState = {
   observacoesInternas: string;
   /** Lote de chegada da mercadoria (obrigatório ao fechar o pedido). */
   entregaLoteId: string;
+  /**
+   * Venda para a Zona Franca de Manaus com inscrição SUFRAMA aprovada:
+   * sem PIS/COFINS, sem IPI e ICMS 4% só nos materiais importados.
+   */
+  suframa?: boolean;
   itens: CarregadoresItem[];
 };
 
@@ -527,11 +533,11 @@ export function calcularCarregadores(
 
     // Fórmula única (6 casas nos intermediários) — ver carregadores-impostos.ts.
     // Frete vai "por fora": não entra na base de ICMS/DIFAL nem na MB/comissão.
-    const dec = decomporPrecoCarregadores(bruto, {
-      ipi: r.ipi,
-      icms: interItem,
-      pisCofins: r.pisCofins,
-    });
+    // Zona Franca de Manaus: sem IPI, sem PIS/COFINS e ICMS só nos importados.
+    const efetivas = state.suframa
+      ? aliquotasSuframa({ ipi: r.ipi, icms: interItem, pisCofins: r.pisCofins })
+      : { ipi: r.ipi, icms: interItem, pisCofins: r.pisCofins };
+    const dec = decomporPrecoCarregadores(bruto, efetivas);
 
     valorItens += bruto;
     custoTotal += (prod?.custo || 0) * qtd;
@@ -539,9 +545,10 @@ export function calcularCarregadores(
     ipiValor += dec.ipi;
     icms += dec.icms;
     pisCofins += dec.pisCofins;
-    interPonderado += interItem * bruto;
+    interPonderado += efetivas.icms * bruto;
 
-    if (r.geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !operacaoInterna(destino.uf)) {
+    // Venda SUFRAMA é isenta: não há DIFAL a estimar.
+    if (!state.suframa && r.geraDifal && finalidadeGeraDifal(state.finalidadeUso) && !operacaoInterna(destino.uf)) {
       const d = calcularDifal(bruto, interna, fcp, interItem);
       difalBase += d.base;
       difalValor += d.valor;
@@ -771,6 +778,8 @@ export function aliquotasDoItem(args: {
   finalidade: CarregadoresFinalidadeUso;
   ncm?: CarregadoresNcm | null;
   config: Pick<CarregadoresConfig, "ipi" | "pis_cofins" | "aliq_inter">;
+  /** Venda para a Zona Franca de Manaus com SUFRAMA aprovado. */
+  suframa?: boolean;
 }) {
   const ipi = args.ncm?.ipi ?? args.config.ipi;
   const pisCofins = args.ncm?.pis_cofins ?? args.config.pis_cofins;
@@ -781,5 +790,5 @@ export function aliquotasDoItem(args: {
     finalidade: args.finalidade,
     padrao: args.ncm?.aliq_inter ?? args.config.aliq_inter,
   });
-  return { ipi, icms, pisCofins };
+  return args.suframa ? aliquotasSuframa({ ipi, icms, pisCofins }) : { ipi, icms, pisCofins };
 }

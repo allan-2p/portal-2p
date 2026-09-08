@@ -321,6 +321,13 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       clienteDoc: String(data.cliente.doc ?? ""),
     });
 
+    // Zona Franca de Manaus: a decisão é SEMPRE do servidor — relê a inscrição
+    // SUFRAMA no cadastro do cliente (preenchida só pela consulta do CNPJ).
+    const { suframaDoCliente } = await import("./suframa.server");
+    const suframa = await suframaDoCliente(data.cliente.doc, {
+      faturarClienteFinal: data.faturarClienteFinal,
+    });
+
     const { precos, avisos, fallback, aliquotas } = await precosSolar(
       data.itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId)!;
@@ -332,6 +339,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
         listaPreco: data.listaPreco,
         tipoOv: tpOvDoPedido(data.tipoNf, finalContribuinte),
         kitFotovoltaico: data.ehKit,
+        suframa: suframa.aplicado,
         sugeridos,
         auditoria: { ...auditCtx, etapa: "salvar", doc: docSimulacao },
       },
@@ -495,6 +503,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       cupom: cupom?.codigo ?? null,
       listaPreco: data.listaPreco,
       ehKit: data.ehKit,
+      suframa: suframa.aplicado,
       vendidoClienteFinal: data.vendidoClienteFinal,
       projetoVendido: data.projetoVendido,
     };
@@ -562,6 +571,9 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
       frete_valor: freteValor,
       frete_bonificado: data.freteBonificado,
       kit_fotovoltaico: data.ehKit,
+      suframa: suframa.suframa,
+      suframa_situacao: suframa.suframa_situacao,
+      suframa_aplicado: suframa.aplicado,
       transportadora: data.transportadora?.nome ?? null,
       transportadora_documento: data.transportadora?.documento ?? null,
       transportadora_id: data.transportadora?.id ?? null,

@@ -10,6 +10,8 @@ export type PrecoSolarInput = {
   tipoOv: string;
   /** Kit fotovoltaico: preço sem ICMS/IPI. */
   kitFotovoltaico: boolean;
+  /** Venda para a Zona Franca de Manaus (SUFRAMA aprovado). */
+  suframa: boolean;
   /** Faturamento ao cliente final (não cadastrado no SAP) — usa cliente fake. */
   faturarClienteFinal: boolean;
   /** UF do faturamento (define o cliente fake usado na simulação). */
@@ -68,6 +70,9 @@ function validar(input: unknown): PrecoSolarInput {
       }),
     ),
     kitFotovoltaico: i.kitFotovoltaico === true,
+    // O benefício vale para o destinatário da nota: faturando ao cliente final
+    // (outro destinatário) ele se perde.
+    suframa: i.suframa === true && i.faturarClienteFinal !== true,
   };
 }
 
@@ -112,6 +117,7 @@ export const precosSolarFn = createServerFn({ method: "POST" })
       listaPreco: data.listaPreco,
       tipoOv: data.tipoOv,
       kitFotovoltaico: data.kitFotovoltaico,
+      suframa: data.suframa,
       sugeridos,
       auditoria: {
         etapa: "precos",

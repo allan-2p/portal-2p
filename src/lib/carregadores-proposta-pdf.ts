@@ -37,6 +37,9 @@ export type PropostaPdfData = {
     cidade?: string | null;
     contribuinte: boolean;
   };
+  /** Venda para a Zona Franca de Manaus (inscrição SUFRAMA aprovada). */
+  suframa?: string | null;
+  suframaAplicado?: boolean | null;
   /** Finalidade de uso herdada do cadastro do cliente (somente leitura). */
   finalidadeUso?: string | null;
   itens: PropostaPdfItem[];
@@ -354,6 +357,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
           <div class="tag">${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}</div>
           <div class="tag ${p.cliente.contribuinte ? "on" : ""}">${p.cliente.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}</div>
           ${p.finalidadeUso ? `<div class="tag on">Finalidade: ${esc(p.finalidadeUso)}</div>` : ""}
+          ${p.suframaAplicado ? `<div class="tag on">Zona Franca de Manaus · SUFRAMA ${esc(p.suframa ?? "")}</div>` : ""}
         </div>
         <div class="grid">
           <div class="f"><label>CNPJ / CPF</label><div>${esc(p.cliente.doc) || "—"}</div></div>

@@ -1,4 +1,6 @@
 import { PropostaPdfPreview } from "@/components/proposta-pdf-preview";
+import { SuframaBanner } from "@/components/suframa-banner";
+import { statusSuframa } from "@/lib/suframa";
 import { formatPropostaNumero, formatSapNumero } from "@/lib/sap-numero";
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -155,6 +157,9 @@ type ClienteCadastro = {
   /** Finalidade de uso definida no cadastro do cliente (fonte única de verdade). */
   finalidade?: string | null;
   regime_tributario?: string | null;
+  /** Inscrição SUFRAMA do cadastro (consulta automática do CNPJ). */
+  suframa?: string | null;
+  suframa_situacao?: string | null;
   cliente_updated_at: string | null;
   consultor_nome: string | null;
   /** Endereço do cadastro — base do frete quando a entrega não é diferente. */
@@ -513,6 +518,8 @@ function PropostaCarregadoresPage() {
     contribuinte: c["contribuinte"] !== false,
     finalidade: (c["finalidade"] as string) ?? null,
     regime_tributario: (c["regime_tributario"] as string) ?? null,
+    suframa: (c["suframa"] as string) ?? null,
+    suframa_situacao: (c["suframa_situacao"] as string) ?? null,
     cliente_updated_at: (c["updated_at"] as string) ?? null,
     consultor_nome: (c["created_by_nome"] as string) ?? null,
     cep: (c["cep"] as string) ?? "",
@@ -687,6 +694,34 @@ function PropostaCarregadoresPage() {
   };
 
 
+
+  // ------------------------------------------------------------------
+  // Zona Franca de Manaus (SUFRAMA): vem SÓ do cadastro do cliente, que é
+  // preenchido pela consulta automática do CNPJ. Faturando o cliente final o
+  // benefício é perdido (a nota sai contra outro destinatário).
+  // ------------------------------------------------------------------
+  const clienteCadastro = useMemo(() => {
+    const alvo = (state.doc ?? "").replace(/\D/g, "");
+    if (!alvo) return null;
+    return (
+      (clientesQ.data ?? []).find((c) => (c.cliente_doc ?? "").replace(/\D/g, "") === alvo) ?? null
+    );
+  }, [clientesQ.data, state.doc]);
+
+  const suframaStatus = useMemo(
+    () =>
+      statusSuframa({
+        doc: state.doc,
+        suframa: clienteCadastro?.suframa,
+        suframa_situacao: clienteCadastro?.suframa_situacao,
+      }),
+    [clienteCadastro, state.doc],
+  );
+  const suframaAtivo = suframaStatus === "aprovado" && !state.faturarClienteFinal;
+
+  useEffect(() => {
+    setState((s) => (s.suframa === suframaAtivo ? s : { ...s, suframa: suframaAtivo }));
+  }, [suframaAtivo]);
 
   // Preço sugerido do item já considerando os impostos da operação, para que
   // a MB% da proposta nasça em 37% (e não abaixo da política de 33%).
@@ -1272,6 +1307,7 @@ function PropostaCarregadoresPage() {
               finalidade: state.finalidadeUso,
               ncm: ncmRow,
               config,
+              suframa: state.suframa === true,
             });
             return {
               codigo: prod?.codigo ?? null,
@@ -1758,6 +1794,12 @@ function PropostaCarregadoresPage() {
 
             {etapa === 1 ? (
               <>
+                <SuframaBanner
+                  status={suframaStatus}
+                  inscricao={clienteCadastro?.suframa ?? null}
+                  situacao={clienteCadastro?.suframa_situacao ?? null}
+                  faturarClienteFinal={state.faturarClienteFinal}
+                />
                 <Field label="Nome da proposta *">
                   <Input
                     value={state.propostaNome}
@@ -2719,6 +2761,7 @@ function PropostaCarregadoresPage() {
                               finalidade: state.finalidadeUso,
                               ncm: ncmRow,
                               config,
+                              suframa: state.suframa === true,
                             });
                             return (
                               <tr key={i.key} className="border-t border-border/60">

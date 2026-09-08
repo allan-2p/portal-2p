@@ -94,6 +94,8 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
       cidade: txt(fat['cidade'] || ent['cidade']) || null,
       contribuinte: contribuinteDaNf(p),
     },
+    suframa: txt(p['suframa']) || null,
+    suframaAplicado: p['suframa_aplicado'] === true,
     itens: itens.map((i) => ({
       codigo: txt(i['codigo']) || null,
       nome: txt(i['nome']),
@@ -165,6 +167,8 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
       uf: txt(fat['uf'] || ent['uf'] || p['uf']),
       cidade: txt(fat['cidade'] || ent['cidade']),
     },
+    suframa: txt(p['suframa']) || null,
+    suframaAplicado: p['suframa_aplicado'] === true,
     consultor: txt(p['consultor_nome']) || null,
     itens: itens.map((i) => ({
       codigo: txt(i['codigo']) || null,

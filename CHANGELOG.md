@@ -36,6 +36,20 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ## [Não publicado]
 
 ### Adicionado
+
+- Propostas de 2P Carregadores e 2P Solar destacam, já na primeira tela, quando a venda é
+  para a Zona Franca de Manaus (inscrição SUFRAMA aprovada) ou quando a inscrição está
+  bloqueada/impedida, com aviso de que faturar direto ao cliente final faz o benefício
+  ser perdido. Na venda com benefício, não incidem PIS/COFINS nem IPI, materiais
+  importados ficam com ICMS de 4% e nacionais ficam isentos. A informação aparece também
+  no detalhe do pedido e nos PDFs.
+
+### Banco de dados
+
+- Banco externo Grupo 2P (`supabase/external/propostas-suframa.sql`): novas colunas
+  `suframa`, `suframa_situacao` e `suframa_aplicado` em `propostas`, com índice parcial.
+
+### Adicionado
 - **Visão Geral de Carregadores com custo e resultado**: cada pedido mostra valor dos produtos, valor da NF, frete, margem e comissão total (com detalhamento por tipo: consultor, indicação, representante — os dois últimos zerados até existirem). Totais por mês e total geral no rodapé; clicar no pedido abre o detalhe. Saíram as colunas Nº SAP e nome da proposta.
 - **Lote de chegada obrigatório no fechamento (Carregadores)**: ao concluir o pedido o consultor escolhe mês de referência e lote da mercadoria; a lista de lotes é mantida em Moderação › 2P Carregadores › Lotes de Entrega.
 - **Correção** — Corrigido o erro ao salvar propostas do 2P Carregadores: o banco de propostas não tinha os campos de mês/lote de entrega (`supabase/external/propostas-entrega-lote.sql`).

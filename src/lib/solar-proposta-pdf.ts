@@ -41,6 +41,9 @@ export type SolarPropostaPdfData = {
     uf?: string | null;
     cidade?: string | null;
   };
+  /** Venda para a Zona Franca de Manaus (inscrição SUFRAMA aprovada). */
+  suframa?: string | null;
+  suframaAplicado?: boolean | null;
   consultor?: string | null;
   itens: SolarPdfItem[];
   subtotal: number;
@@ -316,6 +319,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
           <div class="f"><label>E-mail</label><div>${esc(p.cliente.email) || "—"}</div></div>
           <div class="f"><label>Telefone</label><div>${esc(p.cliente.telefone) || "—"}</div></div>
           <div class="f"><label>Cidade / UF</label><div>${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}</div></div>
+          ${p.suframaAplicado ? `<div class="f"><label>Zona Franca de Manaus</label><div>SUFRAMA ${esc(p.suframa ?? "")} — sem PIS/COFINS e IPI</div></div>` : ""}
           <div class="f"><label>Tipo de NF</label><div>${esc(p.tipoNf) || "—"}</div></div>
           <div class="f"><label>Forma de pagamento</label><div>${esc(p.formaPagamento ? (LABEL_PAGAMENTO[p.formaPagamento] ?? p.formaPagamento) : "") || "—"}</div></div>
         </div>

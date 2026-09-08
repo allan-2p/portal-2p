@@ -401,6 +401,14 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       })),
     };
 
+    // Zona Franca de Manaus: decisão do servidor, a partir da inscrição SUFRAMA
+    // do cadastro do cliente (preenchida só pela consulta do CNPJ).
+    const { suframaDoCliente } = await import("./suframa.server");
+    const suframa = await suframaDoCliente(data.cliente.doc, {
+      faturarClienteFinal: data.faturarClienteFinal,
+    });
+    state.suframa = suframa.aplicado;
+
     const d = calcularCarregadores(state, produtos, ufs, config, ncms);
 
     if (d.mbPct < config.politica_mb_min)
@@ -495,6 +503,9 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       entrega_lote_id: lote?.id ?? null,
       entrega_lote_mes: lote?.mes_referencia ?? null,
       entrega_lote_nome: lote?.lote ?? null,
+      suframa: suframa.suframa,
+      suframa_situacao: suframa.suframa_situacao,
+      suframa_aplicado: suframa.aplicado,
       itens: data.itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId)!;
         // Alíquotas fotografadas por linha: o IPI vem do NCM do cadastro do
@@ -506,6 +517,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
           finalidade: finalidadeUso,
           ncm: p.ncm_id ? (ncms.find((n) => n.id === p.ncm_id) ?? null) : null,
           config,
+          suframa: suframa.aplicado,
         });
         return {
           produtoId: i.produtoId,

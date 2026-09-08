@@ -312,6 +312,16 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             )}
           />
           <Campo label="Contribuinte" value={contribuinteNf ? "Sim" : "Não"} />
+          {p['suframa'] ? (
+            <Campo
+              label="SUFRAMA"
+              value={`${String(p['suframa'])}${
+                p['suframa_aplicado']
+                  ? " · Zona Franca de Manaus (sem PIS/COFINS e IPI)"
+                  : ` · ${String(p['suframa_situacao'] ?? "sem benefício")}`
+              }`}
+            />
+          ) : null}
           <Campo
             label="Finalidade de uso"
             value={
