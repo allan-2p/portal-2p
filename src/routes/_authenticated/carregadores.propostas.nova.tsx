@@ -439,6 +439,9 @@ function PropostaCarregadoresPage() {
         ie_situacao: e.ie_situacao ?? "",
         ie_habilitada: e.ie_habilitada === true,
         contribuinte: contribuinteDeEnrich({ ...e, doc } as never),
+        // SUFRAMA do cliente final: o benefício acompanha o destinatário da NF.
+        suframa: e.suframa ?? "",
+        suframa_situacao: e.suframa_situacao ?? "",
         cep: e.cep ?? state.faturamento.cep,
         logradouro: e.logradouro ?? state.faturamento.logradouro,
         numero: e.numero ?? state.faturamento.numero,
@@ -708,16 +711,24 @@ function PropostaCarregadoresPage() {
     );
   }, [clientesQ.data, state.doc]);
 
-  const suframaStatus = useMemo(
-    () =>
-      statusSuframa({
+  // Faturando o cliente final, quem vale é o SUFRAMA DELE (a NF sai no nome
+  // dele). Sem faturamento direto, vale o do cliente do cadastro.
+  const suframaFonte = state.faturarClienteFinal
+    ? {
+        doc: state.faturamento.doc,
+        suframa: (state.faturamento as Record<string, unknown>)['suframa'],
+        suframa_situacao: (state.faturamento as Record<string, unknown>)['suframa_situacao'],
+      }
+    : {
         doc: state.doc,
         suframa: clienteCadastro?.suframa,
         suframa_situacao: clienteCadastro?.suframa_situacao,
-      }),
-    [clienteCadastro, state.doc],
+      };
+  const suframaStatus = useMemo(
+    () => statusSuframa(suframaFonte),
+    [suframaFonte.doc, suframaFonte.suframa, suframaFonte.suframa_situacao],
   );
-  const suframaAtivo = suframaStatus === "aprovado" && !state.faturarClienteFinal;
+  const suframaAtivo = suframaStatus === "aprovado";
 
   useEffect(() => {
     setState((s) => (s.suframa === suframaAtivo ? s : { ...s, suframa: suframaAtivo }));
@@ -1796,9 +1807,9 @@ function PropostaCarregadoresPage() {
               <>
                 <SuframaBanner
                   status={suframaStatus}
-                  inscricao={clienteCadastro?.suframa ?? null}
-                  situacao={clienteCadastro?.suframa_situacao ?? null}
-                  faturarClienteFinal={state.faturarClienteFinal}
+                  inscricao={(suframaFonte.suframa as string) ?? null}
+                  situacao={(suframaFonte.suframa_situacao as string) ?? null}
+                  clienteFinal={state.faturarClienteFinal}
                 />
                 <Field label="Nome da proposta *">
                   <Input

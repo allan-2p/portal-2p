@@ -424,12 +424,18 @@ function NovaPropostaSolarPage() {
     cfgQ,
   ].some((q) => q.isLoading);
   const cliente = (clientesQ.selecionado ?? null) as ClienteCad | null;
-  // Zona Franca de Manaus: só o cadastro do cliente define (consulta do CNPJ).
-  const suframaStatus = statusSuframa({
-    doc: (cliente as Record<string, unknown> | null)?.['doc'],
-    suframa: (cliente as Record<string, unknown> | null)?.['suframa'],
-    suframa_situacao: (cliente as Record<string, unknown> | null)?.['suframa_situacao'],
-  });
+  // Zona Franca de Manaus: vale o SUFRAMA de quem recebe a nota — o cliente do
+  // cadastro ou, no faturamento direto, o cliente final consultado pelo CNPJ.
+  const clienteRec = cliente as Record<string, unknown> | null;
+  const suframaFonte = faturarClienteFinal
+    ? { doc: fat['doc'], suframa: fat['suframa'], suframa_situacao: fat['suframa_situacao'] }
+    : {
+        doc: clienteRec?.['doc'],
+        suframa: clienteRec?.['suframa'],
+        suframa_situacao: clienteRec?.['suframa_situacao'],
+      };
+  const suframaStatus = statusSuframa(suframaFonte);
+
   // Boleto a prazo depende de condição cadastrada no cliente + crédito aprovado.
   const prazo = usePrazoLiberado(String((clientesQ.selecionado as any)?.["doc"] ?? clienteDoc ?? ""));
   useEffect(() => {
@@ -1331,6 +1337,9 @@ function NovaPropostaSolarPage() {
         nome: e.razao_social ?? p['nome'] ?? "",
         ie: e.ie ?? p['ie'] ?? "",
         ie_situacao: e.ie_situacao ?? "",
+        // SUFRAMA do cliente final: o benefício acompanha o destinatário da NF.
+        suframa: e.suframa ?? "",
+        suframa_situacao: e.suframa_situacao ?? "",
         cep: e.cep ?? p['cep'] ?? "",
         logradouro: e.logradouro ?? p['logradouro'] ?? "",
         numero: e.numero ?? p['numero'] ?? "",
@@ -1991,9 +2000,9 @@ function NovaPropostaSolarPage() {
           <section className="glass rounded-2xl p-5 space-y-4">
             <SuframaBanner
               status={suframaStatus}
-              inscricao={((cliente as Record<string, unknown> | null)?.['suframa'] as string) ?? null}
-              situacao={((cliente as Record<string, unknown> | null)?.['suframa_situacao'] as string) ?? null}
-              faturarClienteFinal={faturarClienteFinal}
+              inscricao={(suframaFonte.suframa as string) ?? null}
+              situacao={(suframaFonte.suframa_situacao as string) ?? null}
+              clienteFinal={faturarClienteFinal}
             />
             <div className="grid gap-4 md:grid-cols-2">
               <Campo label="Nome da proposta *">

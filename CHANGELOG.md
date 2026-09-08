@@ -42,7 +42,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   bloqueada/impedida, com aviso de que faturar direto ao cliente final faz o benefício
   ser perdido. Na venda com benefício, não incidem PIS/COFINS nem IPI, materiais
   importados ficam com ICMS de 4% e nacionais ficam isentos. A informação aparece também
-  no detalhe do pedido e nos PDFs.
+  no detalhe do pedido e nos PDFs. No faturamento direto para o cliente final (CNPJ), vale
+  a inscrição SUFRAMA dele: se estiver ativa, o destaque e o benefício continuam valendo.
 
 ### Banco de dados
 

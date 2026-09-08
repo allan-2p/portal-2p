@@ -326,6 +326,8 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const { suframaDoCliente } = await import("./suframa.server");
     const suframa = await suframaDoCliente(data.cliente.doc, {
       faturarClienteFinal: data.faturarClienteFinal,
+      // A NF sai contra o cliente final: vale o SUFRAMA dele.
+      faturamento: (data.faturamento ?? null) as Record<string, unknown> | null,
     });
 
     const { precos, avisos, fallback, aliquotas } = await precosSolar(
