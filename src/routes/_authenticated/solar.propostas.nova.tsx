@@ -3642,6 +3642,9 @@ function SeletorPesquisavel({
     passo: 40,
     chave: `${remoto ? busca ?? "" : termoLocal}`,
   });
+  // Na busca remota a paginação é do servidor: mostrar tudo que já veio,
+  // senão a lista fica presa nos 40 primeiros mesmo após "carregar mais".
+  const visiveis = remoto ? filtradas : lista.visiveis;
   const sentinelaRemota = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!remoto || !temMaisRemoto || !onCarregarMais) return;
