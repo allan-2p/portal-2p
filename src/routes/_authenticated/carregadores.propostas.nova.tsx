@@ -2099,7 +2099,16 @@ function PropostaCarregadoresPage() {
                           </span>
                         </span>
                         <Switch checked={state.faturamento.contribuinte} disabled />
-                      </div>
+                       </div>
+                       {state.faturarClienteFinal && !faturamentoEhCpf ? (
+                         <SuframaBanner
+                           className="md:col-span-2 lg:col-span-3"
+                           status={suframaStatus}
+                           inscricao={(suframaFonte.suframa as string) ?? null}
+                           situacao={(suframaFonte.suframa_situacao as string) ?? null}
+                           clienteFinal
+                         />
+                       ) : null}
                       <Field label="CEP">
                         <CepInput
                           value={state.faturamento.cep}
