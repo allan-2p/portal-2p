@@ -208,6 +208,13 @@ function TarefasPage() {
     });
   }, [tasksQuery.data, busca, ordem]);
 
+  const { pageItens: listaPagina, props: paginacao } = usePaginacao(
+    listaFiltrada,
+    25,
+    `${busca}|${ordem}|${ownerId}|${year}-${month}`,
+  );
+
+
   const cells: Array<{ date: Date; key: string } | null> = [];
   for (let i = 0; i < startOffset; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
