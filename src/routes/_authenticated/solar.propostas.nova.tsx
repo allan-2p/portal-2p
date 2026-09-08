@@ -2100,7 +2100,14 @@ function NovaPropostaSolarPage() {
                           // Trocar o tipo zera o documento e tudo que veio da
                           // consulta: senão um CNPJ digitado sobra no campo CPF
                           // e trava o "Próximo" com "CPF inválido".
-                          setFat((p) => ({ ...p, doc: "", nome: "", ie: "" }));
+                          setFat((p) => ({
+                            ...p,
+                            doc: "",
+                            nome: "",
+                            ie: "",
+                            suframa: "",
+                            suframa_situacao: "",
+                          }));
                           fatConsultaRef.current = null;
                           setFatConsultadoDoc(null);
                           setFatIeHabilitada(null);
@@ -2135,7 +2142,13 @@ function NovaPropostaSolarPage() {
                             setFatIeHabilitada(null);
                             setFatContribuinte(false);
                           }
-                          setFat((p) => ({ ...p, doc: novoDoc }));
+                          setFat((p) => ({
+                            ...p,
+                            doc: novoDoc,
+                            ...(fatConsultaRef.current === null
+                              ? { suframa: "", suframa_situacao: "" }
+                              : {}),
+                          }));
                         }}
                       />
                       {fatTipoDoc === "cnpj" && (

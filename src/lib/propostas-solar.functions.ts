@@ -55,6 +55,20 @@ export type SalvarPropostaSolarInput = {
 
 const money2 = (v: unknown) => Math.round((Number(v) || 0) * 100) / 100;
 
+export function normalizarFaturamentoSolar(input: unknown): Record<string, string | boolean> {
+  const faturamentoEntrada = (input ?? {}) as Record<string, unknown>;
+  const campos = [
+    "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "contato", "telefone",
+    "doc", "nome", "ie", "consulta_fiscal_doc", "suframa", "suframa_situacao",
+  ];
+  const faturamento: Record<string, string | boolean> = {};
+  for (const campo of campos) faturamento[campo] = String(faturamentoEntrada[campo] ?? "").slice(0, 160);
+  faturamento['contribuinte'] = !!faturamentoEntrada['contribuinte'];
+  if (typeof faturamentoEntrada['ie_habilitada'] === "boolean")
+    faturamento['ie_habilitada'] = faturamentoEntrada['ie_habilitada'];
+  return faturamento;
+}
+
 /** Material do kit gerador fotovoltaico injetado quando o kit está ativo. */
 export const KIT_FOTOVOLTAICO_MATERIAL = "200000691";
 const normCod = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
@@ -101,14 +115,9 @@ function validar(input: unknown): SalvarPropostaSolarInput {
   if (i.entregaDiferente && (!entrega['logradouro'] || !entrega['cidade']))
     throw new Error("Informe o endereço de entrega.");
 
-  const faturamento: Record<string, string | boolean> = {};
-  for (const c of [...campos, "doc", "nome", "ie", "consulta_fiscal_doc"])
-    faturamento[c] = String(i.faturamento?.[c] ?? "").slice(0, 160);
-  faturamento['contribuinte'] = !!i.faturamento?.contribuinte;
-  // A decisão fiscal da consulta é booleana e precisa atravessar o validador —
-  // sem ela a guarda abaixo rejeitaria toda proposta faturada a CNPJ.
-  if (typeof i.faturamento?.['ie_habilitada'] === "boolean")
-    faturamento['ie_habilitada'] = i.faturamento['ie_habilitada'];
+  // Mantém junto do CNPJ a decisão fiscal consultada, inclusive SUFRAMA, para
+  // que reabrir a proposta não obrigue uma nova validação.
+  const faturamento = normalizarFaturamentoSolar(i.faturamento);
 
   // Finalidade de uso: no Solar só é exigida quando o pedido fatura o cliente
   // final — é ele que entra como parceiro no SAP e define CFOP/IE. Aceita tanto
