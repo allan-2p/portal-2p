@@ -246,10 +246,10 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .hmeta b{ color:#fff; font-weight:600; }
   .accentbar{ height:3px; background:linear-gradient(90deg,var(--accent),var(--accent-2),rgba(47,107,255,.1)); }
 
-  .body{ padding:7mm 14mm 0; }
+  .body{ padding:6mm 14mm 0; }
 
   /* SECTIONS */
-  .sec{ margin-top:6mm; }
+  .sec{ margin-top:5mm; }
   .sec:first-child{ margin-top:0; }
   .sech{ display:flex; align-items:center; gap:7px; margin-bottom:3mm; }
   .sech span{ font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); font-weight:600; white-space:nowrap; }
@@ -290,7 +290,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   tfoot td{ padding:6px 5px; font-size:9px; color:var(--muted); }
 
   /* TWO COL */
-  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; margin-top:6mm; }
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; margin-top:5mm; }
   .panel{ border:1px solid var(--line); border-radius:9px; overflow:hidden; }
   .panel h4{ font-size:7.8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-weight:600;
     padding:3mm 4mm; border-bottom:1px solid var(--line); background:var(--soft); }
@@ -301,7 +301,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .rate{ font-size:7.6px; color:var(--muted); margin-left:4px; }
 
   /* TOTAL */
-  .total{ margin-top:6mm; background:linear-gradient(120deg,#060B18 0%,#0E1B38 60%,#14265A 100%); color:#fff; border-radius:11px; padding:5mm 6mm;
+  .total{ margin-top:5mm; background:linear-gradient(120deg,#060B18 0%,#0E1B38 60%,#14265A 100%); color:#fff; border-radius:11px; padding:5mm 6mm;
     display:flex; justify-content:space-between; align-items:center; position:relative; overflow:hidden; }
   .total:after{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--accent),var(--accent-2)); }
   .total .lbl{ font-size:7.8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,255,255,.55); font-weight:600; }
@@ -310,13 +310,13 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .total .val small{ display:block; font-size:7.6px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--accent-2); margin-bottom:2px; }
 
   /* CONDITIONS */
-  .cond{ margin-top:6mm; display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; }
+  .cond{ margin-top:5mm; display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; }
   .cond div{ border-left:2px solid var(--accent); padding-left:3mm; }
   .cond label{ display:block; font-size:7.2px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:2px; }
   .cond p{ font-size:8.8px; line-height:1.45; }
 
   /* FOOTER */
-  .foot{ margin-top:8mm; padding:4mm 14mm 0; border-top:1px solid var(--line);
+  .foot{ margin-top:5mm; padding:3mm 14mm 0; border-top:1px solid var(--line);
     display:flex; justify-content:space-between; align-items:center; font-size:7.6px; color:var(--muted); letter-spacing:.05em; }
   .foot b{ color:var(--accent); font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
 
