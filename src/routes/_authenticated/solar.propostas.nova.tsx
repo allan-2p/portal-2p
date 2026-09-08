@@ -3683,7 +3683,7 @@ function SeletorPesquisavel({
           <CommandList>
             <CommandEmpty>{carregando ? "Buscando..." : vazio}</CommandEmpty>
 
-            {lista.visiveis.map((opcao) => (
+            {visiveis.map((opcao) => (
               <CommandItem
                 key={opcao.value}
                 value={opcao.label}
