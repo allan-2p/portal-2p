@@ -502,10 +502,12 @@ function TarefasPage() {
             )}
 
             <div className="flex flex-col gap-2">
-              {listaFiltrada.map((t) => (
+              {listaPagina.map((t) => (
                 <CardTarefa key={t.id} t={t} />
               ))}
             </div>
+            <Paginacao {...paginacao} />
+
           </div>
         ) : (
           <div className="glass rounded-2xl overflow-hidden">
