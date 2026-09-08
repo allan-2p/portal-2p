@@ -406,6 +406,8 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
     const { suframaDoCliente } = await import("./suframa.server");
     const suframa = await suframaDoCliente(data.cliente.doc, {
       faturarClienteFinal: data.faturarClienteFinal,
+      // A NF sai contra o cliente final: vale o SUFRAMA dele.
+      faturamento: (data.faturamento ?? null) as Record<string, unknown> | null,
     });
     state.suframa = suframa.aplicado;
 
