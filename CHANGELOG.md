@@ -44,6 +44,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   importados ficam com ICMS de 4% e nacionais ficam isentos. A informação aparece também
   no detalhe do pedido e nos PDFs. No faturamento direto para o cliente final (CNPJ), vale
   a inscrição SUFRAMA dele: se estiver ativa, o destaque e o benefício continuam valendo.
+  O bloco "Faturado para (cliente final)" do resumo do pedido (Solar e Carregadores) e do
+  detalhe da proposta (olhinho) passa a exibir a inscrição SUFRAMA e o destaque de Zona
+  Franca de Manaus/impedimento do cliente final.
 
 ### Banco de dados
 
