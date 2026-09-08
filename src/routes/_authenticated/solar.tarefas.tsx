@@ -212,7 +212,7 @@ function TarefasPage() {
 
   const { pageItens: listaPagina, props: paginacao } = usePaginacao(
     listaFiltrada,
-    25,
+    10,
     `${busca}|${ordem}|${ownerId}|${year}-${month}`,
   );
 
