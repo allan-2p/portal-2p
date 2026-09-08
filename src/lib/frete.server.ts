@@ -10,7 +10,7 @@ import {
   ORIGEM,
   aplicarRegras,
   carregarFreteRegras,
-  detectarTrilho,
+  detectarTrilhos,
   filtraFretes,
   normalizarCodigo,
   type ContextoFrete,
@@ -83,7 +83,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
 
   const codigosCarrinho = data.itens.map((i) => normalizarCodigo(i.codigo));
   const nomesCarrinho = data.itens.map((i) => String(i.nome ?? ""));
-  const codigoTrilho = detectarTrilho(codigosCarrinho);
+  const codigosTrilho = detectarTrilhos(codigosCarrinho);
 
   const destino: Record<string, unknown> = {
     uf: data.destino.uf,
@@ -92,7 +92,7 @@ export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFre
     cubagem,
     peso,
   };
-  if (codigoTrilho) destino["codigoProdutos"] = [codigoTrilho];
+  if (codigosTrilho.length) destino["codigoProdutos"] = codigosTrilho;
 
   const body: Record<string, unknown> = {
     modalidade: 3,
