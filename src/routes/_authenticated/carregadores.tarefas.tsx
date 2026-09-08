@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PermissionGate } from "@/components/permission-gate";
+import { Paginacao, usePaginacao } from "@/components/paginacao";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/tarefas")({
   head: () => ({
