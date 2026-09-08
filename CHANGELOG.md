@@ -477,3 +477,5 @@ Primeira versão consolidada do portal em produção (`portal.2pgroup.app`).
   Itaú (Pix/Boleto), Salesforce, Fretefy, SharePoint/Graph, consulta CNPJ/CPF.
 
 - Estimativa de entrega (e demais datas) exibidas em formato americano em alguns casos: formatação pt-BR agora é feita manualmente, sem depender do Intl do runtime.
+
+- Venda SUFRAMA: preço do item passa a sair do valor líquido do SAP com o ICMS da operação recomposto "por dentro" (4% importado, alíquota interestadual nos nacionais), sem IPI e sem PIS/COFINS — igual à planilha oficial.
