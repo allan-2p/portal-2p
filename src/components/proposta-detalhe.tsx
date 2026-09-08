@@ -664,15 +664,13 @@ function Campo({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="font-medium break-words sm:truncate text-primary hover:underline"
+      className="font-medium break-words text-primary hover:underline"
       title={`${value} — abrir no WhatsApp`}
     >
       {value}
     </a>
   ) : (
-    <div className="font-medium break-words sm:truncate" title={value}>
-      {value}
-    </div>
+    <div className="font-medium break-words">{value}</div>
   );
   return (
     <div className="min-w-0">
