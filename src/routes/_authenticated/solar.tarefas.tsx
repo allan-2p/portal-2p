@@ -47,6 +47,8 @@ import {
 import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
+import { Paginacao, usePaginacao } from "@/components/paginacao";
+
 import {
   CompleteTaskDialog,
   InteractionQuickDialog,
