@@ -106,7 +106,9 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
     })),
     freteMod: txt(p['frete_mod']) || "—",
     fretePrazo: p['frete_prazo'] == null ? null : num(p['frete_prazo']),
+    transportadora: txt(p['transportadora']) || null,
     freteValor: frete,
+
     // Grátis só por marcação no pedido ou cupom — modalidade CIF/DEDICADO
     // por si só NÃO torna o frete grátis.
     freteGratis: p['frete_gratis'] === true || totais['freteGratis'] === true,

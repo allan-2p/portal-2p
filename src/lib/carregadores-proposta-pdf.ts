@@ -425,7 +425,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
 
     <div class="cond">
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
-      <div><label>Prazo de entrega</label><p>${esc(textoPrazoEntrega(p.fretePrazo, p.freteMod))}</p></div>
+      <div><label>Prazo de entrega</label><p>${esc(textoPrazoEntrega(p.fretePrazo, p.freteMod))}${p.transportadora ? ` · ${esc(p.transportadora)}` : ""}</p></div>
       <div><label>Condições</label><p>Valores em reais, impostos conforme legislação vigente em ${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}.</p></div>
       <div><label>Forma de pagamento</label><p>${esc(p.formaPagamento) || "—"}</p></div>
     </div>
