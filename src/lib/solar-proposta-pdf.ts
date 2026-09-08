@@ -41,6 +41,9 @@ export type SolarPropostaPdfData = {
     uf?: string | null;
     cidade?: string | null;
   };
+  /** Venda para a Zona Franca de Manaus (inscrição SUFRAMA aprovada). */
+  suframa?: string | null;
+  suframaAplicado?: boolean | null;
   consultor?: string | null;
   itens: SolarPdfItem[];
   subtotal: number;
