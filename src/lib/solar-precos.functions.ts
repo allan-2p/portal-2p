@@ -72,7 +72,9 @@ function validar(input: unknown): PrecoSolarInput {
     kitFotovoltaico: i.kitFotovoltaico === true,
     // O benefício vale para o destinatário da nota: faturando ao cliente final
     // (outro destinatário) ele se perde.
-    suframa: i.suframa === true && i.faturarClienteFinal !== true,
+    // Faturando o cliente final, o SUFRAMA avaliado é o dele — a tela já manda
+    // o resultado dessa verificação; o salvamento reconfirma no servidor.
+    suframa: i.suframa === true,
   };
 }
 
