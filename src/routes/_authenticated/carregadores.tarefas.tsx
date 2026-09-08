@@ -88,7 +88,7 @@ function CarregadoresTarefas() {
 
   const { pageItens: rowsPagina, props: paginacao } = usePaginacao(
     rows,
-    25,
+    10,
     `${filter}|${vendedor}`,
   );
 

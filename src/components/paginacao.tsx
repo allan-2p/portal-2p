@@ -13,7 +13,7 @@ import {
  * Paginação simples e reaproveitável para listas grandes (tarefas, etc).
  * Mantém a página válida quando a lista muda de tamanho ou de filtro.
  */
-export function usePaginacao<T>(itens: T[], porPaginaInicial = 25, chaveReset?: unknown) {
+export function usePaginacao<T>(itens: T[], porPaginaInicial = 10, chaveReset?: unknown) {
   const [porPagina, setPorPagina] = useState(porPaginaInicial);
   const [pagina, setPagina] = useState(1);
 
