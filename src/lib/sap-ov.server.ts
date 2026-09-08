@@ -20,6 +20,7 @@
 
 import { XMLParser } from "fast-xml-parser";
 import { tpOvDoPedido, contribuinteDoFaturamento } from "./sap-tp-ov";
+import { pltypDaTabela } from "./sap-clientes-map";
 import * as db from "./propostas-db.server";
 import { logIntegrationEvent } from "./integration-logs.server";
 import { simularPrecosSap } from "./sap-precos.server";
@@ -277,6 +278,15 @@ function observacoes(row: Record<string, any>): string[] {
   if (transp) obs.push(`Transportadora: ${transp} (${String(row["frete_mod"] ?? "").toUpperCase()})`);
 
   if (row["kit_fotovoltaico"]) obs.push("PEDIDO KIT FOTOVOLTAICO");
+  if (row["suframa_aplicado"]) {
+    const insc = String(row["suframa"] ?? "").trim();
+    obs.push(
+      `VENDA ZONA FRANCA DE MANAUS - SUFRAMA${insc ? ` ${insc}` : ""} - SEM PIS/COFINS, SEM IPI, ICMS 4% IMPORTADOS E ISENTO NACIONAIS`,
+    );
+  }
+  const totaisObs = (row["totais"] ?? {}) as Record<string, any>;
+  const listaObs = String(row["lista_preco"] ?? totaisObs["listaPreco"] ?? "").trim();
+  if (listaObs) obs.push(`Tabela de preço da proposta: ${pltypDaTabela(listaObs)}`);
   if (row["frete_bonificado"])
     obs.push(`FRETE BONIFICADO - valor R$ ${Number(row["frete_valor"] ?? 0).toFixed(2)} por conta da 2P`);
 
@@ -284,7 +294,7 @@ function observacoes(row: Record<string, any>): string[] {
   return obs.flatMap((o) => String(o).match(/.{1,130}/g) ?? []).slice(0, 20);
 }
 
-function parceiro(role: "AG" | "CL" | "ZT", doc: string, nome: string) {
+function parceiro(role: "AG" | "CL" | "ZT", doc: string, nome: string, pltyp = "01") {
   const d = digitos(doc);
   // Documento pode chegar sem o zero à esquerda (13 dígitos): o SAP exige
   // 14 posições no CNPJ e 11 no CPF, senão não encontra o parceiro.
@@ -313,10 +323,23 @@ function parceiro(role: "AG" | "CL" | "ZT", doc: string, nome: string) {
     `<NUMERO></NUMERO>` +
     `<COMPLEMENTO></COMPLEMENTO>` +
     `<KUNNR></KUNNR>` +
-    `<PLTYP>01</PLTYP>` +
+    `<PLTYP>${esc(pltyp)}</PLTYP>` +
     `</item>`
   );
 }
+
+/**
+ * Tabela de preço (PLTYP) da proposta. Era fixa em "01": o SAP reprecificava
+ * a ordem no varejo mesmo quando a proposta foi fechada em outra tabela
+ * (pedido 60350 / OV 17805 fechou na tabela 03 e saiu no SAP pela 01).
+ */
+function pltypDaProposta(row: Record<string, any>): string {
+  const totais = (row["totais"] ?? {}) as Record<string, any>;
+  const bruto =
+    String(row["lista_preco"] ?? "").trim() || String(totais["listaPreco"] ?? "").trim();
+  return bruto ? pltypDaTabela(bruto) : "01";
+}
+
 
 
 type Peso = { bruto: number; liquido: number };
@@ -610,15 +633,16 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
 
   const docCliente = docSap(row["cliente_doc"]);
   const nomeCliente = String(row["cliente_nome"] ?? "");
+  const pltyp = pltypDaProposta(row);
   const emissor =
     row["faturar_cliente_final"] && digitos((row["faturamento"] ?? {})["doc"])
-      ? parceiro("AG", (row["faturamento"] ?? {})["doc"], (row["faturamento"] ?? {})["nome"] ?? nomeCliente)
-      : parceiro("AG", docCliente, nomeCliente);
+      ? parceiro("AG", (row["faturamento"] ?? {})["doc"], (row["faturamento"] ?? {})["nome"] ?? nomeCliente, pltyp)
+      : parceiro("AG", docCliente, nomeCliente, pltyp);
 
   // Transportadora escolhida (CIF ou dedicado) entra na OV como parceiro ZT.
   const docTransp = digitos(row["transportadora_documento"]);
   const transportadoraParceiro = docTransp
-    ? parceiro("ZT", docTransp, String(row["transportadora"] ?? ""))
+    ? parceiro("ZT", docTransp, String(row["transportadora"] ?? ""), pltyp)
     : "";
 
   const obs = observacoes(row)
@@ -706,7 +730,7 @@ function envelope(row: Record<string, any>, peso: Peso, testrun: boolean): strin
       <T_PAGTO>${parcelas}</T_PAGTO>
       <T_PARCEIRO>
         ${emissor}
-        ${parceiro("CL", docCliente, nomeCliente)}
+        ${parceiro("CL", docCliente, nomeCliente, pltyp)}
         ${transportadoraParceiro}
       </T_PARCEIRO>
     </n0:ZNFE_OV_CRIAR>
