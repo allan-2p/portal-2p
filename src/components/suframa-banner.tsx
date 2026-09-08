@@ -13,13 +13,14 @@ export function SuframaBanner({
   status,
   inscricao,
   situacao,
-  faturarClienteFinal,
+  clienteFinal,
   className,
 }: {
   status: StatusSuframa;
   inscricao?: string | null;
   situacao?: string | null;
-  faturarClienteFinal?: boolean;
+  /** A nota sai contra o cliente final: o SUFRAMA avaliado é o dele. */
+  clienteFinal?: boolean;
   className?: string;
 }) {
   if (status === "sem") return null;
@@ -32,7 +33,9 @@ export function SuframaBanner({
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 size-5 shrink-0" />
           <div className="space-y-1">
-            <p className="font-semibold">Inscrição SUFRAMA com impedimento</p>
+            <p className="font-semibold">
+              Inscrição SUFRAMA {clienteFinal ? "do cliente final " : ""}com impedimento
+            </p>
             <p className="text-sm">
               {inscricao ? `Inscrição ${inscricao} — ` : ""}
               {situacao || "situação não aprovada"}. A proposta segue como venda normal, com todos
@@ -54,11 +57,11 @@ export function SuframaBanner({
             {inscricao ? `Inscrição ${inscricao}` : "Inscrição aprovada"}
             {situacao ? ` · ${situacao}` : ""}. {SUFRAMA_BENEFICIOS}
           </p>
-          {faturarClienteFinal ? (
+          {clienteFinal ? (
             <p className="flex items-start gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
               <Info className="mt-0.5 size-4 shrink-0" />
-              Faturando direto para o cliente final, o benefício da Zona Franca é perdido e a
-              proposta volta a ter todos os impostos.
+              A nota sai direto para o cliente final: o benefício segue valendo porque a inscrição
+              SUFRAMA avaliada é a dele. Trocar o destinatário refaz essa verificação.
             </p>
           ) : null}
         </div>
