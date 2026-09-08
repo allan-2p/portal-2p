@@ -197,7 +197,7 @@ function CarregadoresTarefas() {
             {!isLoading && rows.length === 0 && (
               <div className="p-6 text-sm text-muted-foreground text-center">Nenhuma tarefa por aqui.</div>
             )}
-            {rows.map((t) => {
+            {rowsPagina.map((t) => {
               const prio = PRIOS.find((p) => p.v === t.prioridade) ?? PRIOS[1];
               return (
                 <div key={t.id} className="flex items-center gap-3 p-3">
