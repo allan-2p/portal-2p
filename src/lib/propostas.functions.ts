@@ -386,6 +386,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       freteMod: data.freteMod as CarregadoresState["freteMod"],
       freteAreaRural: data.freteAreaRural,
       freteBonificado: data.freteBonificado,
+      entregaLoteId: data.entregaLoteId ?? "",
       freteValor: data.freteValor,
       transportadora: data.transportadora,
 
