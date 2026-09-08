@@ -131,6 +131,12 @@ export type SalesforceTask = {
   type: string | null;
   owner: string | null;
   ownerId: string | null;
+  /** Nome do contato/cliente diretamente vinculado à tarefa. */
+  clientName?: string | null;
+  /** Razão social da conta vinculada. */
+  corporateName?: string | null;
+  /** Nome fantasia da conta vinculada. */
+  tradeName?: string | null;
   /** Segmentação Solar da conta vinculada (só existe para clientes/contas). */
   segment?: "A" | "B" | "C" | "D" | null;
   /** true quando o vínculo é um Lead (não possui segmentação). */
@@ -171,6 +177,9 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
       whatId: r.WhatId ?? null,
       owner: r.Owner?.Name ?? null,
       ownerId: r.OwnerId ?? null,
+      clientName: r.Who?.Name ?? r.What?.Name ?? null,
+      corporateName: String(r.WhatId ?? "").startsWith("001") ? r.What?.Name ?? null : null,
+      tradeName: null,
       segment: null,
       isLead: String(r.WhoId ?? "").startsWith("00Q") || String(r.WhatId ?? "").startsWith("00Q"),
     }));
@@ -183,10 +192,18 @@ export const getSalesforceTasks = createServerFn({ method: "GET" })
     );
     if (accountIds.length) {
       try {
-        const { fetchAccountSegments } = await import("@/lib/accounts-db.server");
-        const segByAccount = await fetchAccountSegments("solar", accountIds);
+        const { fetchAccountSegments, fetchAccountTaskSearchNames } = await import("@/lib/accounts-db.server");
+        const [segByAccount, namesByAccount] = await Promise.all([
+          fetchAccountSegments("solar", accountIds),
+          fetchAccountTaskSearchNames("solar", accountIds),
+        ]);
         for (const t of records) {
           if (t.whatId && segByAccount.has(t.whatId)) t.segment = segByAccount.get(t.whatId) ?? null;
+          const names = t.whatId ? namesByAccount.get(t.whatId) : null;
+          if (names) {
+            t.corporateName = names.razaoSocial ?? t.corporateName;
+            t.tradeName = names.nomeFantasia;
+          }
         }
       } catch {
         // segmentação é informação de apoio: falha aqui não deve derrubar a agenda
