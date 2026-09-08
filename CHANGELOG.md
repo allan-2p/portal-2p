@@ -38,6 +38,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 ### Adicionado
 - **Visão Geral de Carregadores com custo e resultado**: cada pedido mostra valor dos produtos, valor da NF, frete, margem e comissão total (com detalhamento por tipo: consultor, indicação, representante — os dois últimos zerados até existirem). Totais por mês e total geral no rodapé; clicar no pedido abre o detalhe. Saíram as colunas Nº SAP e nome da proposta.
 - **Lote de chegada obrigatório no fechamento (Carregadores)**: ao concluir o pedido o consultor escolhe mês de referência e lote da mercadoria; a lista de lotes é mantida em Moderação › 2P Carregadores › Lotes de Entrega.
+- **Correção** — Corrigido o erro ao salvar propostas do 2P Carregadores: o banco de propostas não tinha os campos de mês/lote de entrega (`supabase/external/propostas-entrega-lote.sql`).
 
 ### Alterado
 - **Proposta de Carregadores sem margem/comissão**: no resumo, na revisão final e no detalhe do pedido aparecem apenas os impostos; margem e comissão ficam na Visão Geral.
