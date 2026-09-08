@@ -42,6 +42,9 @@ export type CotarFreteResultado = {
   cubagem: number;
   valorNotaFinal: number;
   trilho: string | null;
+  /** Todos os trilhos do carrinho — base dos bloqueios e adicionais (TDE). */
+  trilhos?: string[];
+
 };
 
 export async function cotarFreteFretefy(data: CotarFreteInput): Promise<CotarFreteResultado> {
