@@ -148,10 +148,9 @@ export function aplicarRegras(
       ctx.unidade !== "carregadores" &&
       cnpj === alvo &&
       regra?.ativa !== false &&
-      (() => {
-        const trilho = detectarTrilho(ctx.codigosCarrinho);
-        return !!trilho && (regra?.trilhos ?? []).includes(trilho);
-      })()
+      // Qualquer trilho do carrinho dispara o adicional — uma vez por envio.
+      detectarTrilhos(ctx.codigosCarrinho).some((t) => (regra?.trilhos ?? []).includes(t))
+
     ) {
       total += regra?.adicional ?? 0;
       ajustes.push(`TDE ${nome}: +${regra?.adicional ?? 0}`);
