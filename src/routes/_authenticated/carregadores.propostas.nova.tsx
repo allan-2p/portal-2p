@@ -1292,6 +1292,10 @@ function PropostaCarregadoresPage() {
           contribuinte: state.contribuinte,
         },
         finalidadeUso: finalidadeUsoPdf,
+        suframa: String(suframaFonte.suframa ?? "") || null,
+        suframaSituacao: String(suframaFonte.suframa_situacao ?? "") || null,
+        suframaAplicado: suframaStatus === "aprovado",
+        suframaTitular: state.faturarClienteFinal ? "cliente_final" : "cliente",
         enderecoFaturamento: {
           nome: faturamentoEfetivo.nome || state.nome,
           doc: faturamentoEfetivo.doc || state.doc,

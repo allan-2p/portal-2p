@@ -43,7 +43,9 @@ export type SolarPropostaPdfData = {
   };
   /** Venda para a Zona Franca de Manaus (inscrição SUFRAMA aprovada). */
   suframa?: string | null;
+  suframaSituacao?: string | null;
   suframaAplicado?: boolean | null;
+  suframaTitular?: "cliente" | "cliente_final";
   consultor?: string | null;
   itens: SolarPdfItem[];
   subtotal: number;
@@ -115,6 +117,13 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   const validade = new Date(hoje.getTime() + (p.validadeDias ?? 15) * 86400000).toLocaleDateString("pt-BR");
   const numero = formatPropostaNumero(p.numero) || "—";
   const qtdTotal = p.itens.reduce((a, i) => a + i.qtd, 0);
+  const suframaHtml = p.suframa
+    ? `<div class="suframa ${p.suframaAplicado ? "ok" : "warn"}">
+        <div class="suframa-title">${p.suframaAplicado ? "Venda Zona Franca de Manaus" : "SUFRAMA com impedimento"}</div>
+        <div class="suframa-owner">Inscrição do ${p.suframaTitular === "cliente_final" ? "cliente final faturado" : "cliente da proposta"}: <b>${esc(p.suframa)}</b>${p.suframaSituacao ? ` · ${esc(p.suframaSituacao)}` : ""}</div>
+        <div class="suframa-rules">${p.suframaAplicado ? "Sem PIS/COFINS e IPI · ICMS de 4% em materiais importados · ICMS isento em materiais nacionais" : "Benefício fiscal não aplicado; proposta calculada com tributação normal."}</div>
+      </div>`
+    : "";
 
   /** Alíquota da linha em % (vazio quando o item não tem regra fiscal). */
   const pct = (v?: number | null) =>
@@ -239,6 +248,12 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
   .f label{ display:block; font-size:7px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; font-weight:700; }
   .f div{ font-size:9.2px; font-weight:500; word-break:break-word; line-height:1.45; }
   .soft{ color:var(--muted); }
+  .suframa{ margin-top:3.5mm; border:1.5px solid; border-left-width:4px; border-radius:7px; padding:3.2mm 4mm; break-inside:avoid; page-break-inside:avoid; }
+  .suframa.ok{ background:#ECFDF3; border-color:#16803C; color:#14532D; }
+  .suframa.warn{ background:#FFF7ED; border-color:#C2410C; color:#7C2D12; }
+  .suframa-title{ font-size:11px; font-weight:800; text-transform:uppercase; }
+  .suframa-owner{ margin-top:2px; font-size:9px; }
+  .suframa-rules{ margin-top:3px; font-size:8.5px; line-height:1.4; }
 
   table{ width:100%; border-collapse:collapse; }
   thead th{ font-size:7px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); font-weight:700;
@@ -319,11 +334,11 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
           <div class="f"><label>E-mail</label><div>${esc(p.cliente.email) || "—"}</div></div>
           <div class="f"><label>Telefone</label><div>${esc(p.cliente.telefone) || "—"}</div></div>
           <div class="f"><label>Cidade / UF</label><div>${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}</div></div>
-          ${p.suframaAplicado ? `<div class="f"><label>Zona Franca de Manaus</label><div>SUFRAMA ${esc(p.suframa ?? "")} — sem PIS/COFINS e IPI</div></div>` : ""}
           <div class="f"><label>Tipo de NF</label><div>${esc(p.tipoNf) || "—"}</div></div>
           <div class="f"><label>Forma de pagamento</label><div>${esc(p.formaPagamento ? (LABEL_PAGAMENTO[p.formaPagamento] ?? p.formaPagamento) : "") || "—"}</div></div>
         </div>
       </div>
+      ${suframaHtml}
     </div>
 
     ${

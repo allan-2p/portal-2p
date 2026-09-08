@@ -39,7 +39,9 @@ export type PropostaPdfData = {
   };
   /** Venda para a Zona Franca de Manaus (inscrição SUFRAMA aprovada). */
   suframa?: string | null;
+  suframaSituacao?: string | null;
   suframaAplicado?: boolean | null;
+  suframaTitular?: "cliente" | "cliente_final";
   /** Finalidade de uso herdada do cadastro do cliente (somente leitura). */
   finalidadeUso?: string | null;
   itens: PropostaPdfItem[];
@@ -194,6 +196,14 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
     </div>`
       : "";
 
+  const suframaHtml = p.suframa
+    ? `<div class="suframa ${p.suframaAplicado ? "ok" : "warn"}">
+        <div class="suframa-title">${p.suframaAplicado ? "Venda Zona Franca de Manaus" : "SUFRAMA com impedimento"}</div>
+        <div class="suframa-owner">Inscrição do ${p.suframaTitular === "cliente_final" ? "cliente final faturado" : "cliente da proposta"}: <b>${esc(p.suframa)}</b>${p.suframaSituacao ? ` · ${esc(p.suframaSituacao)}` : ""}</div>
+        <div class="suframa-rules">${p.suframaAplicado ? "Sem PIS/COFINS e IPI · ICMS de 4% em materiais importados · ICMS isento em materiais nacionais" : "Benefício fiscal não aplicado; proposta calculada com tributação normal."}</div>
+      </div>`
+    : "";
+
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
 <title>${esc(propostaPdfFileName({ ...p, numero }))}</title>
@@ -236,10 +246,10 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .hmeta b{ color:#fff; font-weight:600; }
   .accentbar{ height:3px; background:linear-gradient(90deg,var(--accent),var(--accent-2),rgba(47,107,255,.1)); }
 
-  .body{ padding:7mm 14mm 0; }
+  .body{ padding:6mm 14mm 0; }
 
   /* SECTIONS */
-  .sec{ margin-top:6mm; }
+  .sec{ margin-top:5mm; }
   .sec:first-child{ margin-top:0; }
   .sech{ display:flex; align-items:center; gap:7px; margin-bottom:3mm; }
   .sech span{ font-size:8px; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); font-weight:600; white-space:nowrap; }
@@ -256,6 +266,12 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; margin-top:4mm; }
   .f label{ display:block; font-size:7.2px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; font-weight:600; }
   .f div{ font-size:9.8px; font-weight:500; word-break:break-word; }
+  .suframa{ margin-top:4mm; border:1.5px solid; border-left-width:4px; border-radius:7px; padding:3.2mm 4mm; break-inside:avoid; page-break-inside:avoid; }
+  .suframa.ok{ background:#ECFDF3; border-color:#16803C; color:#14532D; }
+  .suframa.warn{ background:#FFF7ED; border-color:#C2410C; color:#7C2D12; }
+  .suframa-title{ font-size:11px; font-weight:800; text-transform:uppercase; }
+  .suframa-owner{ margin-top:2px; font-size:9px; }
+  .suframa-rules{ margin-top:3px; font-size:8.5px; line-height:1.4; }
 
   /* TABLE */
   table{ width:100%; border-collapse:collapse; }
@@ -274,7 +290,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   tfoot td{ padding:6px 5px; font-size:9px; color:var(--muted); }
 
   /* TWO COL */
-  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; margin-top:6mm; }
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; margin-top:5mm; }
   .panel{ border:1px solid var(--line); border-radius:9px; overflow:hidden; }
   .panel h4{ font-size:7.8px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-weight:600;
     padding:3mm 4mm; border-bottom:1px solid var(--line); background:var(--soft); }
@@ -285,7 +301,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .rate{ font-size:7.6px; color:var(--muted); margin-left:4px; }
 
   /* TOTAL */
-  .total{ margin-top:6mm; background:linear-gradient(120deg,#060B18 0%,#0E1B38 60%,#14265A 100%); color:#fff; border-radius:11px; padding:5mm 6mm;
+  .total{ margin-top:5mm; background:linear-gradient(120deg,#060B18 0%,#0E1B38 60%,#14265A 100%); color:#fff; border-radius:11px; padding:5mm 6mm;
     display:flex; justify-content:space-between; align-items:center; position:relative; overflow:hidden; }
   .total:after{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--accent),var(--accent-2)); }
   .total .lbl{ font-size:7.8px; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,255,255,.55); font-weight:600; }
@@ -294,13 +310,13 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
   .total .val small{ display:block; font-size:7.6px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--accent-2); margin-bottom:2px; }
 
   /* CONDITIONS */
-  .cond{ margin-top:6mm; display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; }
+  .cond{ margin-top:5mm; display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; }
   .cond div{ border-left:2px solid var(--accent); padding-left:3mm; }
   .cond label{ display:block; font-size:7.2px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:2px; }
   .cond p{ font-size:8.8px; line-height:1.45; }
 
   /* FOOTER */
-  .foot{ margin-top:8mm; padding:4mm 14mm 0; border-top:1px solid var(--line);
+  .foot{ margin-top:5mm; padding:3mm 14mm 0; border-top:1px solid var(--line);
     display:flex; justify-content:space-between; align-items:center; font-size:7.6px; color:var(--muted); letter-spacing:.05em; }
   .foot b{ color:var(--accent); font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
 
@@ -357,7 +373,6 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
           <div class="tag">${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}</div>
           <div class="tag ${p.cliente.contribuinte ? "on" : ""}">${p.cliente.contribuinte ? "Contribuinte ICMS" : "Não contribuinte"}</div>
           ${p.finalidadeUso ? `<div class="tag on">Finalidade: ${esc(p.finalidadeUso)}</div>` : ""}
-          ${p.suframaAplicado ? `<div class="tag on">Zona Franca de Manaus · SUFRAMA ${esc(p.suframa ?? "")}</div>` : ""}
         </div>
         <div class="grid">
           <div class="f"><label>CNPJ / CPF</label><div>${esc(p.cliente.doc) || "—"}</div></div>
@@ -367,6 +382,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
           <div class="f"><label>Finalidade de uso</label><div>${esc(p.finalidadeUso) || "—"}</div></div>
         </div>
       </div>
+      ${suframaHtml}
     </div>
 
     ${enderecosHtml}

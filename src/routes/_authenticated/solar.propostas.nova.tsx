@@ -89,7 +89,11 @@ import { statusSuframa } from "@/lib/suframa";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
 import { resolverProduto } from "@/lib/solar-sku";
 import { pltypDaTabela } from "@/lib/sap-clientes-map";
-import { buildSolarPropostaPdfHtml, solarPropostaPdfFileName } from "@/lib/solar-proposta-pdf";
+import {
+  buildSolarPropostaPdfHtml,
+  solarPropostaPdfFileName,
+  type SolarPropostaPdfData,
+} from "@/lib/solar-proposta-pdf";
 import {
   useSolarCalcConfig,
   useSolarCupons,
@@ -1830,7 +1834,7 @@ function NovaPropostaSolarPage() {
     };
   }
 
-  function montarPdfDados() {
+  function montarPdfDados(): SolarPropostaPdfData {
     const linhasEnd = (o: Record<string, any>) =>
       [
         [o['logradouro'], o['numero']].filter(Boolean).join(", "),
@@ -1854,6 +1858,10 @@ function NovaPropostaSolarPage() {
         cidade: String(cliente?.['cidade'] ?? ""),
       },
       consultor: String(cliente?.['created_by_nome'] ?? ""),
+      suframa: String(suframaFonte.suframa ?? "") || null,
+      suframaSituacao: String(suframaFonte.suframa_situacao ?? "") || null,
+      suframaAplicado: suframaStatus === "aprovado",
+      suframaTitular: faturarClienteFinal ? "cliente_final" : "cliente",
       itens: itens.map((i) => {
         const p = produtos.find((x) => x.id === i.produtoId);
         const aliq = aliquotasDaLinha(i);

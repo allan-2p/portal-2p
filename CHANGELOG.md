@@ -65,6 +65,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - `20260908132639`: tabela `carregadores_lotes` e campos de lote de entrega na proposta (`entrega_lote_id`, `entrega_lote_mes`, `entrega_lote_nome`).
 
 ### Corrigido
+- **SUFRAMA destacado nos PDFs**: os documentos de Solar e Carregadores agora exibem um aviso visual de Zona Franca de Manaus, informam se a inscrição pertence ao cliente da proposta ou ao cliente final faturado e detalham os benefícios fiscais aplicados; inscrições com impedimento também ficam sinalizadas.
 - **Validação SUFRAMA preservada nas propostas**: inscrição e situação do CNPJ de faturamento direto agora permanecem salvas ao sair e reabrir no Solar; propostas anteriores recuperam o snapshot fiscal já salvo, e Solar/Carregadores limpam a validação antiga ao trocar o documento para não reaproveitá-la em outro cliente.
 - **Busca das tarefas por todos os nomes do cliente**: a pesquisa mensal agora encontra tarefas pelo assunto, nome do cliente/contato, nome fantasia e razão social, inclusive quando o texto é digitado sem acentos.
 - **Lateral do calendário de tarefas organizada**: os cartões da lateral agora usam um formato compacto próprio, com título completo, indicadores agrupados e os três botões de ação distribuídos sem cortes ou sobreposição.
