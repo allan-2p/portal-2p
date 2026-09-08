@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useCarregadoresVendedores } from "@/hooks/use-carregadores-vendedores";
 import { PermissionGate } from "@/components/permission-gate";
+import { Paginacao, usePaginacao } from "@/components/paginacao";
+
 
 export const Route = createFileRoute("/_authenticated/carregadores/tarefas")({
   head: () => ({
@@ -83,6 +85,13 @@ function CarregadoresTarefas() {
         .filter((t) => vend.matches(vendedor, t.owner_id)),
     [tasks, filter, vendedor, vend],
   );
+
+  const { pageItens: rowsPagina, props: paginacao } = usePaginacao(
+    rows,
+    25,
+    `${filter}|${vendedor}`,
+  );
+
 
   async function create() {
     if (!form.titulo.trim()) { toast.error("Informe o título da tarefa."); return; }
@@ -188,7 +197,7 @@ function CarregadoresTarefas() {
             {!isLoading && rows.length === 0 && (
               <div className="p-6 text-sm text-muted-foreground text-center">Nenhuma tarefa por aqui.</div>
             )}
-            {rows.map((t) => {
+            {rowsPagina.map((t) => {
               const prio = PRIOS.find((p) => p.v === t.prioridade) ?? PRIOS[1];
               return (
                 <div key={t.id} className="flex items-center gap-3 p-3">
@@ -223,7 +232,11 @@ function CarregadoresTarefas() {
                 </div>
               );
             })}
+            <div className="p-3">
+              <Paginacao {...paginacao} className="border-t-0 pt-0" />
+            </div>
           </CardContent>
+
         </Card>
       </div>
     </AppLayout>

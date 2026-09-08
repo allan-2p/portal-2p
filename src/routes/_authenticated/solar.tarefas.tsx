@@ -47,6 +47,8 @@ import {
 import { getSalesforceTasks, type SalesforceTask } from "@/lib/salesforce.functions";
 import { VendedorFilter } from "@/components/vendedor-filter";
 import { useScopedOwner } from "@/hooks/use-seller-scope";
+import { Paginacao, usePaginacao } from "@/components/paginacao";
+
 import {
   CompleteTaskDialog,
   InteractionQuickDialog,
@@ -207,6 +209,13 @@ function TarefasPage() {
       }
     });
   }, [tasksQuery.data, busca, ordem]);
+
+  const { pageItens: listaPagina, props: paginacao } = usePaginacao(
+    listaFiltrada,
+    25,
+    `${busca}|${ordem}|${ownerId}|${year}-${month}`,
+  );
+
 
   const cells: Array<{ date: Date; key: string } | null> = [];
   for (let i = 0; i < startOffset; i++) cells.push(null);
@@ -495,10 +504,12 @@ function TarefasPage() {
             )}
 
             <div className="flex flex-col gap-2">
-              {listaFiltrada.map((t) => (
+              {listaPagina.map((t) => (
                 <CardTarefa key={t.id} t={t} />
               ))}
             </div>
+            <Paginacao {...paginacao} />
+
           </div>
         ) : (
           <div className="glass rounded-2xl overflow-hidden">
