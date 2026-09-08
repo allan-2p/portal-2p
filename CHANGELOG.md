@@ -62,7 +62,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - `20260908132639`: tabela `carregadores_lotes` e campos de lote de entrega na proposta (`entrega_lote_id`, `entrega_lote_mes`, `entrega_lote_nome`).
 
 ### Corrigido
-- **Validação SUFRAMA preservada nas propostas Solar**: inscrição e situação do CNPJ de faturamento direto agora permanecem salvas ao sair e reabrir a proposta; propostas anteriores recuperam o snapshot fiscal já salvo, e ao trocar o documento a validação antiga é limpa para não ser reaproveitada em outro cliente.
+- **Validação SUFRAMA preservada nas propostas**: inscrição e situação do CNPJ de faturamento direto agora permanecem salvas ao sair e reabrir no Solar; propostas anteriores recuperam o snapshot fiscal já salvo, e Solar/Carregadores limpam a validação antiga ao trocar o documento para não reaproveitá-la em outro cliente.
 - **Busca das tarefas por todos os nomes do cliente**: a pesquisa mensal agora encontra tarefas pelo assunto, nome do cliente/contato, nome fantasia e razão social, inclusive quando o texto é digitado sem acentos.
 - **Lateral do calendário de tarefas organizada**: os cartões da lateral agora usam um formato compacto próprio, com título completo, indicadores agrupados e os três botões de ação distribuídos sem cortes ou sobreposição.
 - **Regra de trilhos por transportadora deixa de depender da ordem dos itens**: a cotação avaliava apenas o primeiro trilho do carrinho, então um pedido com trilho 2,40M + 4,80M liberava a Expresso São Miguel (que não leva o 4,80M) e podia deixar de cobrar o adicional TDE. Agora todos os trilhos do pedido são considerados: um trilho proibido já remove a transportadora, e o adicional é aplicado uma única vez por envio.

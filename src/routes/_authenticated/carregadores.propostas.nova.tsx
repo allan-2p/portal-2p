@@ -2052,6 +2052,8 @@ function PropostaCarregadoresPage() {
                                 ie_habilitada: null,
                                 ie_situacao: "",
                                 contribuinte: false,
+                                suframa: "",
+                                suframa_situacao: "",
                               })
                             }
                           />
