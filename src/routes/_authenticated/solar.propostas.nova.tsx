@@ -508,7 +508,15 @@ function NovaPropostaSolarPage() {
       setObservacoesInternas(String(p['observacoes_internas'] ?? ""));
       setTipoNf(String(p['tipo_nf'] ?? "") || "venda");
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
-      const fatSalvo = (p['faturamento'] as Record<string, string>) ?? {};
+      const fatPersistido = (p['faturamento'] as Record<string, string>) ?? {};
+      // Compatibilidade com propostas salvas antes de o snapshot SUFRAMA fazer
+      // parte do bloco de faturamento: restaura a validação fiscal da proposta.
+      const fatSalvo: Record<string, string> = {
+        ...fatPersistido,
+        suframa: fatPersistido['suframa'] || String(p['suframa'] ?? ""),
+        suframa_situacao:
+          fatPersistido['suframa_situacao'] || String(p['suframa_situacao'] ?? ""),
+      };
       setFat(fatSalvo);
       const fatBlob = (p['faturamento'] as Record<string, unknown> | null) ?? {};
       const ieHab = typeof fatBlob['ie_habilitada'] === "boolean" ? (fatBlob['ie_habilitada'] as boolean) : null;
@@ -2100,7 +2108,14 @@ function NovaPropostaSolarPage() {
                           // Trocar o tipo zera o documento e tudo que veio da
                           // consulta: senão um CNPJ digitado sobra no campo CPF
                           // e trava o "Próximo" com "CPF inválido".
-                          setFat((p) => ({ ...p, doc: "", nome: "", ie: "" }));
+                          setFat((p) => ({
+                            ...p,
+                            doc: "",
+                            nome: "",
+                            ie: "",
+                            suframa: "",
+                            suframa_situacao: "",
+                          }));
                           fatConsultaRef.current = null;
                           setFatConsultadoDoc(null);
                           setFatIeHabilitada(null);
@@ -2135,7 +2150,13 @@ function NovaPropostaSolarPage() {
                             setFatIeHabilitada(null);
                             setFatContribuinte(false);
                           }
-                          setFat((p) => ({ ...p, doc: novoDoc }));
+                          setFat((p) => ({
+                            ...p,
+                            doc: novoDoc,
+                            ...(fatConsultaRef.current === null
+                              ? { suframa: "", suframa_situacao: "" }
+                              : {}),
+                          }));
                         }}
                       />
                       {fatTipoDoc === "cnpj" && (
