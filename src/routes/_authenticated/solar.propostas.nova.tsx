@@ -508,7 +508,15 @@ function NovaPropostaSolarPage() {
       setObservacoesInternas(String(p['observacoes_internas'] ?? ""));
       setTipoNf(String(p['tipo_nf'] ?? "") || "venda");
       setFaturarClienteFinal(!!p['faturar_cliente_final']);
-      const fatSalvo = (p['faturamento'] as Record<string, string>) ?? {};
+      const fatPersistido = (p['faturamento'] as Record<string, string>) ?? {};
+      // Compatibilidade com propostas salvas antes de o snapshot SUFRAMA fazer
+      // parte do bloco de faturamento: restaura a validação fiscal da proposta.
+      const fatSalvo = {
+        ...fatPersistido,
+        suframa: fatPersistido['suframa'] || String(p['suframa'] ?? ""),
+        suframa_situacao:
+          fatPersistido['suframa_situacao'] || String(p['suframa_situacao'] ?? ""),
+      };
       setFat(fatSalvo);
       const fatBlob = (p['faturamento'] as Record<string, unknown> | null) ?? {};
       const ieHab = typeof fatBlob['ie_habilitada'] === "boolean" ? (fatBlob['ie_habilitada'] as boolean) : null;
