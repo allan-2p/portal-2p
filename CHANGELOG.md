@@ -35,6 +35,16 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Adicionado
+- **Visão Geral de Carregadores com custo e resultado**: cada pedido mostra valor dos produtos, valor da NF, frete, margem e comissão total (com detalhamento por tipo: consultor, indicação, representante — os dois últimos zerados até existirem). Totais por mês e total geral no rodapé; clicar no pedido abre o detalhe. Saíram as colunas Nº SAP e nome da proposta.
+- **Lote de chegada obrigatório no fechamento (Carregadores)**: ao concluir o pedido o consultor escolhe mês de referência e lote da mercadoria; a lista de lotes é mantida em Moderação › 2P Carregadores › Lotes de Entrega.
+
+### Alterado
+- **Proposta de Carregadores sem margem/comissão**: no resumo, na revisão final e no detalhe do pedido aparecem apenas os impostos; margem e comissão ficam na Visão Geral.
+
+### Banco de dados
+- `20260908132639`: tabela `carregadores_lotes` e campos de lote de entrega na proposta (`entrega_lote_id`, `entrega_lote_mes`, `entrega_lote_nome`).
+
 ### Corrigido
 - **Cancelamentos param de travar no Salesforce**: motivo de cancelamento fora da lista oficial (inclusive o texto herdado da migração) é enviado como "Erro Interno", em vez de derrubar a atualização inteira da oportunidade.
 - **Pedido não falha mais por falta da conta do cliente**: se a conta ainda não existir no Salesforce, o portal sincroniza o cadastro do cliente na hora e segue com o pedido.
