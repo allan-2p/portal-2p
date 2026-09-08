@@ -240,6 +240,8 @@ export type CarregadoresState = {
   observacoes: string;
   /** Observações internas do pedido — não vão para a NF nem para o SAP. */
   observacoesInternas: string;
+  /** Lote de chegada da mercadoria (obrigatório ao fechar o pedido). */
+  entregaLoteId: string;
   itens: CarregadoresItem[];
 };
 
@@ -431,6 +433,7 @@ export function novoEstado(): CarregadoresState {
 
     observacoes: OBSERVACOES_PADRAO,
     observacoesInternas: "",
+    entregaLoteId: "",
     itens: [novoItem()],
   };
 }

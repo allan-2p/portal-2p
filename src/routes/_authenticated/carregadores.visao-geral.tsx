@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
-import { BarChart3, Loader2 } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { listarPropostasFn } from "@/lib/propostas.functions";
-import { fmtBRL } from "@/lib/carregadores";
+import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { useCarregadoresProducts } from "@/hooks/use-carregadores";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { cn } from "@/lib/utils";
@@ -34,19 +34,49 @@ const STATUS_VENDIDOS = [
 type PedidoVendido = {
   id: string;
   numero: string | null;
-  nome: string | null;
   cliente_nome: string;
   status: string;
-  valor: number;
+  /** Valor dos produtos (sem frete). */
+  valorProdutos: number;
+  /** Valor da NF (produtos + frete cobrado). */
+  valorNf: number;
+  /** Frete cobrado do cliente (0 quando bonificado/FOB). */
+  frete: number;
+  /** Margem bruta (R$) e % — custo interno. */
+  margem: number;
+  margemPct: number;
+  /** Comissões por tipo; soma = comissão total. */
+  comissoes: ComissaoDetalhe[];
+  comissaoTotal: number;
   /** Data da compra: quando o pedido saiu de rascunho (fallback: criação). */
   data: string;
   /** Data de faturamento (NF emitida). */
   dataFaturamento: string | null;
   nfNumero: string | null;
-  sapOvNumero: string | null;
   codigos: string[];
   nomesItens: string[];
 };
+
+type ComissaoDetalhe = { tipo: string; rotulo: string; valor: number };
+
+/**
+ * Tipos de comissão que um mesmo pedido pode ter. Hoje só a do consultor é
+ * calculada; as demais ficam zeradas até existirem (indicação, representante…).
+ */
+const TIPOS_COMISSAO: { tipo: string; rotulo: string }[] = [
+  { tipo: "consultor", rotulo: "Consultor" },
+  { tipo: "indicacao", rotulo: "Indicação" },
+  { tipo: "representante", rotulo: "Representante" },
+];
+
+function detalharComissoes(totais: Record<string, unknown>): ComissaoDetalhe[] {
+  const raw = (totais["comissoes"] ?? null) as Record<string, unknown> | null;
+  const total = Number(totais["comissao"] ?? 0);
+  return TIPOS_COMISSAO.map((t) => {
+    const v = raw && typeof raw === "object" ? Number(raw[t.tipo] ?? 0) : t.tipo === "consultor" ? total : 0;
+    return { ...t, valor: Number.isFinite(v) ? v : 0 };
+  });
+}
 
 const norm = (v: unknown) =>
   String(v ?? "")
@@ -65,6 +95,31 @@ function mesLabel(chave: string) {
     month: "long",
     year: "numeric",
   });
+}
+
+type Somatorio = { valorProdutos: number; valorNf: number; frete: number; margem: number; comissaoTotal: number; comissoes: ComissaoDetalhe[] };
+
+function somar(lista: PedidoVendido[]): Somatorio {
+  const acc: Somatorio = {
+    valorProdutos: 0,
+    valorNf: 0,
+    frete: 0,
+    margem: 0,
+    comissaoTotal: 0,
+    comissoes: TIPOS_COMISSAO.map((t) => ({ ...t, valor: 0 })),
+  };
+  for (const p of lista) {
+    acc.valorProdutos += p.valorProdutos;
+    acc.valorNf += p.valorNf;
+    acc.frete += p.frete;
+    acc.margem += p.margem;
+    acc.comissaoTotal += p.comissaoTotal;
+    for (const c of p.comissoes) {
+      const alvo = acc.comissoes.find((x) => x.tipo === c.tipo);
+      if (alvo) alvo.valor += c.valor;
+    }
+  }
+  return acc;
 }
 
 function fmtData(iso: string) {
@@ -93,23 +148,34 @@ function CarregadoresVisaoGeralPage() {
         data: {
           organizacao: "carregadores",
           select:
-            "id,numero,nome,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em,faturado_em,nf_numero,sap_ov_numero",
+            "id,numero,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em,faturado_em,nf_numero,frete_valor,frete_bonificado",
           statusIn: STATUS_VENDIDOS as unknown as string[],
         },
       });
       return (data ?? []).map((r: any) => {
         const itens = Array.isArray(r.itens) ? r.itens : [];
+        const t = (r.totais ?? {}) as Record<string, unknown>;
+        const valorNf = Number(t["valorTotal"] ?? t["total"] ?? 0);
+        const frete = Number(
+          t["freteCobrado"] ?? (r.frete_bonificado ? 0 : (r.frete_valor ?? 0)),
+        );
+        const valorProdutos = Number(t["valor"] ?? valorNf - frete);
+        const comissoes = detalharComissoes(t);
         return {
           id: r.id,
           numero: r.numero ?? null,
-          nome: r.nome ?? null,
           cliente_nome: r.cliente_nome ?? "—",
           status: r.status,
-          valor: Number(r.totais?.valorTotal ?? r.totais?.total ?? 0),
+          valorProdutos,
+          valorNf,
+          frete,
+          margem: Number(t["mb"] ?? 0),
+          margemPct: Number(t["mbPct"] ?? 0),
+          comissoes,
+          comissaoTotal: comissoes.reduce((s, c) => s + c.valor, 0),
           data: r.aguardando_pagamento_em ?? r.processando_em ?? r.created_at,
           dataFaturamento: r.faturado_em ?? null,
           nfNumero: r.nf_numero ?? null,
-          sapOvNumero: r.sap_ov_numero ?? null,
           codigos: itens.map((i: any) => String(i?.codigo ?? "").trim()).filter(Boolean),
           nomesItens: itens.map((i: any) => norm(i?.nome)).filter(Boolean),
         };
@@ -169,7 +235,16 @@ function CarregadoresVisaoGeralPage() {
     });
   }, [vendidos, modo, mes, trimestre, ano, de, ate, campoData]);
 
-  const totalPeriodo = filtrados.reduce((s, p) => s + p.valor, 0);
+  const totais = useMemo(() => somar(filtrados), [filtrados]);
+  const totalPeriodo = totais.valorNf;
+  const [abertos, setAbertos] = useState<Set<string>>(new Set());
+  const alternar = (id: string) =>
+    setAbertos((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
 
   // Agrupa por mês (mais recente primeiro) para exibir subtotais.
   const grupos = useMemo(() => {
@@ -202,7 +277,7 @@ function CarregadoresVisaoGeralPage() {
               <BarChart3 className="h-5 w-5 text-primary" /> Visão Geral
             </h1>
             <p className="text-sm text-muted-foreground">
-              Pedidos vendidos de carregadores — cliente, pedido, data da compra e valor.
+              Pedidos vendidos de carregadores — clique no pedido para abrir o detalhe.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -269,15 +344,12 @@ function CarregadoresVisaoGeralPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="glass rounded-2xl p-5 border border-border">
-            <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-semibold">Pedidos vendidos</div>
-            <div className="text-2xl font-display font-bold mt-1">{filtrados.length}</div>
-          </div>
-          <div className="glass rounded-2xl p-5 border border-border">
-            <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-semibold">Valor total no período</div>
-            <div className="text-2xl font-display font-bold mt-1">{fmtBRL(totalPeriodo)}</div>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <Card titulo="Pedidos vendidos" valor={String(filtrados.length)} />
+          <Card titulo="Valor da NF no período" valor={fmtBRL(totalPeriodo)} />
+          <Card titulo="Produtos" valor={fmtBRL(totais.valorProdutos)} />
+          <Card titulo="Margem" valor={fmtBRL(totais.margem)} sub={totais.valorProdutos ? fmtPct(totais.margem / totais.valorProdutos) : undefined} />
+          <Card titulo="Comissões (custo)" valor={fmtBRL(totais.comissaoTotal)} />
         </div>
 
         {carregando && (
@@ -290,50 +362,154 @@ function CarregadoresVisaoGeralPage() {
         )}
 
         {grupos.map(([mesK, itens]) => {
-          const subtotal = itens.reduce((s, p) => s + p.valor, 0);
+          const sub = somar(itens);
           return (
             <div key={mesK} className="glass rounded-2xl border border-border overflow-hidden">
               <div className="flex items-center justify-between px-5 py-3 bg-surface-2/50">
                 <h2 className="font-display font-semibold capitalize">{mesLabel(mesK)}</h2>
                 <div className="text-sm text-muted-foreground">
-                  {itens.length} pedido{itens.length !== 1 ? "s" : ""} • <span className="font-semibold text-foreground">{fmtBRL(subtotal)}</span>
+                  {itens.length} pedido{itens.length !== 1 ? "s" : ""} • <span className="font-semibold text-foreground">{fmtBRL(sub.valorNf)}</span>
                 </div>
               </div>
               <div className="divide-y divide-border">
-                <div className="hidden lg:grid grid-cols-[90px_90px_90px_90px_90px_1fr_1fr_110px_120px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                <div className="hidden lg:grid grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                   <span>Pedido</span>
-                  <span>Nº SAP</span>
                   <span>Nº NF</span>
                   <span>Compra</span>
                   <span>Faturamento</span>
-                  <span>Nome</span>
                   <span>Cliente</span>
                   <span>Status</span>
-                  <span className="text-right">Valor</span>
+                  <span className="text-right">Produtos</span>
+                  <span className="text-right">Valor NF</span>
+                  <span className="text-right">Frete</span>
+                  <span className="text-right">Margem</span>
+                  <span className="text-right">Comissão</span>
                 </div>
-                {itens.map((p) => (
-                  <div
-                    key={p.id}
-                    className="grid lg:grid-cols-[90px_90px_90px_90px_90px_1fr_1fr_110px_120px] gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center"
-                  >
-                    <span className="font-mono text-xs text-muted-foreground">{p.numero ?? "—"}</span>
-                    <span className="font-mono text-xs text-muted-foreground">{p.sapOvNumero ?? "—"}</span>
-                    <span className="font-mono text-xs text-muted-foreground">{p.nfNumero ?? "—"}</span>
-                    <span className="text-xs text-muted-foreground">{fmtData(p.data)}</span>
-                    <span className="text-xs text-muted-foreground">{p.dataFaturamento ? fmtData(p.dataFaturamento) : "—"}</span>
-                    <span className={cn("truncate", !p.nome && "text-muted-foreground")}>{p.nome ?? "—"}</span>
-                    <span className="truncate">{p.cliente_nome}</span>
-                    <span className="flex items-center gap-1.5 text-xs">
-                      <StatusDot status={p.status as any} /> {p.status}
-                    </span>
-                    <span className="lg:text-right font-semibold">{fmtBRL(p.valor)}</span>
-                  </div>
-                ))}
+                {itens.map((p) => {
+                  const aberto = abertos.has(p.id);
+                  return (
+                    <div key={p.id}>
+                      <Link
+                        to="/carregadores/propostas/visualizar"
+                        search={{ id: p.id }}
+                        className="grid lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px] gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center hover:bg-surface-2/60 transition-colors"
+                        title="Abrir o pedido"
+                      >
+                        <span className="font-mono text-xs text-muted-foreground">{p.numero ?? "—"}</span>
+                        <span className="font-mono text-xs text-muted-foreground">{p.nfNumero ?? "—"}</span>
+                        <span className="text-xs text-muted-foreground">{fmtData(p.data)}</span>
+                        <span className="text-xs text-muted-foreground">{p.dataFaturamento ? fmtData(p.dataFaturamento) : "—"}</span>
+                        <span className="truncate font-medium">{p.cliente_nome}</span>
+                        <span className="flex items-center gap-1.5 text-xs">
+                          <StatusDot status={p.status as any} /> {p.status}
+                        </span>
+                        <Num label="Produtos" v={p.valorProdutos} />
+                        <Num label="Valor NF" v={p.valorNf} destaque />
+                        <Num label="Frete" v={p.frete} />
+                        <span className="lg:text-right tabular-nums">
+                          <span className="lg:hidden text-xs text-muted-foreground">Margem: </span>
+                          {fmtBRL(p.margem)}
+                          <span className="block text-[10px] text-muted-foreground">{fmtPct(p.margemPct)}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            alternar(p.id);
+                          }}
+                          className="flex items-center justify-end gap-1 tabular-nums hover:text-primary"
+                          title="Detalhar comissões"
+                          aria-expanded={aberto}
+                        >
+                          <span className="lg:hidden text-xs text-muted-foreground">Comissão: </span>
+                          {fmtBRL(p.comissaoTotal)}
+                          {aberto ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                        </button>
+                      </Link>
+                      {aberto && (
+                        <div className="bg-surface-2/40 px-5 py-2 text-xs">
+                          <div className="lg:ml-auto lg:w-[360px] space-y-1">
+                            {p.comissoes.map((c) => (
+                              <div key={c.tipo} className="flex items-center justify-between">
+                                <span className="text-muted-foreground">Comissão · {c.rotulo}</span>
+                                <span className="tabular-nums">{fmtBRL(c.valor)}</span>
+                              </div>
+                            ))}
+                            <div className="flex items-center justify-between border-t border-border pt-1 font-semibold">
+                              <span>Total de comissões</span>
+                              <span className="tabular-nums">{fmtBRL(p.comissaoTotal)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <TotaisLinha rotulo={`Total ${mesLabel(mesK)}`} s={sub} />
               </div>
             </div>
           );
         })}
+
+        {!carregando && filtrados.length > 0 && (
+          <div className="glass rounded-2xl border border-border overflow-hidden">
+            <div className="px-5 py-3 bg-surface-2/50">
+              <h2 className="font-display font-semibold">Total geral do período</h2>
+            </div>
+            <div className="hidden lg:grid grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-b border-border">
+              <span className="col-span-6" />
+              <span className="text-right">Produtos</span>
+              <span className="text-right">Valor NF</span>
+              <span className="text-right">Frete</span>
+              <span className="text-right">Margem</span>
+              <span className="text-right">Comissão</span>
+            </div>
+            <TotaisLinha rotulo={`${filtrados.length} pedido${filtrados.length !== 1 ? "s" : ""}`} s={totais} />
+            <div className="px-5 pb-3 text-xs text-muted-foreground">
+              Comissões: {totais.comissoes.map((c) => `${c.rotulo} ${fmtBRL(c.valor)}`).join(" · ")}
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
+  );
+}
+
+function Card({ titulo, valor, sub }: { titulo: string; valor: string; sub?: string }) {
+  return (
+    <div className="glass rounded-2xl p-5 border border-border">
+      <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-semibold">{titulo}</div>
+      <div className="text-2xl font-display font-bold mt-1">{valor}</div>
+      {sub ? <div className="text-xs text-muted-foreground">{sub}</div> : null}
+    </div>
+  );
+}
+
+function Num({ label, v, destaque }: { label: string; v: number; destaque?: boolean }) {
+  return (
+    <span className={cn("lg:text-right tabular-nums", destaque && "font-semibold")}>
+      <span className="lg:hidden text-xs text-muted-foreground">{label}: </span>
+      {fmtBRL(v)}
+    </span>
+  );
+}
+
+function TotaisLinha({ rotulo, s }: { rotulo: string; s: Somatorio }) {
+  return (
+    <div className="grid lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px] gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center bg-surface-2/30 font-semibold">
+      <span className="lg:col-span-6 capitalize">{rotulo}</span>
+      <Num label="Produtos" v={s.valorProdutos} />
+      <Num label="Valor NF" v={s.valorNf} destaque />
+      <Num label="Frete" v={s.frete} />
+      <span className="lg:text-right tabular-nums">
+        <span className="lg:hidden text-xs text-muted-foreground">Margem: </span>
+        {fmtBRL(s.margem)}
+        <span className="block text-[10px] text-muted-foreground font-normal">
+          {s.valorProdutos ? fmtPct(s.margem / s.valorProdutos) : "—"}
+        </span>
+      </span>
+      <Num label="Comissão" v={s.comissaoTotal} />
+    </div>
   );
 }

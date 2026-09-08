@@ -11,6 +11,7 @@ const GROUP_PREFIXES = [
   "/carregadores/produtos",
   "/carregadores/comissoes",
   "/carregadores/regras",
+  "/carregadores/lotes",
   "/carregadores/metas",
 
 ];

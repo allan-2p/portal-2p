@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { listarLotesAtivos, rotuloLote } from "@/lib/carregadores-lotes.functions";
 import { listClientesPaginaFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { cnpjValido } from "@/lib/cnpj";
@@ -391,6 +392,7 @@ function PropostaCarregadoresPage() {
 
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         observacoesInternas: ((data as any).observacoes_internas as string | null) ?? "",
+        entregaLoteId: ((data as any).entrega_lote_id as string | null) ?? "",
         itens: itens.length ? itens : [novoItem()],
       });
       setConsultorProposta(((data as any).consultor_nome as string | null) ?? null);
@@ -478,6 +480,12 @@ function PropostaCarregadoresPage() {
     enabled: docLogo.length >= 11,
   });
   const logoCliente = ((logoQ.data as any)?.data_url as string | undefined) ?? null;
+
+  // Lotes de chegada ativos (Moderação › Carregadores › Lotes de Entrega).
+  const listarLotes = useServerFn(listarLotesAtivos);
+  const lotesQ = useQuery({ queryKey: ["carregadores-lotes-ativos"], queryFn: () => listarLotes() });
+  const lotes = (lotesQ.data ?? []) as Awaited<ReturnType<typeof listarLotesAtivos>>;
+  const loteSelecionado = lotes.find((l) => l.id === state.entregaLoteId) ?? null;
 
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
 
@@ -1080,6 +1088,7 @@ function PropostaCarregadoresPage() {
 
   // Conclusão do pedido herda os mesmos bloqueios (inclui forma de pagamento).
   const errosConclusao: string[] = [...errosPdf];
+  if (!state.entregaLoteId) errosConclusao.push("Informe o mês de referência e o lote de chegada da mercadoria.");
   const podeFechar = errosConclusao.length === 0;
 
   // ---- Bloqueios de salvamento ----
@@ -1422,6 +1431,7 @@ function PropostaCarregadoresPage() {
 
           observacoes: observacoesFinal.trim() || null,
           observacoesInternas: state.observacoesInternas.trim() || null,
+          entregaLoteId: state.entregaLoteId || null,
           itens: state.itens
             .filter((i) => i.produtoId)
             .map((i) => ({ produtoId: i.produtoId, qtd: i.qtd, valor: money2(i.valor) })),
@@ -2763,11 +2773,6 @@ function PropostaCarregadoresPage() {
                         : fmtBRL(state.freteValor)
                     }
                   />
-                  <ResumoLinha k="Margem bruta" v={fmtPct(d.mbPct)} />
-                  <ResumoLinha
-                    k={`Comissão do vendedor (${regimeVendedor})`}
-                    v={fmtBRL(comissaoVendedor.valor)}
-                  />
                 </div>
               </div>
               </>
@@ -2835,6 +2840,33 @@ function PropostaCarregadoresPage() {
                     </Field>
                   </>
                 )}
+
+                <Field label="Chegada da mercadoria (mês / lote)">
+                  <Select
+                    value={state.entregaLoteId || undefined}
+                    onValueChange={(v) => set("entregaLoteId", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={lotesQ.isLoading ? "Carregando lotes..." : "Selecione o lote"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lotes.map((l) => (
+                        <SelectItem key={l.id} value={l.id!}>
+                          {rotuloLote(l)}
+                          {l.previsao_chegada ? ` — prev. ${l.previsao_chegada.split("-").reverse().join("/")}` : ""}
+                        </SelectItem>
+                      ))}
+                      {!lotesQ.isLoading && lotes.length === 0 ? (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          Nenhum lote ativo — cadastre em Moderação › Carregadores › Lotes de Entrega.
+                        </div>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Obrigatório para fechar o pedido: mês de referência e lote em que a mercadoria chega.
+                  </p>
+                </Field>
 
                 <Field label="Observações do Pedido">
                   <Textarea
@@ -3288,12 +3320,8 @@ function PropostaCarregadoresPage() {
                   <span className="tabular-nums">{fmtBRL(d.valorTotalProposta)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Margem bruta</span>
-                  <span className="tabular-nums">{fmtPct(d.mbPct)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Comissão do vendedor ({regimeVendedor})</span>
-                  <span className="tabular-nums">{fmtBRL(comissaoVendedor.valor)}</span>
+                  <span className="text-muted-foreground">Chegada da mercadoria</span>
+                  <span className="tabular-nums">{loteSelecionado ? rotuloLote(loteSelecionado) : "—"}</span>
                 </div>
               </div>
 
