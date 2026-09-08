@@ -84,6 +84,8 @@ import { normalizarFinalidade } from "@/lib/sap-clientes-map";
 import { cnpjValido, cpfValido } from "@/lib/cnpj";
 import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
+import { SuframaBanner } from "@/components/suframa-banner";
+import { statusSuframa } from "@/lib/suframa";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
 import { resolverProduto } from "@/lib/solar-sku";
 import { pltypDaTabela } from "@/lib/sap-clientes-map";
@@ -422,6 +424,12 @@ function NovaPropostaSolarPage() {
     cfgQ,
   ].some((q) => q.isLoading);
   const cliente = (clientesQ.selecionado ?? null) as ClienteCad | null;
+  // Zona Franca de Manaus: só o cadastro do cliente define (consulta do CNPJ).
+  const suframaStatus = statusSuframa({
+    doc: (cliente as Record<string, unknown> | null)?.['doc'],
+    suframa: (cliente as Record<string, unknown> | null)?.['suframa'],
+    suframa_situacao: (cliente as Record<string, unknown> | null)?.['suframa_situacao'],
+  });
   // Boleto a prazo depende de condição cadastrada no cliente + crédito aprovado.
   const prazo = usePrazoLiberado(String((clientesQ.selecionado as any)?.["doc"] ?? clienteDoc ?? ""));
   useEffect(() => {
@@ -1065,6 +1073,8 @@ function NovaPropostaSolarPage() {
           listaPreco: tabela,
           tipoNf,
           kitFotovoltaico: ehKit === true,
+          // Venda SUFRAMA: sem PIS/COFINS, sem IPI e ICMS só nos importados.
+          suframa: suframaStatus === "aprovado",
           contribuinte: cliente?.['contribuinte'] === true,
           // A NF sai contra o cliente final: o servidor simula os preços com o
           // documento e o TP_OV dele (impostos diferentes), mantendo a tabela.
@@ -1979,6 +1989,12 @@ function NovaPropostaSolarPage() {
 
         {etapa === 1 && (
           <section className="glass rounded-2xl p-5 space-y-4">
+            <SuframaBanner
+              status={suframaStatus}
+              inscricao={((cliente as Record<string, unknown> | null)?.['suframa'] as string) ?? null}
+              situacao={((cliente as Record<string, unknown> | null)?.['suframa_situacao'] as string) ?? null}
+              faturarClienteFinal={faturarClienteFinal}
+            />
             <div className="grid gap-4 md:grid-cols-2">
               <Campo label="Nome da proposta *">
                 <Input
