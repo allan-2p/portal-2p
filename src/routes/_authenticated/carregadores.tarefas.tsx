@@ -232,7 +232,11 @@ function CarregadoresTarefas() {
                 </div>
               );
             })}
+            <div className="p-3">
+              <Paginacao {...paginacao} className="border-t-0 pt-0" />
+            </div>
           </CardContent>
+
         </Card>
       </div>
     </AppLayout>
