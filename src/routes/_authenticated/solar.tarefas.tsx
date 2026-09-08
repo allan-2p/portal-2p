@@ -247,15 +247,15 @@ function TarefasPage() {
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   useHashAction("novo", () => setNewTaskOpen(true));
 
-  const AcoesTarefa = ({ t, className }: { t: SalesforceTask; className?: string }) => (
-    <div className={cn("flex items-center gap-1.5 flex-wrap", className)}>
-      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setInteractionTask(t)}>
+  const AcoesTarefa = ({ t, className, compacta = false }: { t: SalesforceTask; className?: string; compacta?: boolean }) => (
+    <div className={cn("grid grid-cols-3 items-center gap-1.5", !compacta && "sm:flex sm:flex-wrap", className)}>
+      <Button size="sm" variant="outline" className={cn("min-w-0 gap-1.5 px-2", compacta && "w-full")} onClick={() => setInteractionTask(t)}>
         <MessageSquare className="h-3.5 w-3.5" /> Interação
       </Button>
-      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setRescheduleTask(t)}>
+      <Button size="sm" variant="outline" className={cn("min-w-0 gap-1.5 px-2", compacta && "w-full")} onClick={() => setRescheduleTask(t)}>
         <CalendarPlus className="h-3.5 w-3.5" /> Adiar
       </Button>
-      <Button size="sm" className="gap-1.5" onClick={() => setCompleteTask(t)}>
+      <Button size="sm" className={cn("min-w-0 gap-1.5 px-2", compacta && "w-full")} onClick={() => setCompleteTask(t)}>
         <CheckCircle2 className="h-3.5 w-3.5" /> Concluir
       </Button>
     </div>
@@ -315,7 +315,7 @@ function TarefasPage() {
     );
   };
 
-  const CardTarefa = ({ t }: { t: SalesforceTask }) => {
+  const CardTarefa = ({ t, compacta = false }: { t: SalesforceTask; compacta?: boolean }) => {
     const type = inferType(t.subject);
     const Icon = TYPE_ICON[type];
     const prio = mapPriority(t.priority);
@@ -324,7 +324,10 @@ function TarefasPage() {
     const cliente = t.what ?? t.who;
     return (
       <div className="rounded-xl border border-border bg-background px-3 py-2.5 hover:border-primary/40 transition-colors">
-        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3 lg:flex lg:items-center">
+        <div className={cn(
+          "grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3",
+          !compacta && "lg:flex lg:items-center",
+        )}>
           <SegmentoIcone t={t} />
           <div
             className={cn(
@@ -336,36 +339,41 @@ function TarefasPage() {
             <Icon className="h-4 w-4" />
           </div>
 
-          <div className="min-w-0 lg:flex-1">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className={cn("min-w-0", !compacta && "lg:flex-1")}>
+            <div className={cn("min-w-0", compacta ? "space-y-1" : "flex items-center gap-2")}>
               <button
                 onClick={() => setDetalheTask(t)}
-                className="font-semibold text-sm text-left truncate hover:text-primary hover:underline"
+                className={cn(
+                  "font-semibold text-sm text-left hover:text-primary hover:underline",
+                  compacta ? "block w-full break-words leading-snug" : "truncate",
+                )}
                 title={t.subject}
               >
                 {t.subject}
               </button>
-              <span
-                className={cn(
-                  "text-[10px] px-1.5 py-0.5 rounded shrink-0",
-                  atrasada
-                    ? "bg-destructive/15 text-destructive font-semibold"
-                    : t.date === hojeKey
-                      ? "bg-primary/15 text-primary font-semibold"
-                      : "bg-surface-2 text-muted-foreground",
-                )}
-              >
-                {atrasada ? "Atrasada · " : t.date === hojeKey ? "Hoje · " : ""}
-                {fmtDia(t.date)}
-              </span>
-              <span className={cn("text-[10px] px-1.5 py-0.5 rounded shrink-0", PRIO_CLASS[prio])}>
-                {t.priority ?? "—"}
-              </span>
-              {jaInteragiu && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success shrink-0">
-                  Interação
+              <div className={cn("flex min-w-0 flex-wrap items-center gap-1.5", !compacta && "contents")}>
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded shrink-0",
+                    atrasada
+                      ? "bg-destructive/15 text-destructive font-semibold"
+                      : t.date === hojeKey
+                        ? "bg-primary/15 text-primary font-semibold"
+                        : "bg-surface-2 text-muted-foreground",
+                  )}
+                >
+                  {atrasada ? "Atrasada · " : t.date === hojeKey ? "Hoje · " : ""}
+                  {fmtDia(t.date)}
                 </span>
-              )}
+                <span className={cn("text-[10px] px-1.5 py-0.5 rounded shrink-0", PRIO_CLASS[prio])}>
+                  {t.priority ?? "—"}
+                </span>
+                {jaInteragiu && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success shrink-0">
+                    Interação
+                  </span>
+                )}
+              </div>
             </div>
             <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground min-w-0">
               {t.whatId?.startsWith("001") ? (
@@ -378,7 +386,14 @@ function TarefasPage() {
             </div>
           </div>
 
-          <AcoesTarefa t={t} className="col-span-3 justify-end lg:shrink-0" />
+          <AcoesTarefa
+            t={t}
+            compacta={compacta}
+            className={cn(
+              "col-span-3 mt-1",
+              compacta ? "w-full" : "justify-end lg:mt-0 lg:w-auto lg:shrink-0",
+            )}
+          />
         </div>
       </div>
     );
@@ -591,13 +606,13 @@ function TarefasPage() {
             onClick={() => setSelectedDay(null)}
             aria-label="Fechar detalhes do dia"
           />
-          <aside className="fixed right-0 top-0 bottom-0 w-full sm:w-[460px] bg-surface border-l border-border z-50 flex flex-col">
-            <header className="px-5 py-4 border-b border-border flex items-center justify-between">
-              <div>
+          <aside className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-border bg-surface shadow-2xl sm:w-[min(520px,calc(100vw-2rem))]">
+            <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border-b border-border px-4 py-4 sm:px-5">
+              <div className="min-w-0">
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">
                   Tarefas do dia · Salesforce
                 </div>
-                <div className="font-display font-semibold capitalize">
+                <div className="font-display font-semibold capitalize break-words">
                   {new Date(selectedDay + "T00:00:00").toLocaleDateString("pt-BR", {
                     weekday: "long",
                     day: "2-digit",
@@ -620,7 +635,7 @@ function TarefasPage() {
                 </div>
               )}
               {selectedTasks.map((t) => (
-                <CardTarefa key={t.id} t={t} />
+                <CardTarefa key={t.id} t={t} compacta />
               ))}
             </div>
           </aside>
