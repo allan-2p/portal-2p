@@ -3195,7 +3195,26 @@ function NovaPropostaSolarPage() {
                     />
                     <Info label="Contribuinte de ICMS" value={fatContribuinte ? "Sim" : "Não"} />
                     <Info label="Finalidade de uso" value={finalidadeUso || "—"} />
+                    {fat['suframa'] ? (
+                      <Info
+                        label="SUFRAMA"
+                        value={`${String(fat['suframa'])}${
+                          suframaStatus === "aprovado"
+                            ? " · Zona Franca de Manaus (sem PIS/COFINS e IPI)"
+                            : ` · ${String(fat['suframa_situacao'] ?? "") || "sem benefício"}`
+                        }`}
+                      />
+                    ) : null}
                   </div>
+                  {suframaStatus !== "sem" ? (
+                    <SuframaBanner
+                      className="mt-3"
+                      status={suframaStatus}
+                      inscricao={(suframaFonte.suframa as string) ?? null}
+                      situacao={(suframaFonte.suframa_situacao as string) ?? null}
+                      clienteFinal
+                    />
+                  ) : null}
                 </div>
               )}
 

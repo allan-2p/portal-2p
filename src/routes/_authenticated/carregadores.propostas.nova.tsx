@@ -3347,6 +3347,22 @@ function PropostaCarregadoresPage() {
                       .filter((v) => String(v ?? "").trim())
                       .join(", ") || "—"}
                   </p>
+                  {(state.faturamento as Record<string, unknown>)['suframa'] ? (
+                    <p className="text-xs font-medium">
+                      SUFRAMA {String((state.faturamento as Record<string, unknown>)['suframa'])}
+                      {suframaStatus === "aprovado"
+                        ? " · Zona Franca de Manaus (sem PIS/COFINS e IPI)"
+                        : ` · ${String((state.faturamento as Record<string, unknown>)['suframa_situacao'] ?? "") || "sem benefício"}`}
+                    </p>
+                  ) : null}
+                  {suframaStatus !== "sem" ? (
+                    <SuframaBanner
+                      status={suframaStatus}
+                      inscricao={(suframaFonte.suframa as string) ?? null}
+                      situacao={(suframaFonte.suframa_situacao as string) ?? null}
+                      clienteFinal
+                    />
+                  ) : null}
                 </div>
               )}
 
