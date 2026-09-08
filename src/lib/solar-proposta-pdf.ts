@@ -379,7 +379,7 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
 
     <div class="cond">
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
-      <div><label>Prazo de entrega</label><p>${esc(textoPrazoEntrega(p.fretePrazo, p.freteMod))}</p></div>
+      <div><label>Prazo de entrega</label><p>${esc(textoPrazoEntrega(p.fretePrazo, p.freteMod))}${p.transportadora ? ` · ${esc(p.transportadora)}` : ""}</p></div>
       <div><label>Condições</label><p>Valores em reais.</p></div>
       <div><label>Forma de pagamento</label><p>${esc(p.formaPagamento ? (LABEL_PAGAMENTO[p.formaPagamento] ?? p.formaPagamento) : "") || "A definir"}</p></div>
     </div>

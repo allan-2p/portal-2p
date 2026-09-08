@@ -322,8 +322,9 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           />
           <Campo
             label="Frete"
-            value={`${p['frete_mod'] ?? "—"} · ${freteGratis ? "Grátis (cupom)" : freteBonificado ? "Bonificado" : fmtBRL(frete)}`}
+            value={`${p['frete_mod'] ?? "—"}${p['transportadora'] ? ` · ${p['transportadora']}` : ""} · ${freteGratis ? "Grátis (cupom)" : freteBonificado ? "Bonificado" : fmtBRL(frete)}`}
           />
+
           <Campo
             label="Prazo de entrega"
             value={textoPrazoEntrega(

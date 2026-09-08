@@ -43,7 +43,10 @@ export type PropostaPdfData = {
   freteMod: string;
   /** Prazo de entrega em dias úteis (propostas.frete_prazo). */
   fretePrazo?: number | null;
+  /** Transportadora escolhida na cotação (propostas.transportadora). */
+  transportadora?: string | null;
   freteValor: number;
+
   /** Frete grátis só quando marcado no pedido ou concedido por cupom. */
   freteGratis?: boolean;
   freteBonificado?: boolean;
@@ -374,7 +377,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
         <tfoot><tr>
           <td colspan="${temFoto ? 3 : 2}">${p.itens.length} ${p.itens.length === 1 ? "item" : "itens"} · ${qtdTotal} ${qtdTotal === 1 ? "unidade" : "unidades"}</td>
 
-          <td colspan="6" class="r">Frete ${esc(p.freteMod)}${p.freteGratis || p.freteBonificado ? " · <b>Frete grátis</b>" : ""}</td>
+          <td colspan="6" class="r">Frete ${esc(p.freteMod)}${p.transportadora ? ` · ${esc(p.transportadora)}` : ""}${p.freteGratis || p.freteBonificado ? " · <b>Frete grátis</b>" : ""}</td>
         </tr></tfoot>
       </table>
     </div>
@@ -422,7 +425,7 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
 
     <div class="cond">
       <div><label>Validade</label><p>Proposta válida até ${esc(validade)}, sujeita a disponibilidade de estoque.</p></div>
-      <div><label>Prazo de entrega</label><p>${esc(textoPrazoEntrega(p.fretePrazo, p.freteMod))}</p></div>
+      <div><label>Prazo de entrega</label><p>${esc(textoPrazoEntrega(p.fretePrazo, p.freteMod))}${p.transportadora ? ` · ${esc(p.transportadora)}` : ""}</p></div>
       <div><label>Condições</label><p>Valores em reais, impostos conforme legislação vigente em ${esc(cidadeUf(p.cliente.cidade, p.cliente.uf))}.</p></div>
       <div><label>Forma de pagamento</label><p>${esc(p.formaPagamento) || "—"}</p></div>
     </div>
