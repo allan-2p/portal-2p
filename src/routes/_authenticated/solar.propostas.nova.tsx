@@ -223,15 +223,6 @@ function NovaPropostaSolarPage() {
   const [faturarClienteFinal, setFaturarClienteFinal] = useState(false);
   const [fatTipoDoc, setFatTipoDoc] = useState<"cnpj" | "cpf">("cnpj");
   const [fat, setFat] = useState<Record<string, string>>({});
-
-  const suframaFonte = faturarClienteFinal
-    ? { doc: fat['doc'], suframa: fat['suframa'], suframa_situacao: fat['suframa_situacao'] }
-    : {
-        doc: clienteRec?.['doc'],
-        suframa: clienteRec?.['suframa'],
-        suframa_situacao: clienteRec?.['suframa_situacao'],
-      };
-  const suframaStatus = statusSuframa(suframaFonte);
   /** Cliente final CNPJ contribuinte de ICMS (define CFOP/IE no SAP). */
   const [fatContribuinte, setFatContribuinte] = useState(false);
   /** Cidade/UF do faturamento ficam travadas quando vieram do CEP. */
@@ -436,6 +427,15 @@ function NovaPropostaSolarPage() {
   // Zona Franca de Manaus: vale o SUFRAMA de quem recebe a nota — o cliente do
   // cadastro ou, no faturamento direto, o cliente final consultado pelo CNPJ.
   const clienteRec = cliente as Record<string, unknown> | null;
+  const suframaFonte = faturarClienteFinal
+    ? { doc: fat['doc'], suframa: fat['suframa'], suframa_situacao: fat['suframa_situacao'] }
+    : {
+        doc: clienteRec?.['doc'],
+        suframa: clienteRec?.['suframa'],
+        suframa_situacao: clienteRec?.['suframa_situacao'],
+      };
+  const suframaStatus = statusSuframa(suframaFonte);
+
   // Boleto a prazo depende de condição cadastrada no cliente + crédito aprovado.
   const prazo = usePrazoLiberado(String((clientesQ.selecionado as any)?.["doc"] ?? clienteDoc ?? ""));
   useEffect(() => {
