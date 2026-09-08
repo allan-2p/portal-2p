@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { precoUnitarioSuframa } from "@/lib/suframa";
+
 import { aliquotasSuframa, itemImportadoPorIcms, statusSuframa } from "@/lib/suframa";
 
 describe("status SUFRAMA", () => {
@@ -29,12 +31,20 @@ describe("alíquotas na Zona Franca de Manaus", () => {
     });
   });
 
-  it("nacional fica isento de ICMS, IPI e PIS/COFINS", () => {
-    expect(itemImportadoPorIcms(0.12)).toBe(false);
-    expect(aliquotasSuframa({ ipi: 0.05, icms: 0.12, pisCofins: 0.0925 })).toEqual({
+  it("nacional mantém o ICMS da operação e zera IPI e PIS/COFINS", () => {
+    expect(itemImportadoPorIcms(0.07)).toBe(false);
+    expect(aliquotasSuframa({ ipi: 0.05, icms: 0.07, pisCofins: 0.0925 })).toEqual({
       ipi: 0,
-      icms: 0,
+      icms: 0.07,
       pisCofins: 0,
     });
   });
+
+  it("preço unitário = líquido ÷ (1 − ICMS), como na planilha", () => {
+    expect(precoUnitarioSuframa(2.5, 0.04)).toBe(2.6);
+    expect(precoUnitarioSuframa(9.98, 0.07)).toBe(10.73);
+    expect(precoUnitarioSuframa(3.03, 0.04)).toBe(3.16);
+    expect(precoUnitarioSuframa(3.18, 0.04)).toBe(3.31);
+  });
 });
+
