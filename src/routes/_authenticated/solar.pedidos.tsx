@@ -97,7 +97,7 @@ function AcompanhamentoSolarPage() {
       const data = await listarPropostasFn({
         data: {
           organizacao: "solar",
-          select: "id,numero,cliente_nome,uf,status,totais,created_at,created_by,finalizado_em,previsao_fechamento,expedido_em,estimativa_entrega",
+          select: "id,numero,sap_ov_numero,nf_numero,cliente_nome,uf,status,totais,created_at,created_by,finalizado_em,previsao_fechamento,expedido_em,estimativa_entrega",
           statusIn: PEDIDO_STATUS as unknown as string[],
         },
       });
