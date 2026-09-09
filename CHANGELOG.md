@@ -43,8 +43,8 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   podendo ser de outro estado). As opções de faturar o cliente final e de endereço de entrega
   diferente saem de cena, o frete é cotado para o destinatário e os dados aparecem no resumo,
   no detalhe do pedido e no PDF. A ordem de venda no SAP sai no cliente da proposta com as
-  observações de venda à ordem, e o fiscal, o financeiro e o consultor recebem um e-mail para
-  cadastrar o destinatário e emitir as notas.
+  observações de venda à ordem, e o fiscal, o financeiro, a logística, o Alexandre e o consultor
+  recebem um e-mail para cadastrar o destinatário e emitir as notas.
 
 
 - Nova aba **Estoque** no topo de 2P Solar e 2P Carregadores, visível apenas para
