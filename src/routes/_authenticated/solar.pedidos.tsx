@@ -11,6 +11,7 @@ import { listarPropostasFn } from "@/lib/propostas.functions";
 import { VendedorNamesFilter } from "@/components/vendedor-names-filter";
 import { useVendedoresOrg } from "@/hooks/use-carregadores-vendedores";
 import { fmtDataBR } from "@/lib/data-br";
+import { formatSapNumero } from "@/lib/sap-numero";
 
 export const Route = createFileRoute("/_authenticated/solar/pedidos")({
   head: () => ({
