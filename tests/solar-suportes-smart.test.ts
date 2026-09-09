@@ -79,7 +79,7 @@ describe("suportes Smart — cadastro e quantificador", () => {
       quantidade: TOT_GRAMPO + 5,
     });
     expect(item(r, "kit_parafuso_smart")).toMatchObject({
-      codigo: "100000052",
+      codigo: "100000210",
       quantidade: TOT_GRAMPO + 5,
     });
   });
