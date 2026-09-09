@@ -43,8 +43,9 @@ const STATUS_STYLE = PROPOSTA_STATUS_STYLE;
 
 type Pedido = {
   id: string;
-  code: string;
-  title: string;
+  numero: string | null;
+  sap: string | null;
+  nf: string | null;
   client: string;
   /** CloseDate: data real de fechamento (finalizado_em) ou a previsão gravada. */
   fechamento: string;
