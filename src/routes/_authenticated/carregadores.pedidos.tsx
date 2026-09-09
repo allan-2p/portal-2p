@@ -14,6 +14,7 @@ import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { PixStatusBadge } from "@/components/pix-status-badge";
 import { acaoAtlasPix, normalizarPagamentoStatus, type PagamentoStatus } from "@/lib/pagamentos-ui";
 import { fmtDataBR } from "@/lib/data-br";
+import { formatSapNumero } from "@/lib/sap-numero";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
@@ -42,8 +43,9 @@ const STATUS_STYLE = PROPOSTA_STATUS_STYLE;
 
 type Pedido = {
   id: string;
-  code: string;
-  title: string;
+  numero: string | null;
+  sap: string | null;
+  nf: string | null;
   client: string;
   /** CloseDate: data real de fechamento (finalizado_em) ou a previsão gravada. */
   fechamento: string;
@@ -96,7 +98,7 @@ function CarregadoresPedidosPage() {
       const data = await listarPropostasFn({
         data: {
           organizacao: "carregadores",
-          select: "id,numero,cliente_nome,uf,status,totais,created_at,created_by,finalizado_em,previsao_fechamento,expedido_em,estimativa_entrega",
+          select: "id,numero,sap_ov_numero,nf_numero,cliente_nome,uf,status,totais,created_at,created_by,finalizado_em,previsao_fechamento,expedido_em,estimativa_entrega",
           statusIn: PEDIDO_STATUS as unknown as string[],
         },
       });
@@ -117,8 +119,9 @@ function CarregadoresPedidosPage() {
       const p: any = pag.get(r.id);
       return {
         id: r.id,
-        code: r.numero ?? r.id.slice(-6).toUpperCase(),
-        title: r.numero ? `Proposta ${r.numero}` : "Proposta",
+        numero: r.numero ? String(r.numero) : null,
+        sap: r.sap_ov_numero ? formatSapNumero(r.sap_ov_numero) : null,
+        nf: r.nf_numero ? formatSapNumero(r.nf_numero) : null,
         client: r.cliente_nome,
         fechamento: datePtBr(r.finalizado_em ?? r.previsao_fechamento ?? r.created_at),
         previsaoDespacho: r.expedido_em ? String(r.expedido_em).slice(0, 10) : null,
@@ -139,8 +142,9 @@ function CarregadoresPedidosPage() {
       .filter((o) => vend.matches(vendedor, o.created_by))
       .filter((o) =>
         !s ||
-        o.code.toLowerCase().includes(s) ||
-        o.title.toLowerCase().includes(s) ||
+        (o.numero ?? "").toLowerCase().includes(s) ||
+        (o.sap ?? "").toLowerCase().includes(s) ||
+        (o.nf ?? "").toLowerCase().includes(s) ||
         o.client.toLowerCase().includes(s),
       )
       .sort((a, b) => b.value - a.value);
@@ -229,7 +233,7 @@ function KanbanView({ data }: { data: Pedido[] }) {
                 return (
                   <div key={c.id} className="bg-surface-2 hover:bg-surface rounded-xl p-3 cursor-pointer border border-transparent hover:border-primary/30 hover:shadow-md transition-all">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-semibold truncate tabular-nums">{c.code}</div>
+                      <div className="text-sm font-semibold truncate tabular-nums">{c.numero ?? "—"}</div>
                       <span className="shrink-0 rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                         {c.uf}
                       </span>
@@ -296,8 +300,9 @@ function ListView({ data }: { data: Pedido[] }) {
         <table className="w-full min-w-max text-sm">
           <thead>
             <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-              <th className="text-left px-4 py-3">Código</th>
-              <th className="text-left px-4 py-3">Pedido</th>
+              <th className="text-left px-4 py-3">Nº proposta</th>
+              <th className="text-left px-4 py-3">Nº SAP</th>
+              <th className="text-left px-4 py-3">Nº NF</th>
               <th className="text-left px-4 py-3">Cliente</th>
               <th className="text-center px-4 py-3">Status</th>
               <th className="text-left px-4 py-3">Pix</th>
@@ -312,8 +317,9 @@ function ListView({ data }: { data: Pedido[] }) {
               const prev = previsaoDo(o);
               return (
               <tr key={o.id} className="border-b border-border/50 hover:bg-surface-2">
-                <td className="px-4 py-3 font-medium">{o.code}</td>
-                <td className="px-4 py-3 text-muted-foreground">{o.title}</td>
+                <td className="px-4 py-3 font-medium tabular-nums">{o.numero ?? "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground tabular-nums">{o.sap ?? "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground tabular-nums">{o.nf ?? "—"}</td>
                 <td className="px-4 py-3">{o.client}</td>
                 <td className="px-4 py-3 text-center">
                   <StatusDot status={o.status} />
@@ -351,7 +357,7 @@ function ListView({ data }: { data: Pedido[] }) {
             })}
             {data.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
                   Nenhum pedido encontrado nos status em curso.
                 </td>
               </tr>
