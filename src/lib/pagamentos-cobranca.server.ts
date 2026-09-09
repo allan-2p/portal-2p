@@ -422,3 +422,135 @@ export async function gerarCobrancaCheckout(
   }
 }
 
+
+// --------------------------------------------------------------------------
+// Cancelamento manual da cobrança (botão do financeiro/admin)
+// --------------------------------------------------------------------------
+
+export type CancelamentoCobrancaResultado = {
+  cancelada: boolean;
+  meio: "boleto" | "pix" | null;
+  motivo?: string;
+  erro?: string;
+};
+
+/**
+ * Identificador do boleto exigido pela API de baixa (23 posições):
+ * `id_beneficiario` (12) + `codigo_carteira` (3) + `nosso_numero` (8).
+ * Validado contra o Itaú: 24 posições devolve "Tamanho do Id Boleto deve ter
+ * 23 ou 31 caracteres".
+ */
+function idBoletoBaixa(nossoNumero: string): string | null {
+  const beneficiario = soDigitos(itauEnv("ITAU_BOLETO_BENEFICIARIO"));
+  const carteira = soDigitos(itauEnv("ITAU_BOLETO_CARTEIRA") ?? "109");
+  const nn = soDigitos(nossoNumero).padStart(8, "0").slice(-8);
+  if (beneficiario.length !== 12 || carteira.length !== 3 || nn.length !== 8) return null;
+  return `${beneficiario}${carteira}${nn}`;
+}
+
+/**
+ * Cancela a cobrança do pedido: baixa o boleto no Itaú (PATCH .../baixa) ou
+ * remove a cobrança Pix. Nunca é automático — só pelo botão manual da tela de
+ * Integrações, restrito a administrador e financeiro.
+ *
+ * Pedido já pago não é cancelado aqui.
+ */
+export async function cancelarCobranca(
+  propostaId: string,
+  opts: { ator?: { id?: string | null; email?: string | null } } = {},
+): Promise<CancelamentoCobrancaResultado> {
+  const t0 = Date.now();
+  const row = await db.getProposta(propostaId);
+  if (!row) return { cancelada: false, meio: null, motivo: "Pedido não encontrado." };
+
+  const registrar = async (
+    level: "info" | "warn" | "error",
+    event: string,
+    message: string,
+    detail: Record<string, unknown> = {},
+  ) => {
+    const { logIntegrationEvent } = await import("./integration-logs.server");
+    await logIntegrationEvent({
+      slug: "pagamento.cobranca",
+      level,
+      event,
+      message: message.slice(0, 500),
+      detail: { proposta_id: propostaId, numero: row["numero"] ?? null, modo: modoItau(), ...detail },
+      durationMs: Date.now() - t0,
+      actorId: opts.ator?.id ?? null,
+      actorEmail: opts.ator?.email ?? null,
+    });
+  };
+
+  const status = String(row["pagamento_status"] ?? "");
+  if (status === "pago" || status === "confirmado" || status === "liquidado") {
+    return { cancelada: false, meio: null, motivo: "Pagamento já confirmado: a cobrança não pode ser cancelada." };
+  }
+  if (status === "cancelado") {
+    return { cancelada: false, meio: null, motivo: "A cobrança deste pedido já está cancelada." };
+  }
+
+  const meio = String(row["pagamento_meio"] ?? "") === "pix" ? "pix" : "boleto";
+  const nossoNumero = String(row["pagamento_nosso_numero"] ?? "").trim();
+  const txid = String(row["pagamento_txid"] ?? "").trim();
+  if (meio === "boleto" && !nossoNumero) {
+    return { cancelada: false, meio: null, motivo: "Este pedido não tem boleto emitido." };
+  }
+  if (meio === "pix" && !txid) {
+    return { cancelada: false, meio: null, motivo: "Este pedido não tem cobrança Pix emitida." };
+  }
+
+  const marcarCancelada = async () => {
+    await db.atualizarProposta(row.id, {
+      pagamento_status: "cancelado",
+      pagamento_atualizado_em: new Date().toISOString(),
+    });
+  };
+
+  try {
+    if (meio === "boleto") {
+      const cred = credenciaisBoleto();
+      const idBoleto = idBoletoBaixa(nossoNumero);
+      if (!cred || !idBoleto) throw new ItauIndisponivel("Credenciais do boleto Itaú não configuradas.");
+      const resp = await chamarItau({
+        escopo: "boleto",
+        cred,
+        metodo: "PATCH",
+        caminho: `/cash_management/v2/boletos/${idBoleto}/baixa`,
+        body: { data: { baixa: { codigo_baixa: "10" } } },
+        correlationId: correlation("baixa", String(row["id"])),
+      });
+      await marcarCancelada();
+      await registrar("info", "boleto_baixado", `Boleto baixado no Itaú (nosso número ${nossoNumero}).`, {
+        nosso_numero: nossoNumero,
+        id_boleto: idBoleto,
+        resposta: resp,
+      });
+      return { cancelada: true, meio: "boleto" };
+    }
+
+    const cred = credenciaisPix();
+    if (!cred) throw new ItauIndisponivel("Credenciais do Pix Itaú não configuradas.");
+    const resp = await chamarItau({
+      escopo: "pix",
+      cred,
+      metodo: "PATCH",
+      caminho: `/cob/${txid}`,
+      body: { status: "REMOVIDA_PELO_USUARIO_RECEBEDOR" },
+      correlationId: correlation("pixcancel", String(row["id"])),
+    });
+    await marcarCancelada();
+    await registrar("info", "pix_removido", `Cobrança Pix removida (txid ${txid}).`, { txid, resposta: resp });
+    return { cancelada: true, meio: "pix" };
+  } catch (e) {
+    const msg = (e as Error).message ?? String(e);
+    // Título já baixado/liquidado no banco: o estado local é acertado mesmo assim.
+    if (/j[áa] baixado|BAIXADO|liquidado/i.test(msg)) {
+      await marcarCancelada();
+      await registrar("warn", "cobranca_ja_baixada", `Cobrança já estava baixada no Itaú: ${msg}`, { resposta: msg });
+      return { cancelada: true, meio, motivo: "A cobrança já estava baixada no banco; o pedido foi atualizado." };
+    }
+    await registrar("error", "cobranca_cancelamento_falhou", msg, { resposta: msg });
+    return { cancelada: false, meio, erro: msg };
+  }
+}

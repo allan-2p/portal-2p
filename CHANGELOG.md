@@ -37,6 +37,12 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Adicionado
 
+- Botão manual **Cancelar cobrança** na tela de Integrações do pedido, visível apenas para
+  administrador e financeiro: baixa o boleto no banco (ou remove a cobrança Pix), bloqueia
+  o cancelamento quando o pagamento já foi confirmado e registra o resultado na auditoria
+  do pedido. Nunca é automático — o cancelamento do pedido continua sem mexer na cobrança.
+
+
 - Propostas de 2P Carregadores e 2P Solar destacam, já na primeira tela, quando a venda é
   para a Zona Franca de Manaus (inscrição SUFRAMA aprovada) ou quando a inscrição está
   bloqueada/impedida, com aviso de que faturar direto ao cliente final faz o benefício
