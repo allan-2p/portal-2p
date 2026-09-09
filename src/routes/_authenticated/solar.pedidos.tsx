@@ -136,8 +136,9 @@ function AcompanhamentoSolarPage() {
       .filter(
         (o) =>
           !s ||
-          o.code.toLowerCase().includes(s) ||
-          o.title.toLowerCase().includes(s) ||
+          (o.numero ?? "").toLowerCase().includes(s) ||
+          (o.sap ?? "").toLowerCase().includes(s) ||
+          (o.nf ?? "").toLowerCase().includes(s) ||
           o.client.toLowerCase().includes(s),
       )
       .sort((a, b) => b.value - a.value);
