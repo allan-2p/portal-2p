@@ -1926,6 +1926,47 @@ export const gerarCobrancaPedidoFn = createServerFn({ method: "POST" })
     };
   });
 
+/**
+ * Cancelamento manual da cobrança (baixa do boleto / remoção do Pix).
+ *
+ * Nunca automático: só por este botão, restrito a administrador e ao pessoal
+ * do financeiro (feature "financeiro.home").
+ */
+export const cancelarCobrancaPedidoFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => {
+    const i = (input ?? {}) as { propostaId?: unknown };
+    if (typeof i.propostaId !== "string" || !i.propostaId) throw new Error("Proposta inválida.");
+    return { propostaId: i.propostaId };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId, claims } = context as any;
+    const { data: papeis } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const ehAdmin = (papeis ?? []).some((p: any) => String(p?.role) === "admin");
+    let podeFinanceiro = ehAdmin;
+    if (!podeFinanceiro) {
+      const { data: temFeature } = await supabase.rpc("has_feature", {
+        _user_id: userId,
+        _key: "financeiro.home",
+      });
+      podeFinanceiro = Boolean(temFeature);
+    }
+    if (!podeFinanceiro) {
+      throw new Error("Apenas administrador e financeiro podem cancelar a cobrança.");
+    }
+    const { cancelarCobranca } = await import("@/lib/pagamentos-cobranca.server");
+    const r = await cancelarCobranca(data.propostaId, {
+      ator: { id: userId, email: claims?.email ?? null },
+    });
+    return {
+      cancelada: r.cancelada,
+      meio: r.meio ?? null,
+      motivo: r.motivo ?? null,
+      erro: r.erro ?? null,
+    };
+  });
+
+
 
 /**
  * Confirmação manual de pagamento (boleto a prazo e cartão de crédito, que não

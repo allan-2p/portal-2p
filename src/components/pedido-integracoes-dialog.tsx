@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  cancelarCobrancaPedidoFn,
   criarOrdemVendaSapFn,
   gerarCobrancaPedidoFn,
   sincronizarPedidoSalesforceFn,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/propostas.functions";
 import { listIntegrationLogs, type IntegrationLogRow } from "@/lib/integration-logs.functions";
 import { CobrancaCard } from "@/components/cobranca-card";
+import { useCan } from "@/components/permission-gate";
 import { formatSapNumero } from "@/lib/sap-numero";
 
 function dataHora(iso?: string | null) {
@@ -138,10 +140,23 @@ export function PedidoIntegracoesDialog({
       toast.error(e instanceof Error ? e.message : "Falha ao emitir a cobrança.", { duration: 14000 }),
   });
 
+  const cancelarCobrancaFn = useServerFn(cancelarCobrancaPedidoFn);
+  const cancelarCobranca = useMutation({
+    mutationFn: async () => cancelarCobrancaFn({ data: { propostaId: propostaId! } }),
+    onSuccess: (r: any) => {
+      if (r?.cancelada) toast.success(r?.motivo ?? "Cobrança cancelada no banco.");
+      else toast.error(r?.erro ?? r?.motivo ?? "A cobrança não foi cancelada.", { duration: 14000 });
+      atualizar();
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar a cobrança.", { duration: 14000 }),
+  });
+  const podeCancelarCobranca = useCan("financeiro.home");
+
   const d = status.data;
   const rows = (logs.data?.rows ?? []) as IntegrationLogRow[];
   const total = logs.data?.total ?? 0;
-  const ocupado = sap.isPending || sf.isPending || cobranca.isPending;
+  const ocupado = sap.isPending || sf.isPending || cobranca.isPending || cancelarCobranca.isPending;
 
 
   return (
@@ -287,6 +302,26 @@ export function PedidoIntegracoesDialog({
                         Forçar nova emissão
                       </Button>
                     )}
+                    {podeCancelarCobranca &&
+                      (d.cobranca.linhaDigitavel || d.cobranca.pixCopiaCola) &&
+                      d.cobranca.status !== "cancelado" && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={ocupado}
+                          onClick={() => {
+                            if (!window.confirm("Cancelar a cobrança deste pedido no banco? O cliente não conseguirá mais pagar.")) return;
+                            cancelarCobranca.mutate();
+                          }}
+                        >
+                          {cancelarCobranca.isPending ? (
+                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <XCircle className="mr-2 h-3.5 w-3.5" />
+                          )}
+                          Cancelar cobrança
+                        </Button>
+                      )}
                   </>
                 ) : null
               }
