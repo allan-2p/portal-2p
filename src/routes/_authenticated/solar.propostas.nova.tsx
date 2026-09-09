@@ -85,6 +85,7 @@ import { cnpjValido, cpfValido } from "@/lib/cnpj";
 import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { precosSolarFn } from "@/lib/solar-precos.functions";
 import { SuframaBanner } from "@/components/suframa-banner";
+import { DestinatarioTriangulacao, validarDestinatario } from "@/components/destinatario-triangulacao";
 import { statusSuframa } from "@/lib/suframa";
 import { BloqueioPrecificacaoAlert, diagnosticarBloqueio } from "@/components/solar/bloqueio-precificacao";
 import { resolverProduto } from "@/lib/solar-sku";
@@ -258,6 +259,18 @@ function NovaPropostaSolarPage() {
     if (faturarClienteFinal && fatTipoDoc === "cpf" && finalidadeUso !== "Uso e Consumo")
       setFinalidadeUso("Uso e Consumo");
   }, [faturarClienteFinal, fatTipoDoc, finalidadeUso]);
+
+  /**
+   * Triangulação (remessa por conta e ordem): a NF é do cliente da proposta e a
+   * mercadoria vai para um destinatário separado — as opções de faturar o
+   * cliente final e de endereço de entrega diferente somem.
+   */
+  const triangulacao = tipoNf === "triangulacao";
+  useEffect(() => {
+    if (!triangulacao) return;
+    setFaturarClienteFinal(false);
+    setEntregaDiferente(false);
+  }, [triangulacao]);
   const [resultadoConclusao, setResultadoConclusao] = useState<ResultadoConclusao | null>(null);
   const [enriquecendo, setEnriquecendo] = useState(false);
   const [formaPagamento, setFormaPagamento] = useState<string>("");
@@ -330,6 +343,10 @@ function NovaPropostaSolarPage() {
 
   // Etapa 4
   const [entregaDiferente, setEntregaDiferente] = useState(false);
+  /**
+   * Endereço de entrega. Na triangulação este mesmo bloco guarda os dados
+   * fiscais do destinatário (remessa por conta e ordem).
+   */
   const [entrega, setEntrega] = useState<Record<string, string>>({});
   const [freteMod, setFreteMod] = useState("");
   const [freteBonificado, setFreteBonificado] = useState(false);
@@ -1559,8 +1576,10 @@ function NovaPropostaSolarPage() {
         e.push("O frete ainda está sendo calculado. Aguarde o fim da cotação para avançar.");
       if ((freteMod === "CIF" || freteMod === "DEDICADO") && !transportadora && !freteGratis)
         e.push("Finalize a cotação e escolha a transportadora.");
-      if (entregaDiferente && (!entrega['logradouro'] || !entrega['cidade']))
+      if (!triangulacao && entregaDiferente && (!entrega['logradouro'] || !entrega['cidade']))
         e.push("Complete o endereço de entrega.");
+      if (triangulacao)
+        e.push(...validarDestinatario(entrega as Record<string, string | boolean>));
     }
     return e;
   }, [
@@ -1568,7 +1587,7 @@ function NovaPropostaSolarPage() {
     finalidadeUso, fatTipoDoc, fatContribuinte, fatConsultadoDoc, fatIeHabilitada,
     itens, freteMod, transportadora, freteGratis, entregaDiferente, entrega,
     modo, assinaturaCalc, calcDesatualizado, itensCalc, avisosPreco, ehKit,
-    freteCotando,
+    freteCotando, triangulacao,
   ]);
 
 
@@ -1648,7 +1667,11 @@ function NovaPropostaSolarPage() {
           entregaDiferente,
           // Sem endereço de entrega próprio, a mercadoria vai para quem recebe a
           // NF: cliente final quando o pedido é faturado direto para ele.
-          entrega: entregaDiferente
+          // Na triangulação o bloco do destinatário (com dados fiscais) é o
+          // próprio jsonb de entrega.
+          entrega: triangulacao
+            ? entrega
+            : entregaDiferente
             ? entrega
             : faturarClienteFinal && String(fat['logradouro'] ?? "").trim()
               ? {
@@ -1785,10 +1808,13 @@ function NovaPropostaSolarPage() {
   }
 
 
+  // Na triangulação a mercadoria vai para o destinatário — é o endereço dele
+  // que define o frete.
+  const entregaPropria = triangulacao || entregaDiferente;
   const destino = {
-    uf: entregaDiferente ? String(entrega['uf'] ?? "") : String(cliente?.['uf'] ?? ""),
-    cidade: entregaDiferente ? String(entrega['cidade'] ?? "") : String(cliente?.['cidade'] ?? ""),
-    cep: entregaDiferente ? String(entrega['cep'] ?? "") : String(cliente?.['cep'] ?? ""),
+    uf: entregaPropria ? String(entrega['uf'] ?? "") : String(cliente?.['uf'] ?? ""),
+    cidade: entregaPropria ? String(entrega['cidade'] ?? "") : String(cliente?.['cidade'] ?? ""),
+    cep: entregaPropria ? String(entrega['cep'] ?? "") : String(cliente?.['cep'] ?? ""),
   };
 
   /** Dados da proposta para o PDF. */
@@ -1898,13 +1924,23 @@ function NovaPropostaSolarPage() {
         contribuinte: faturarClienteFinal ? fatContribuinte : cliente?.['contribuinte'] === true,
         linhas: linhasEnd(faturamentoBase),
       },
-      enderecoEntrega: entregaDiferente
+      enderecoEntrega: triangulacao
         ? {
+            nome: String(entrega['nome'] ?? ""),
+            doc: String(entrega['doc'] ?? ""),
+            ie: String(entrega['ie'] ?? ""),
+            contribuinte: String(entrega['contribuinte']) === "true",
             contato: String(entrega['contato'] ?? ""),
             telefone: String(entrega['telefone'] ?? ""),
             linhas: linhasEnd(entrega),
           }
-        : { nome: "Mesmo do faturamento", linhas: linhasEnd(faturamentoBase) },
+        : entregaDiferente
+          ? {
+              contato: String(entrega['contato'] ?? ""),
+              telefone: String(entrega['telefone'] ?? ""),
+              linhas: linhasEnd(entrega),
+            }
+          : { nome: "Mesmo do faturamento", linhas: linhasEnd(faturamentoBase) },
       estrutura: disposicaoFileiras.length ? { fileiras: disposicaoFileiras } : null,
 
     };
@@ -2091,14 +2127,26 @@ function NovaPropostaSolarPage() {
                 {tentou && !tipoNf && <Erro>Selecione o tipo de nota fiscal.</Erro>}
               </Campo>
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={faturarClienteFinal}
-                onCheckedChange={(v) => setFaturarClienteFinal(v === true)}
-              />
-              Faturar direto para o cliente final
-            </label>
-            {faturarClienteFinal && (
+            {triangulacao ? (
+              <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 text-sm">
+                <div className="text-xs uppercase tracking-wider font-semibold text-primary">
+                  Triangulação — remessa por conta e ordem
+                </div>
+                <p className="mt-1 text-muted-foreground">
+                  O faturamento fica no cliente desta proposta. Os dados de quem recebe a
+                  mercadoria são informados na etapa "Entrega e frete".
+                </p>
+              </div>
+            ) : (
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={faturarClienteFinal}
+                  onCheckedChange={(v) => setFaturarClienteFinal(v === true)}
+                />
+                Faturar direto para o cliente final
+              </label>
+            )}
+            {!triangulacao && faturarClienteFinal && (
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm text-muted-foreground">O cliente final é:</span>
@@ -2997,17 +3045,28 @@ function NovaPropostaSolarPage() {
 
         {etapa === 4 && (
           <section className="glass rounded-2xl p-5 space-y-4">
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={entregaDiferente}
-                onCheckedChange={(v) => {
-                  setEntregaDiferente(v === true);
-                  setTransportadora(null);
-                }}
+            {triangulacao && (
+              <DestinatarioTriangulacao
+                valor={entrega as Record<string, string | boolean>}
+                onChange={(patch) =>
+                  setEntrega((p) => ({ ...p, ...(patch as Record<string, string>) }))
+                }
+                onEnderecoAlterado={() => setTransportadora(null)}
               />
-              Endereço de entrega diferente do cadastro
-            </label>
-            {entregaDiferente && (
+            )}
+            {!triangulacao && (
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={entregaDiferente}
+                  onCheckedChange={(v) => {
+                    setEntregaDiferente(v === true);
+                    setTransportadora(null);
+                  }}
+                />
+                Endereço de entrega diferente do cadastro
+              </label>
+            )}
+            {!triangulacao && entregaDiferente && (
               <div className="grid gap-3 md:grid-cols-3">
                 <Campo label="CEP">
                   <CepInput
@@ -3179,7 +3238,7 @@ function NovaPropostaSolarPage() {
                 <Info
                   label="Endereço de entrega"
                   value={
-                    entregaDiferente
+                    triangulacao || entregaDiferente
                       ? `${entrega['logradouro'] ?? ""} ${entrega['numero'] ?? ""} — ${cidadeUf(entrega['cidade'], entrega['uf'])}`
                       : faturarClienteFinal
                         ? "Mesmo do faturamento (cliente final)"
@@ -3187,6 +3246,42 @@ function NovaPropostaSolarPage() {
                   }
                 />
               </div>
+
+              {triangulacao && (
+                <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+                  <div className="text-xs uppercase tracking-wider font-semibold text-primary">
+                    Destinatário (remessa por conta e ordem)
+                  </div>
+                  <div className="mt-2 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                    <Info label="Nome" value={String(entrega['nome'] ?? "—")} />
+                    <Info label="CPF / CNPJ" value={String(entrega['doc'] ?? "—")} />
+                    <Info label="Inscrição estadual" value={String(entrega['ie'] ?? "") || "—"} />
+                    <Info
+                      label="Contribuinte de ICMS"
+                      value={String(entrega['contribuinte']) === "true" ? "Sim" : "Não"}
+                    />
+                    <Info label="Contato" value={String(entrega['contato'] ?? "") || "—"} />
+                    <Info label="Telefone" value={String(entrega['telefone'] ?? "") || "—"} />
+                    <Info
+                      label="Endereço"
+                      value={
+                        [
+                          [entrega['logradouro'], entrega['numero']].filter(Boolean).join(", "),
+                          entrega['bairro'],
+                          cidadeUf(entrega['cidade'], entrega['uf']),
+                          entrega['cep'],
+                        ]
+                          .filter((v) => v && String(v).trim())
+                          .join(" · ") || "—"
+                      }
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Faturamento no cliente da proposta. A nota de remessa por conta e ordem leva +2
+                    dias para emissão.
+                  </p>
+                </div>
+              )}
 
               {faturarClienteFinal && (
                 <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">

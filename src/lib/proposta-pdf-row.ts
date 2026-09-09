@@ -137,7 +137,12 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
       ie: txt(fat['ie']) || txt(p['cliente_ie']),
       linhas: linhasEndereco(fat),
     },
+    tipoNf: txt(p['tipo_nf']) || null,
+    // Na triangulação o bloco de entrega é o destinatário: mostra nome e documento.
     enderecoEntrega: {
+      nome: txt(ent['nome']) || null,
+      doc: txt(ent['doc']) || null,
+      ie: txt(ent['ie']) || null,
       contato: txt(ent['contato']) || null,
       telefone: txt(ent['telefone']) || null,
       linhas: linhasEndereco(ent),
@@ -206,7 +211,17 @@ export function pdfDataSolarDaProposta(p: Row): SolarPropostaPdfData {
       contribuinte: contribuinteDaNf(p),
       linhas: linhasEndereco(fat),
     },
-    enderecoEntrega: p['entrega_diferente']
+    enderecoEntrega: txt(p['tipo_nf']).toLowerCase().startsWith("triangul")
+      ? {
+          nome: txt(ent['nome']),
+          doc: txt(ent['doc']),
+          ie: txt(ent['ie']),
+          contribuinte: ent['contribuinte'] === true,
+          contato: txt(ent['contato']),
+          telefone: txt(ent['telefone']),
+          linhas: linhasEndereco(ent),
+        }
+      : p['entrega_diferente']
       ? { contato: txt(ent['contato']), telefone: txt(ent['telefone']), linhas: linhasEndereco(ent) }
       : { nome: "Mesmo do faturamento", linhas: linhasEndereco(fat) },
     estrutura: Array.isArray(disposicao) && disposicao.length ? { fileiras: disposicao } : null,

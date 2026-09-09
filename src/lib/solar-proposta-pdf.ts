@@ -347,7 +347,12 @@ export function buildSolarPropostaPdfHtml(p: SolarPropostaPdfData) {
       <div class="sech"><span>Endereços</span></div>
       <div class="grid two" style="margin-top:0">
         ${bloco("Faturamento", p.enderecoFaturamento ?? null)}
-        ${bloco("Entrega", p.enderecoEntrega ?? null)}
+        ${bloco(
+          String(p.tipoNf ?? "").toLowerCase().startsWith("triangul")
+            ? "Destinatário (remessa por conta e ordem)"
+            : "Entrega",
+          p.enderecoEntrega ?? null,
+        )}
       </div>
     </div>`
         : ""

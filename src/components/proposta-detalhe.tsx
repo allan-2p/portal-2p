@@ -377,10 +377,36 @@ export function PropostaDetalhe({ id }: { id?: string }) {
               </div>
             </div>
           ) : null}
+          {String(p['tipo_nf'] ?? "").toLowerCase().startsWith("triangul") ? (
+            <div className="col-span-2 md:col-span-4 rounded-lg border border-border bg-muted/40 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Destinatário — remessa por conta e ordem
+              </div>
+              <div className="font-medium">{entrega['nome'] || "—"}</div>
+              <div className="text-xs text-muted-foreground">
+                {[
+                  entrega['doc'] ? `Doc. ${entrega['doc']}` : "",
+                  entrega['ie'] ? `IE ${entrega['ie']}` : "",
+                  (entrega as Record<string, unknown>)['contribuinte'] === true
+                    ? "Contribuinte de ICMS"
+                    : "Não contribuinte",
+                  entrega['contato'] ? `Contato ${entrega['contato']}` : "",
+                  entrega['telefone'] ? `Tel. ${entrega['telefone']}` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </div>
+              <div className="text-sm mt-1">{enderecoEntrega || "—"}</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                A nota fiscal é emitida para o cliente da proposta; a mercadoria segue para este destinatário.
+              </div>
+            </div>
+          ) : (
           <div className="col-span-2 md:col-span-4">
             <div className="text-xs text-muted-foreground">Endereço de entrega</div>
             <div className="font-medium">{enderecoEntrega || "—"}</div>
           </div>
+          )}
         </div>
       </NfDocumentosCard>
 

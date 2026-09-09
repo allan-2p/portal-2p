@@ -79,13 +79,17 @@ export type PropostaPdfData = {
     ie?: string | null;
     linhas: string[];
   } | null;
-  /** Endereço de entrega da mercadoria. */
+  /** Endereço de entrega da mercadoria (destinatário, na triangulação). */
   enderecoEntrega?: {
     nome?: string | null;
+    doc?: string | null;
+    ie?: string | null;
     contato?: string | null;
     telefone?: string | null;
     linhas: string[];
   } | null;
+  /** Tipo de nota fiscal — "triangulacao" muda o rótulo do bloco de entrega. */
+  tipoNf?: string | null;
   observacoes?: string;
   consultor?: string;
   validadeDias?: number;
@@ -191,7 +195,12 @@ export function buildPropostaPdfHtml(p: PropostaPdfData) {
       <div class="sech"><span>Endereços</span></div>
       <div class="grid" style="grid-template-columns:repeat(2,1fr)">
         ${blocoEndereco("Endereço de faturamento", p.enderecoFaturamento)}
-        ${blocoEndereco("Endereço de entrega", p.enderecoEntrega)}
+        ${blocoEndereco(
+          String(p.tipoNf ?? "").toLowerCase().startsWith("triangul")
+            ? "Destinatário (remessa por conta e ordem)"
+            : "Endereço de entrega",
+          p.enderecoEntrega,
+        )}
       </div>
     </div>`
       : "";

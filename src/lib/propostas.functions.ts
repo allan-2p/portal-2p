@@ -44,7 +44,8 @@ export type SalvarPropostaInput = {
   formaPagamento: string | null;
   condicaoPagamento: string | null;
   entregaDiferente: boolean;
-  entrega: Record<string, string>;
+  /** Endereço de entrega; na triangulação carrega os dados fiscais do destinatário. */
+  entrega: Record<string, string | boolean>;
   freteMod: string;
   freteAreaRural: boolean;
   freteBonificado: boolean;
@@ -95,12 +96,32 @@ function validar(input: any): SalvarPropostaInput {
     }));
   if (!itens.length) throw new Error("Adicione ao menos um produto.");
   const campos = ["cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "contato", "telefone"];
-  const entregaNormalizada: Record<string, string> = {};
+  // Triangulação (remessa por conta e ordem): o bloco de entrega guarda também
+  // os dados fiscais do destinatário, que pode ser de outro estado.
+  const ehTriangulacao = String(input.tipoNf ?? "").trim().toLowerCase().startsWith("triangul");
+  const entregaNormalizada: Record<string, string | boolean> = {};
   for (const c of campos) entregaNormalizada[c] = String(input.entrega?.[c] ?? "").slice(0, 160);
-  if (input.entregaDiferente) {
+  if (ehTriangulacao) {
+    for (const c of ["doc", "nome", "ie", "ie_situacao", "tipo_doc", "consulta_fiscal_doc"])
+      entregaNormalizada[c] = String(input.entrega?.[c] ?? "").slice(0, 160);
+    entregaNormalizada['contribuinte'] = input.entrega?.['contribuinte'] === true;
+    if (typeof input.entrega?.['ie_habilitada'] === "boolean")
+      entregaNormalizada['ie_habilitada'] = input.entrega['ie_habilitada'] as boolean;
+    const docDest = String(entregaNormalizada['doc'] ?? "").replace(/\D/g, "");
+    if (!String(entregaNormalizada['nome'] ?? "").trim())
+      throw new Error("Informe o nome do destinatário da remessa por conta e ordem.");
+    if (docDest.length === 11 ? !cpfValido(docDest) : !cnpjValido(docDest))
+      throw new Error("CPF/CNPJ do destinatário da remessa inválido.");
+    if (
+      !entregaNormalizada['logradouro'] ||
+      !entregaNormalizada['cidade'] ||
+      String(entregaNormalizada['uf'] ?? "").length !== 2
+    )
+      throw new Error("Informe o endereço completo do destinatário da remessa.");
+  } else if (input.entregaDiferente) {
     if (!entregaNormalizada['logradouro'] || !entregaNormalizada['cidade'])
       throw new Error("Informe o endereço de entrega.");
-    if ((entregaNormalizada['uf'] ?? "").toUpperCase() !== uf)
+    if (String(entregaNormalizada['uf'] ?? "").toUpperCase() !== uf)
       throw new Error("O endereço de entrega deve estar no mesmo estado do faturamento.");
   }
 
@@ -1639,6 +1660,17 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         marcar("kit_aviso", async () => {
           const { avisarKitFotovoltaico } = await import("@/lib/kit-aviso.server");
           await avisarKitFotovoltaico({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
+        }).catch(() => undefined),
+      );
+    }
+
+    // Triangulação: o fiscal precisa cadastrar o destinatário no SAP e emitir
+    // as notas de venda à ordem (não bloqueia o pedido).
+    if (String(row["tipo_nf"] ?? "").toLowerCase().startsWith("triangul")) {
+      emParalelo.push(
+        marcar("triangulacao_aviso", async () => {
+          const { avisarTriangulacao } = await import("@/lib/triangulacao-aviso.server");
+          await avisarTriangulacao({ ...row, sap_ov_numero: sapOv?.vbeln ?? row["sap_ov_numero"] });
         }).catch(() => undefined),
       );
     }

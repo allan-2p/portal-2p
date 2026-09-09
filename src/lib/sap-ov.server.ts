@@ -260,7 +260,8 @@ function observacoes(row: Record<string, any>): string[] {
   if (contatoNome || tel) obs.push(`Contato: ${contatoNome}${tel ? ` Telefone ${tel}` : ""}`);
 
 
-  if (row["entrega_diferente"]) {
+  const ehTriangulacaoObs = String(row["tipo_nf"] ?? "").toLowerCase().startsWith("triangul");
+  if (row["entrega_diferente"] || ehTriangulacaoObs) {
     const e = (row["entrega"] ?? {}) as Record<string, any>;
     const partes = [
       [e["logradouro"], e["numero"]].filter(Boolean).join(", "),
@@ -271,7 +272,20 @@ function observacoes(row: Record<string, any>): string[] {
     ]
       .filter((p) => String(p ?? "").trim())
       .join(" - ");
-    if (partes) obs.push(`Entregar no endereço: ${partes}`);
+    if (ehTriangulacaoObs) {
+      // Venda à ordem: a NF sai no cliente da proposta e a remessa vai para o
+      // destinatário. O cadastro do destinatário no SAP é feito pelo fiscal,
+      // avisado por e-mail na conclusão do pedido.
+      obs.push("VENDA A ORDEM - REMESSA POR CONTA E ORDEM DE TERCEIROS");
+      const nomeDest = String(e["nome"] ?? "").trim();
+      const docDest = String(e["doc"] ?? "").trim();
+      if (nomeDest || docDest) obs.push(`Destinatario: ${nomeDest}${docDest ? ` - CNPJ/CPF ${docDest}` : ""}`);
+      const ieDest = String(e["ie"] ?? "").trim();
+      if (ieDest) obs.push(`IE do destinatario: ${ieDest}`);
+      if (partes) obs.push(`Entregar no destinatario: ${partes}`);
+    } else if (partes) {
+      obs.push(`Entregar no endereço: ${partes}`);
+    }
   }
 
   const transp = String(row["transportadora"] ?? "").trim();
