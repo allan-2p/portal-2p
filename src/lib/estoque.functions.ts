@@ -59,8 +59,12 @@ const FEATURES_ESTOQUE = [
 
 export const listEstoque = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ org: z.enum(["solar", "carregadores"]).optional() }).parse(d ?? {}),
+  )
   .handler(
     async ({
+      data,
       context,
     }): Promise<{
       produtos: ProdutoConsolidado[];
@@ -68,13 +72,16 @@ export const listEstoque = createServerFn({ method: "GET" })
       containers: ContainerLinha[];
       lastRun: EstoqueSyncRun | null;
     }> => {
+      let produtosQuery = context.supabase
+        .from("produtos")
+        .select(
+          "codigo, descricao, unidade, ncm, tipo, grp_mercadorias, custo, preco_venda, visibilidade, no_catalogo, ativo, last_synced_at",
+        )
+        .order("descricao");
+      if (data.org) produtosQuery = produtosQuery.eq("visibilidade", data.org);
+
       const [{ data: produtos }, { data: estoque }, { data: containers }, { data: runs }] = await Promise.all([
-        context.supabase
-          .from("produtos")
-          .select(
-            "codigo, descricao, unidade, ncm, tipo, grp_mercadorias, custo, preco_venda, visibilidade, no_catalogo, ativo, last_synced_at",
-          )
-          .order("descricao"),
+        produtosQuery,
         context.supabase
           .from("estoque")
           .select(
@@ -92,14 +99,27 @@ export const listEstoque = createServerFn({ method: "GET" })
           .limit(1),
       ]);
 
+      const listaProdutos = (produtos ?? []) as ProdutoConsolidado[];
+      let listaEstoque = (estoque ?? []) as EstoqueLinha[];
+      let listaContainers = (containers ?? []) as ContainerLinha[];
+
+      // `estoque` e `containers` são por material: filtramos pelos códigos
+      // com a visibilidade da instância pedida.
+      if (data.org) {
+        const codigos = new Set(listaProdutos.map((p) => String(p.codigo)));
+        listaEstoque = listaEstoque.filter((e) => codigos.has(String(e.material)));
+        listaContainers = listaContainers.filter((c) => codigos.has(String(c.material)));
+      }
+
       return {
-        produtos: (produtos ?? []) as ProdutoConsolidado[],
-        estoque: (estoque ?? []) as EstoqueLinha[],
-        containers: (containers ?? []) as ContainerLinha[],
+        produtos: listaProdutos,
+        estoque: listaEstoque,
+        containers: listaContainers,
         lastRun: ((runs ?? [])[0] as EstoqueSyncRun | undefined) ?? null,
       };
     },
   );
+
 
 export const listEstoqueSyncRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
