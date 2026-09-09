@@ -427,7 +427,10 @@ export async function sincronizarPedidoSalesforce(
     if (!oppId && so(row["projeto_antigo_id"])) {
       const mensagem =
         "Pedido legado sem oportunidade correspondente no Salesforce — sincronização pulada para não criar duplicata.";
-      await gravar(propostaId, { sf_status: "erro", sf_mensagem: erroMsg(mensagem) });
+      // "ignorado" (e não "erro"): a fila reprocessa os "erro" para sempre, e
+      // esses pedidos legados nunca poderão ser enviados — ficavam ocupando
+      // todas as vagas do ciclo e travando os pedidos novos.
+      await gravar(propostaId, { sf_status: "ignorado", sf_mensagem: erroMsg(mensagem) });
       await logIntegrationEvent({
         ...base,
         level: "warn",
