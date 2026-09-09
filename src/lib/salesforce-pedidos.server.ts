@@ -395,7 +395,9 @@ export async function sincronizarPedidoSalesforce(
         ? motivoCanc
         : "Erro Interno";
       const obs = so(row["motivo_cancelamento_obs"]);
-      if (obs) custom["Descri_o_do_Motivo_de_Perda__c"] = obs;
+      // O campo aceita 255 caracteres: observações longas (conversas coladas)
+      // faziam o update inteiro ser recusado pela org.
+      if (obs) custom["Descri_o_do_Motivo_de_Perda__c"] = obs.length > 255 ? `${obs.slice(0, 252)}...` : obs;
     }
     // Perda dada no portal: estágio "Oportunidade Perdida" + picklist
     // `Loss_Reason__c` e a descrição escrita pelo vendedor.
