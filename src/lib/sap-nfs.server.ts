@@ -737,9 +737,9 @@ export async function sincronizarNotasFiscais(limite = 90): Promise<NfResultado>
       !(String(r["status"] ?? "") === "Coletado" && String(r["nf_fretefy_em"] ?? "").trim()),
   );
 
-  // O cron roda a cada 10 minutos: os pedidos recentes são consultados em
+  // O cron roda a cada 5 minutos: os pedidos recentes são consultados em
   // todas as execuções e o backlog antigo gira em janelas circulares.
-  const rodada = Math.floor(Date.now() / (10 * 60 * 1000));
+  const rodada = Math.floor(Date.now() / (5 * 60 * 1000));
   const fila = montarFilaNfs(elegiveis, limite, rodada);
 
 
