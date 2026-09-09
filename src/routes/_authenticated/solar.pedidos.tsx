@@ -308,8 +308,9 @@ function ListView({ data }: { data: Pedido[] }) {
           <table className="w-full min-w-max text-sm">
             <thead>
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-                <th className="text-left px-4 py-3">Código</th>
-                <th className="text-left px-4 py-3">Pedido</th>
+                <th className="text-left px-4 py-3">Nº proposta</th>
+                <th className="text-left px-4 py-3">Nº SAP</th>
+                <th className="text-left px-4 py-3">Nº NF</th>
                 <th className="text-left px-4 py-3">Cliente</th>
                 <th className="text-center px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">UF</th>
@@ -323,8 +324,9 @@ function ListView({ data }: { data: Pedido[] }) {
                 const prev = previsaoDo(o);
                 return (
                   <tr key={o.id} className="border-b border-border/50 hover:bg-surface-2">
-                    <td className="px-4 py-3 font-medium">{o.code}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{o.title}</td>
+                    <td className="px-4 py-3 font-medium tabular-nums">{o.numero ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground tabular-nums">{o.sap ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground tabular-nums">{o.nf ?? "—"}</td>
                     <td className="px-4 py-3">{o.client}</td>
                     <td className="px-4 py-3 text-center">
                       <StatusDot status={o.status} />
@@ -347,7 +349,7 @@ function ListView({ data }: { data: Pedido[] }) {
               })}
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                     Nenhum pedido encontrado nos status em curso.
                   </td>
                 </tr>
