@@ -65,6 +65,7 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Correção** — Corrigido o erro ao salvar propostas do 2P Carregadores: o banco de propostas não tinha os campos de mês/lote de entrega (`supabase/external/propostas-entrega-lote.sql`).
 
 ### Alterado
+- **Status do SAP mais rápido no portal**: a verificação de notas fiscais no SAP passou de 20 para 10 minutos e o lote subiu de 50 para 90 pedidos, com os pedidos recentes consultados em toda execução e o histórico antigo em rodízio. Antes um pedido faturado podia levar mais de uma hora para atualizar; agora aparece em até ~10 minutos.
 - **Proposta de Carregadores sem margem/comissão**: no resumo, na revisão final e no detalhe do pedido aparecem apenas os impostos; margem e comissão ficam na Visão Geral.
 
 ### Banco de dados
