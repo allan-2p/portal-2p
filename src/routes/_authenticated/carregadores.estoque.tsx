@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/carregadores/estoque")({
 function EstoqueCarregadoresPage() {
   return (
     <AppLayout>
-      <AdminRouteGuard feature="admin.objetos.produtos" area="configuracoes">
+      <AdminRouteGuard feature="carregadores.estoque">
         <EstoquePainel
           org="carregadores"
           titulo="Estoque — 2P Carregadores"
