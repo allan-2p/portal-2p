@@ -219,6 +219,7 @@ export async function runJob<T>(
   fn: (ctx: { runId: string | null }) => Promise<T>,
 ): Promise<{ ok: true; runId: string | null; result: T } | { ok: false; runId: string | null; error: string }> {
   const t0 = performance.now();
+  if (input.trigger === "cron") await encerrarExecucoesTravadas();
   const runId = await startJobRun(input);
   const { logIntegrationEvent } = await import("@/lib/integration-logs.server");
   try {
