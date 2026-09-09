@@ -674,11 +674,38 @@ export function selecionarFilaRotativa<T>(rows: T[], limite: number, rodada: num
   return Array.from({ length: Math.min(limite, rows.length) }, (_, i) => rows[(inicio + i) % rows.length] as T);
 }
 
+/** Pedido "quente": ainda pode mudar de status a qualquer momento no SAP. */
+export function pedidoPrioritario(row: Record<string, unknown>, agora = Date.now()): boolean {
+  const status = String(row["status"] ?? "");
+  if (status === "Coletado") return false;
+  const criado = Date.parse(String(row["created_at"] ?? ""));
+  if (Number.isNaN(criado)) return true;
+  return agora - criado <= 45 * 24 * 60 * 60 * 1000;
+}
+
+/**
+ * Monta o lote: primeiro os pedidos quentes (consultados em toda execução),
+ * depois o backlog em rodízio, sem estourar o limite do lote.
+ */
+export function montarFilaNfs<T extends Record<string, unknown>>(
+  elegiveis: T[],
+  limite: number,
+  rodada: number,
+  agora = Date.now(),
+): T[] {
+  const quentes = elegiveis.filter((r) => pedidoPrioritario(r, agora));
+  const frios = elegiveis.filter((r) => !pedidoPrioritario(r, agora));
+  const lote = quentes.slice(0, limite);
+  const resto = limite - lote.length;
+  if (resto > 0) lote.push(...selecionarFilaRotativa(frios, resto, rodada));
+  return lote;
+}
+
 /**
  * Varre os pedidos em andamento e sincroniza o status com o SAP.
- * Lote de até 50 por execução, mais antigos primeiro.
+ * Pedidos recentes entram em toda execução; o backlog antigo entra em rodízio.
  */
-export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado> {
+export async function sincronizarNotasFiscais(limite = 90): Promise<NfResultado> {
   if (!sapNfsConfigurado()) {
     return { verificados: 0, atualizados: 0, vazios: 0, erros_total: 0, detalhes: [], skipped: true, motivo: "SAP_NFS_URL/credencial não configurada." };
   }
@@ -710,11 +737,11 @@ export async function sincronizarNotasFiscais(limite = 50): Promise<NfResultado>
       !(String(r["status"] ?? "") === "Coletado" && String(r["nf_fretefy_em"] ?? "").trim()),
   );
 
-  // O cron roda a cada 20 minutos; cada execução pega a janela seguinte e,
-  // ao chegar ao fim, continua do começo. Assim pedidos novos e antigos são
-  // consultados mesmo quando o backlog passa de 50.
-  const rodada = Math.floor(Date.now() / (20 * 60 * 1000));
-  const fila = selecionarFilaRotativa(elegiveis, limite, rodada);
+  // O cron roda a cada 10 minutos: os pedidos recentes são consultados em
+  // todas as execuções e o backlog antigo gira em janelas circulares.
+  const rodada = Math.floor(Date.now() / (10 * 60 * 1000));
+  const fila = montarFilaNfs(elegiveis, limite, rodada);
+
 
 
   const detalhes: NfAplicacao[] = [];
