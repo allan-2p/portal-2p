@@ -25,6 +25,7 @@ export type FeatureKey =
   | "clientes.sugestoes"
   | "clientes.ranking"
   | "atlas"
+  | "estoque"
   | "carregadores.home"
   | "carregadores.visao-geral"
   | "carregadores.tarefas"
@@ -35,6 +36,7 @@ export type FeatureKey =
   | "carregadores.comissoes"
   | "carregadores.regras"
   | "carregadores.metas"
+  | "carregadores.estoque"
   | "admin.usuarios"
   | "admin.metas"
   | "admin.regras"
@@ -205,6 +207,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/solar/clientes/sugestoes": "clientes.sugestoes",
   "/solar/clientes/ranking": "clientes.ranking",
   "/solar/atlas": "atlas",
+  "/solar/estoque": "estoque",
   "/carregadores": "carregadores.home",
   "/carregadores/visao-geral": "carregadores.visao-geral",
   "/carregadores/tarefas": "carregadores.tarefas",
@@ -216,6 +219,7 @@ export const ROUTE_FEATURE: Partial<Record<AppPath, FeatureKey>> = {
   "/carregadores/comissoes": "carregadores.comissoes",
   "/carregadores/regras": "carregadores.regras",
   "/carregadores/metas": "carregadores.metas",
+  "/carregadores/estoque": "carregadores.estoque",
 
   "/admin/usuarios": "admin.usuarios",
   "/admin/configuracoes": "admin.area.configuracoes",
@@ -275,6 +279,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "clientes.sugestoes": "Clientes • Radar do Atlas (Sugestões)",
   "clientes.ranking": "Clientes • Ranking",
   atlas: "Atlas (AI)",
+  estoque: "Estoque",
   "carregadores.home": "Carregadores • Home",
   "carregadores.visao-geral": "Carregadores • Visão Geral",
   "carregadores.tarefas": "Carregadores • Tarefas",
@@ -285,6 +290,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "carregadores.comissoes": "Moderação • Carregadores • Regras de Comissões",
   "carregadores.regras": "Moderação • Carregadores • Regras de Propostas",
   "carregadores.metas": "Moderação • Carregadores • Regras de Metas",
+  "carregadores.estoque": "Estoque",
   "admin.usuarios": "Admin • Usuários",
   "admin.metas": "Moderação • Solar • Regras de Metas",
   "admin.regras": "Moderação • Solar • Regras de Propostas",
