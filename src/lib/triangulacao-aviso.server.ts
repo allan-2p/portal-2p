@@ -8,7 +8,13 @@ import { formatSapNumero } from "@/lib/sap-numero";
  * checkout.
  */
 
-const FIXOS = ["allan@2pgroup.com.br", "nfe@2pgroup.com.br", "financeiro@2pgroup.com.br"];
+const FIXOS = [
+  "allan@2pgroup.com.br",
+  "nfe@2pgroup.com.br",
+  "financeiro@2pgroup.com.br",
+  "logistica@2pgroup.com.br",
+  "alexandre@2pgroup.com.br",
+];
 
 /** E-mail do consultor responsável, quando o perfil tiver um cadastrado. */
 async function emailConsultor(row: Record<string, any>): Promise<string> {
