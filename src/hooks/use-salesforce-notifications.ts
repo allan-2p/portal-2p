@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getSalesforceTasks } from "@/lib/salesforce.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { pushNotification } from "./use-notifications";
 import { useAuth } from "./use-auth";
 
@@ -51,10 +52,15 @@ export function useSalesforceNotifications() {
       if (cancelled) return;
       const seen = seenRef.current!;
       try {
+        // Sem token válido (sessão expirando/renovando) o RPC sairia sem
+        // Authorization e o servidor lançaria "Unauthorized".
+        const { data: sess } = await supabase.auth.getSession();
+        if (!sess.session?.access_token) return;
         const today = todayIso();
         const tasksRes = await fetchTasks({ data: { start: today, end: today } }).catch(() => ({
           records: [] as any[],
         }));
+
 
         const nextSeen = new Set(seen);
         const newItems: Array<() => void> = [];
