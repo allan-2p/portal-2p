@@ -686,6 +686,12 @@ export function pedidoPrioritario(row: Record<string, unknown>, agora = Date.now
 /**
  * Monta o lote: primeiro os pedidos quentes (consultados em toda execução),
  * depois o backlog em rodízio, sem estourar o limite do lote.
+ *
+ * Quando há mais pedidos quentes do que o limite, os MAIS RECENTES entram
+ * primeiro: a lista chega ordenada do mais antigo para o mais novo e o corte
+ * simples deixava justamente os pedidos do dia (que mudam de status a toda
+ * hora no SAP) fora de todas as execuções. O excedente antigo entra no rodízio
+ * junto com o backlog frio, então ninguém fica sem consulta.
  */
 export function montarFilaNfs<T extends Record<string, unknown>>(
   elegiveis: T[],
@@ -695,11 +701,14 @@ export function montarFilaNfs<T extends Record<string, unknown>>(
 ): T[] {
   const quentes = elegiveis.filter((r) => pedidoPrioritario(r, agora));
   const frios = elegiveis.filter((r) => !pedidoPrioritario(r, agora));
-  const lote = quentes.slice(0, limite);
+  const recentesPrimeiro = quentes.slice().reverse();
+  const lote = recentesPrimeiro.slice(0, limite);
+  const excedente = recentesPrimeiro.slice(limite);
   const resto = limite - lote.length;
-  if (resto > 0) lote.push(...selecionarFilaRotativa(frios, resto, rodada));
+  if (resto > 0) lote.push(...selecionarFilaRotativa([...excedente, ...frios], resto, rodada));
   return lote;
 }
+
 
 /**
  * Varre os pedidos em andamento e sincroniza o status com o SAP.

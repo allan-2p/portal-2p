@@ -37,6 +37,14 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Corrigido
 
+- **Pedidos do dia parados em "Faturado" mesmo após a coleta**: a fila do cron do SAP
+  cortava os pedidos quentes do mais antigo para o mais novo, então com mais de 90 pedidos
+  em andamento os pedidos recém-criados ficavam fora de todas as execuções. Agora os mais
+  recentes entram primeiro, o excedente antigo continua no rodízio e o lote padrão subiu
+  para 130 (7 pedidos travados foram destravados, entre eles a OV 17804).
+
+
+
 - **Kit de parafusos Smart subindo com o código antigo**: o material `100000052`
   (2P-KIT PARAFUSOS SMART "N") foi desativado e o `100000210` (2P-KIT PARAFUSOS SMART)
   ativado no catálogo. Propostas já salvas continuavam com o código antigo e o enviavam
