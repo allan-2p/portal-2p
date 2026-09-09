@@ -122,6 +122,7 @@ import { Route as AuthenticatedAdminLogsModeracaoRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminLogsIntegracoesRouteImport } from './routes/_authenticated/admin.logs.integracoes'
 import { Route as AuthenticatedAdminLogsGatilhosRouteImport } from './routes/_authenticated/admin.logs.gatilhos'
 import { Route as AuthenticatedAdminLogsFretefyRouteImport } from './routes/_authenticated/admin.logs.fretefy'
+import { Route as AuthenticatedAdminIntegracoesPedidosParadosRouteImport } from './routes/_authenticated/admin.integracoes_.pedidos-parados'
 import { Route as AuthenticatedAdminIntegracoesSlugRouteImport } from './routes/_authenticated/admin.integracoes_.$slug'
 import { Route as ApiPublicHooksPixItauSplatRouteImport } from './routes/api/public/hooks/pix-itau.$'
 
@@ -780,6 +781,12 @@ const AuthenticatedAdminLogsFretefyRoute =
     path: '/admin/logs/fretefy',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminIntegracoesPedidosParadosRoute =
+  AuthenticatedAdminIntegracoesPedidosParadosRouteImport.update({
+    id: '/admin/integracoes_/pedidos-parados',
+    path: '/admin/integracoes/pedidos-parados',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminIntegracoesSlugRoute =
   AuthenticatedAdminIntegracoesSlugRouteImport.update({
     id: '/admin/integracoes_/$slug',
@@ -867,6 +874,7 @@ export interface FileRoutesByFullPath {
   '/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
   '/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/admin/integracoes/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
+  '/admin/integracoes/pedidos-parados': typeof AuthenticatedAdminIntegracoesPedidosParadosRoute
   '/admin/logs/fretefy': typeof AuthenticatedAdminLogsFretefyRoute
   '/admin/logs/gatilhos': typeof AuthenticatedAdminLogsGatilhosRoute
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -979,6 +987,7 @@ export interface FileRoutesByTo {
   '/financeiro': typeof AuthenticatedFinanceiroIndexRoute
   '/marketing': typeof AuthenticatedMarketingIndexRoute
   '/admin/integracoes/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
+  '/admin/integracoes/pedidos-parados': typeof AuthenticatedAdminIntegracoesPedidosParadosRoute
   '/admin/logs/fretefy': typeof AuthenticatedAdminLogsFretefyRoute
   '/admin/logs/gatilhos': typeof AuthenticatedAdminLogsGatilhosRoute
   '/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -1097,6 +1106,7 @@ export interface FileRoutesById {
   '/_authenticated/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
   '/_authenticated/marketing/': typeof AuthenticatedMarketingIndexRoute
   '/_authenticated/admin/integracoes_/$slug': typeof AuthenticatedAdminIntegracoesSlugRoute
+  '/_authenticated/admin/integracoes_/pedidos-parados': typeof AuthenticatedAdminIntegracoesPedidosParadosRoute
   '/_authenticated/admin/logs/fretefy': typeof AuthenticatedAdminLogsFretefyRoute
   '/_authenticated/admin/logs/gatilhos': typeof AuthenticatedAdminLogsGatilhosRoute
   '/_authenticated/admin/logs/integracoes': typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -1215,6 +1225,7 @@ export interface FileRouteTypes {
     | '/financeiro/'
     | '/marketing/'
     | '/admin/integracoes/$slug'
+    | '/admin/integracoes/pedidos-parados'
     | '/admin/logs/fretefy'
     | '/admin/logs/gatilhos'
     | '/admin/logs/integracoes'
@@ -1327,6 +1338,7 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/marketing'
     | '/admin/integracoes/$slug'
+    | '/admin/integracoes/pedidos-parados'
     | '/admin/logs/fretefy'
     | '/admin/logs/gatilhos'
     | '/admin/logs/integracoes'
@@ -1444,6 +1456,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro/'
     | '/_authenticated/marketing/'
     | '/_authenticated/admin/integracoes_/$slug'
+    | '/_authenticated/admin/integracoes_/pedidos-parados'
     | '/_authenticated/admin/logs/fretefy'
     | '/_authenticated/admin/logs/gatilhos'
     | '/_authenticated/admin/logs/integracoes'
@@ -2314,6 +2327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLogsFretefyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/integracoes_/pedidos-parados': {
+      id: '/_authenticated/admin/integracoes_/pedidos-parados'
+      path: '/admin/integracoes/pedidos-parados'
+      fullPath: '/admin/integracoes/pedidos-parados'
+      preLoaderRoute: typeof AuthenticatedAdminIntegracoesPedidosParadosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/integracoes_/$slug': {
       id: '/_authenticated/admin/integracoes_/$slug'
       path: '/admin/integracoes/$slug'
@@ -2516,6 +2536,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedCarregadoresIndexRoute: typeof AuthenticatedCarregadoresIndexRoute
   AuthenticatedAdminIntegracoesSlugRoute: typeof AuthenticatedAdminIntegracoesSlugRoute
+  AuthenticatedAdminIntegracoesPedidosParadosRoute: typeof AuthenticatedAdminIntegracoesPedidosParadosRoute
   AuthenticatedAdminLogsFretefyRoute: typeof AuthenticatedAdminLogsFretefyRoute
   AuthenticatedAdminLogsGatilhosRoute: typeof AuthenticatedAdminLogsGatilhosRoute
   AuthenticatedAdminLogsIntegracoesRoute: typeof AuthenticatedAdminLogsIntegracoesRoute
@@ -2587,6 +2608,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarregadoresIndexRoute: AuthenticatedCarregadoresIndexRoute,
   AuthenticatedAdminIntegracoesSlugRoute:
     AuthenticatedAdminIntegracoesSlugRoute,
+  AuthenticatedAdminIntegracoesPedidosParadosRoute:
+    AuthenticatedAdminIntegracoesPedidosParadosRoute,
   AuthenticatedAdminLogsFretefyRoute: AuthenticatedAdminLogsFretefyRoute,
   AuthenticatedAdminLogsGatilhosRoute: AuthenticatedAdminLogsGatilhosRoute,
   AuthenticatedAdminLogsIntegracoesRoute:
