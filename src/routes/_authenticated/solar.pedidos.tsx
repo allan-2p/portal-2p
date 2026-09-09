@@ -245,7 +245,7 @@ function KanbanView({ data }: { data: Pedido[] }) {
                     className="bg-surface-2 hover:bg-surface rounded-xl p-3 border border-transparent hover:border-primary/30 hover:shadow-md transition-all"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-semibold truncate tabular-nums">{c.code}</div>
+                      <div className="text-sm font-semibold truncate tabular-nums">{c.numero ?? "—"}</div>
                       <span className="shrink-0 rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                         {c.uf}
                       </span>
