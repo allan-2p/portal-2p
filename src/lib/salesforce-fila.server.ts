@@ -120,18 +120,29 @@ export async function processarFilaSalesforce(limite = 25): Promise<FilaSalesfor
   const { sincronizarPedidoSalesforceSeguro } = await import("./salesforce-pedidos.server");
   const detalhes: FilaSalesforceResultado["detalhes"] = [];
   let sincronizados = 0;
-  for (const row of pendentes) {
-    const id = String((row as any)["id"] ?? "");
-    if (!id) continue;
-    const r = await sincronizarPedidoSalesforceSeguro(id);
-    if (r.ok) sincronizados += 1;
-    detalhes.push({
-      id,
-      numero: ((row as any)["numero"] as string) ?? null,
-      ok: r.ok,
-      mensagem: r.mensagem,
-    });
-  }
+
+  // Sequencial, o ciclo estourava o tempo limite do agendador e morria no meio
+  // (execuções eternamente "em andamento"). Em paralelo controlado o mesmo lote
+  // termina com folga.
+  const CONCORRENCIA = 6;
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(CONCORRENCIA, pendentes.length) }, async () => {
+      while (cursor < pendentes.length) {
+        const row = pendentes[cursor++] as any;
+        const id = String(row?.["id"] ?? "");
+        if (!id) continue;
+        const r = await sincronizarPedidoSalesforceSeguro(id);
+        if (r.ok) sincronizados += 1;
+        detalhes.push({
+          id,
+          numero: (row["numero"] as string) ?? null,
+          ok: r.ok,
+          mensagem: r.mensagem,
+        });
+      }
+    }),
+  );
   return {
     total: pendentes.length,
     sincronizados,

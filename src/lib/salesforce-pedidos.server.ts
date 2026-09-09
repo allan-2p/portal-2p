@@ -395,7 +395,9 @@ export async function sincronizarPedidoSalesforce(
         ? motivoCanc
         : "Erro Interno";
       const obs = so(row["motivo_cancelamento_obs"]);
-      if (obs) custom["Descri_o_do_Motivo_de_Perda__c"] = obs;
+      // O campo aceita 255 caracteres: observações longas (conversas coladas)
+      // faziam o update inteiro ser recusado pela org.
+      if (obs) custom["Descri_o_do_Motivo_de_Perda__c"] = obs.length > 255 ? `${obs.slice(0, 252)}...` : obs;
     }
     // Perda dada no portal: estágio "Oportunidade Perdida" + picklist
     // `Loss_Reason__c` e a descrição escrita pelo vendedor.
@@ -409,10 +411,14 @@ export async function sincronizarPedidoSalesforce(
         // (gravadas antes dessa validação no portal) ganham o motivo como
         // prefixo em vez de ficarem eternamente com erro na fila.
         const { palavrasObsPerda, OBS_PERDA_MIN_PALAVRAS } = await import("./perda-motivos");
-        custom["Descri_o_do_Motivo_de_Perda__c"] =
+        const texto =
           palavrasObsPerda(obsPerda) < OBS_PERDA_MIN_PALAVRAS && motivoPerda
             ? `Motivo: ${motivoPerda}. ${obsPerda}`
             : obsPerda;
+        // O campo da org aceita 255 caracteres; descrições coladas de conversas
+        // estouravam o limite e o pedido ficava eternamente com erro na fila.
+        custom["Descri_o_do_Motivo_de_Perda__c"] =
+          texto.length > 255 ? `${texto.slice(0, 252)}...` : texto;
       }
     }
 
@@ -427,7 +433,10 @@ export async function sincronizarPedidoSalesforce(
     if (!oppId && so(row["projeto_antigo_id"])) {
       const mensagem =
         "Pedido legado sem oportunidade correspondente no Salesforce — sincronização pulada para não criar duplicata.";
-      await gravar(propostaId, { sf_status: "erro", sf_mensagem: erroMsg(mensagem) });
+      // "ignorado" (e não "erro"): a fila reprocessa os "erro" para sempre, e
+      // esses pedidos legados nunca poderão ser enviados — ficavam ocupando
+      // todas as vagas do ciclo e travando os pedidos novos.
+      await gravar(propostaId, { sf_status: "ignorado", sf_mensagem: erroMsg(mensagem) });
       await logIntegrationEvent({
         ...base,
         level: "warn",
