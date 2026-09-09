@@ -35,6 +35,15 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Adicionado
+
+- **Integrações › Pedidos sem atualização**: nova tela que lista os pedidos em andamento
+  que não mudam de status há um tempo escolhido (4h a 7 dias), mostra o último status
+  recebido do SAP para cada ordem de venda, destaca quando o SAP já indica um avanço que
+  o portal ainda não aplicou e permite atualizar o pedido na hora.
+
+
+
 ### Corrigido
 
 - **Fila do Salesforce travando o envio dos pedidos**: os pedidos eram enviados um a um e

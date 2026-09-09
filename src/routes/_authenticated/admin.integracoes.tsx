@@ -66,6 +66,18 @@ function IntegracoesPage() {
 
       <IntegrationAlertsBanner />
 
+      <div className="rounded-2xl border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold">Pedidos sem atualização</h2>
+          <p className="text-sm text-muted-foreground">
+            Pedidos que pararam de avançar no portal, com o último status recebido do SAP.
+          </p>
+        </div>
+        <Button asChild size="sm" variant="outline">
+          <Link to="/admin/integracoes/pedidos-parados">Abrir tela</Link>
+        </Button>
+      </div>
+
       <div id="salesforce" className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="p-6 flex items-start gap-4">
           <div className="h-12 w-12 rounded-xl bg-[#00A1E0]/15 flex items-center justify-center shrink-0">

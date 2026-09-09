@@ -877,3 +877,22 @@ export async function reprocessarFretefyFaturados(limite = 50): Promise<NfResult
     ...(erros.length ? { erros } : {}),
   };
 }
+
+/** Consulta só o status atual da OV no SAP (sem baixar DANFE). */
+export async function consultarStatusSap(ovNumero: string): Promise<ConsultaSap> {
+  const { doc } = await chamarSap(ovNumero, []);
+  return lerConsulta(doc);
+}
+
+/** Colunas que o motor de NFs precisa para processar um pedido. */
+export const SELECT_NF =
+  "id,numero,status,created_by,sap_ov_numero,nf_numero,nf_chave,nf_serie,danfe_path,created_at,fretefy_oferta_id,nf_fretefy_em,expedido_em";
+
+/** Sincroniza um único pedido com o SAP (mesmo motor do cron). */
+export async function sincronizarPedidoNf(propostaId: string): Promise<NfAplicacao> {
+  if (!sapNfsConfigurado()) throw new Error("Integração SAP de notas fiscais não configurada.");
+  const row = await db.getProposta(propostaId, SELECT_NF);
+  if (!row) throw new Error("Pedido não encontrado.");
+  if (!String(row["sap_ov_numero"] ?? "").trim()) throw new Error("Pedido sem ordem de venda no SAP.");
+  return processarProposta(row as Record<string, any>);
+}
