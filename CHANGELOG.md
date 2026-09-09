@@ -37,6 +37,18 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Corrigido
 
+- **Fila do Salesforce travando o envio dos pedidos**: os pedidos eram enviados um a um e
+  o ciclo estourava o tempo do agendador; agora vão 6 por vez. Pedidos com descrição de
+  perda/cancelamento acima de 255 caracteres eram recusados pela org e voltavam para a fila
+  para sempre — o texto passa a ser cortado. Pedidos legados sem oportunidade equivalente
+  saem da fila (marcados como ignorados) em vez de ocuparem todas as vagas do ciclo.
+- **Catálogo do SAP não gravava**: a atualização do catálogo falhava inteira quando um item
+  não tinha preço sugerido; o valor atual passa a ser sempre enviado na gravação.
+- **Execuções eternamente "em andamento" no monitoramento**: rodadas interrompidas por
+  tempo limite ou reinício ficavam abertas; toda rodada de cron agora encerra as anteriores
+  travadas há mais de 15 minutos (as 872 antigas foram encerradas).
+
+
 - **Verificação de status do SAP travando no meio da execução**: as consultas eram feitas
   uma a uma e um ciclo de 90 pedidos levava ~33s, estourando o limite de 30s do agendador —
   boa parte das execuções ficava presa em "running" e o status não avançava. As consultas
