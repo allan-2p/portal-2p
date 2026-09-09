@@ -78,7 +78,8 @@ export const listEstoque = createServerFn({ method: "GET" })
           "codigo, descricao, unidade, ncm, tipo, grp_mercadorias, custo, preco_venda, visibilidade, no_catalogo, ativo, last_synced_at",
         )
         .order("descricao");
-      if (data.org) produtosQuery = produtosQuery.eq("visibilidade", data.org);
+      // Produtos marcados como "ambos" aparecem nas duas unidades.
+      if (data.org) produtosQuery = produtosQuery.in("visibilidade", [data.org, "ambos"]);
 
       const [{ data: produtos }, { data: estoque }, { data: containers }, { data: runs }] = await Promise.all([
         produtosQuery,

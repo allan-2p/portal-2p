@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/solar/estoque")({
 function EstoqueSolarPage() {
   return (
     <AppLayout>
-      <AdminRouteGuard feature="admin.objetos.produtos" area="configuracoes">
+      <AdminRouteGuard feature="estoque">
         <EstoquePainel
           org="solar"
           titulo="Estoque — 2P Solar"
