@@ -73,7 +73,7 @@ export const JOB_EXECUTORS: Record<JobSlug, JobExecutor> = {
   // Faturado → Coletado (com NF e DANFE).
   "cron.sap-nfs": async (payload) => {
     const { sincronizarNotasFiscais } = await import("@/lib/sap-nfs.server");
-    const limite = Number((payload as Record<string, unknown>)["limite"] ?? 50) || 50;
+    const limite = Number((payload as Record<string, unknown>)["limite"] ?? 90) || 90;
     return { ...(await sincronizarNotasFiscais(limite)) };
   },
 
