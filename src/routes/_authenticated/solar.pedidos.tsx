@@ -113,8 +113,9 @@ function AcompanhamentoSolarPage() {
         const totais = (r.totais as Record<string, number>) ?? {};
         return {
           id: r.id,
-          code: r.numero ?? String(r.id).slice(-6).toUpperCase(),
-          title: r.numero ? `Proposta ${r.numero}` : "Proposta",
+          numero: r.numero ? String(r.numero) : null,
+          sap: r.sap_ov_numero ? formatSapNumero(r.sap_ov_numero) : null,
+          nf: r.nf_numero ? formatSapNumero(r.nf_numero) : null,
           client: r.cliente_nome ?? "—",
           fechamento: datePtBr(r.finalizado_em ?? r.previsao_fechamento ?? r.created_at),
           previsaoDespacho: r.expedido_em ? String(r.expedido_em).slice(0, 10) : null,
