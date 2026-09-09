@@ -37,6 +37,12 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Corrigido
 
+- **Verificação de status do SAP travando no meio da execução**: as consultas eram feitas
+  uma a uma e um ciclo de 90 pedidos levava ~33s, estourando o limite de 30s do agendador —
+  boa parte das execuções ficava presa em "running" e o status não avançava. As consultas
+  passaram a rodar em paralelo (8 por vez): o mesmo ciclo agora leva ~8s.
+
+
 - **Pedidos do dia parados em "Faturado" mesmo após a coleta**: a fila do cron do SAP
   cortava os pedidos quentes do mais antigo para o mais novo, então com mais de 90 pedidos
   em andamento os pedidos recém-criados ficavam fora de todas as execuções. Agora os mais

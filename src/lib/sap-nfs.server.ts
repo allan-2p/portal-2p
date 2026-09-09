@@ -755,11 +755,16 @@ export async function sincronizarNotasFiscais(limite = 90): Promise<NfResultado>
 
   const detalhes: NfAplicacao[] = [];
   const erros: { proposta_id: string; erro: string }[] = [];
-  for (const row of fila) {
+
+  // Consultas em paralelo limitado: uma a uma, 90 pedidos levavam ~33s e o
+  // cron (timeout de 30s) derrubava a execução no meio — por isso metade das
+  // rodadas ficava presa em "running" e o status não avançava.
+  const CONCORRENCIA = 8;
+  const trabalhar = async (row: (typeof fila)[number]) => {
     try {
-      detalhes.push(await processarProposta(row));
-      const atual = detalhes[detalhes.length - 1];
-      if (atual?.para === "Coletado" || String(row["status"] ?? "") === "Coletado") {
+      const aplicacao = await processarProposta(row);
+      detalhes.push(aplicacao);
+      if (aplicacao?.para === "Coletado" || String(row["status"] ?? "") === "Coletado") {
         try {
           const { reconciliarEntregaPendente } = await import("./fretefy-tracking.server");
           await reconciliarEntregaPendente(String(row["id"]));
@@ -783,7 +788,18 @@ export async function sincronizarNotasFiscais(limite = 90): Promise<NfResultado>
         },
       });
     }
-  }
+  };
+
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(CONCORRENCIA, fila.length) }, async () => {
+      while (cursor < fila.length) {
+        const row = fila[cursor++];
+        if (row) await trabalhar(row);
+      }
+    }),
+  );
+
 
   const atualizados = detalhes.filter((d) => d.para).length;
   const vazios = detalhes.filter((d) => d.vazio).length;
