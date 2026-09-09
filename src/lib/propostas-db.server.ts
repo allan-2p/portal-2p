@@ -3,6 +3,10 @@
 // separadas pela coluna `organizacao`.
 
 import { grupo2pRest } from "./grupo2p-db.server";
+import {
+  aplicarSubstituicoesItens,
+  aplicarSubstituicoesProposta,
+} from "./produtos-substituicoes";
 
 export type PropostaRow = Record<string, any> & { id: string };
 
@@ -34,7 +38,10 @@ async function rest(
     err.body = text;
     throw err;
   }
-  return text ? JSON.parse(text) : null;
+  const json = text ? JSON.parse(text) : null;
+  // Materiais descontinuados são trocados pelo código vigente já na leitura,
+  // então propostas em aberto deixam de subir o item antigo para o SAP.
+  return Array.isArray(json) ? json.map((row) => aplicarSubstituicoesProposta(row)) : json;
 }
 
 export type ListarPropostasOpts = {
@@ -373,13 +380,20 @@ async function espelhar(row: PropostaRow | null | undefined, payload: Record<str
   }
 }
 
+/** Troca códigos descontinuados no JSON `itens` antes de gravar. */
+function comSubstituicoes(payload: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(payload["itens"])) return payload;
+  return { ...payload, itens: aplicarSubstituicoesItens(payload["itens"]) };
+}
+
 export async function inserirProposta(payload: Record<string, unknown>): Promise<PropostaRow> {
+  const body = comSubstituicoes(payload);
   const rows = await rest(`propostas`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
     prefer: "return=representation",
   });
-  await espelhar(rows?.[0], payload);
+  await espelhar(rows?.[0], body);
   return rows?.[0];
 }
 
@@ -392,7 +406,7 @@ export async function atualizarProposta(
   for (const [k, v] of Object.entries(extraFilter ?? {})) params.set(k, v);
   const rows = await rest(`propostas?${params}`, {
     method: "PATCH",
-    body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
+    body: JSON.stringify({ ...comSubstituicoes(patch), updated_at: new Date().toISOString() }),
     prefer: "return=representation",
   });
   await espelhar(rows?.[0], patch);
