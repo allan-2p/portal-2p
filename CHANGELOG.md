@@ -37,6 +37,14 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Corrigido
 
+- **Kit de parafusos Smart subindo com o código antigo**: o material `100000052`
+  (2P-KIT PARAFUSOS SMART "N") foi desativado e o `100000210` (2P-KIT PARAFUSOS SMART)
+  ativado no catálogo. Propostas já salvas continuavam com o código antigo e o enviavam
+  ao SAP: agora existe uma tabela de substituição de materiais descontinuados aplicada
+  na leitura e na gravação das propostas, e as 130 propostas em aberto que ainda tinham
+  o código antigo foram atualizadas.
+
+
 - **Estoque da 2P Carregadores vazio**: a sincronização com o SAP (ZHDIT_ZMMR059) filtrava
   apenas os grupos de mercadoria da Solar (`2P-0002/0006/0007/0013`) e deixava de fora o grupo
   `2P-0015` (carregadores veiculares e dispositivos de medição). O grupo entrou no filtro,
