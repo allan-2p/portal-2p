@@ -69,3 +69,19 @@ describe("perda de oportunidade", () => {
     ).toBe("Oportunidade Perdida");
   });
 });
+
+describe("lote do cron SAP", () => {
+  it("prioriza os pedidos quentes mais recentes quando estoura o limite", async () => {
+    const { montarFilaNfs } = await import("@/lib/sap-nfs.server");
+    const agora = Date.now();
+    // Chega ordenado do mais antigo para o mais novo, como no banco.
+    const rows = Array.from({ length: 100 }, (_, i) => ({
+      id: String(i),
+      status: "Faturado",
+      created_at: new Date(agora - (100 - i) * 60_000).toISOString(),
+    }));
+    const lote = montarFilaNfs(rows, 90, 0, agora);
+    expect(lote).toHaveLength(90);
+    expect(lote.map((r) => r.id)).toContain("99");
+  });
+});
