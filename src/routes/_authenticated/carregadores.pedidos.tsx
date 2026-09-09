@@ -14,6 +14,7 @@ import { StatusDot, StatusLegend } from "@/components/proposta-status-ui";
 import { PixStatusBadge } from "@/components/pix-status-badge";
 import { acaoAtlasPix, normalizarPagamentoStatus, type PagamentoStatus } from "@/lib/pagamentos-ui";
 import { fmtDataBR } from "@/lib/data-br";
+import { formatSapNumero } from "@/lib/sap-numero";
 
 
 export const Route = createFileRoute("/_authenticated/carregadores/pedidos")({
