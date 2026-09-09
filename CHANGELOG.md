@@ -35,6 +35,15 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Corrigido
+
+- **Estoque da 2P Carregadores vazio**: a sincronização com o SAP (ZHDIT_ZMMR059) filtrava
+  apenas os grupos de mercadoria da Solar (`2P-0002/0006/0007/0013`) e deixava de fora o grupo
+  `2P-0015` (carregadores veiculares e dispositivos de medição). O grupo entrou no filtro,
+  materiais novos desse grupo passam a nascer com visibilidade "carregadores" e os itens já
+  existentes foram reclassificados — saldos e containers em trânsito agora aparecem na aba
+  Estoque da 2P Carregadores.
+
 ### Adicionado
 
 - **Triangulação (remessa por conta e ordem)** nas propostas de 2P Solar e 2P Carregadores:
