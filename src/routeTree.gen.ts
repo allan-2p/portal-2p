@@ -31,6 +31,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ApiPublicAppVersionRouteImport } from './routes/api/public/app-version'
 import { Route as AuthenticatedSolarTarefasRouteImport } from './routes/_authenticated/solar.tarefas'
 import { Route as AuthenticatedSolarPedidosRouteImport } from './routes/_authenticated/solar.pedidos'
+import { Route as AuthenticatedSolarEstoqueRouteImport } from './routes/_authenticated/solar.estoque'
 import { Route as AuthenticatedSolarDashboardsRouteImport } from './routes/_authenticated/solar.dashboards'
 import { Route as AuthenticatedSolarCuponsRouteImport } from './routes/_authenticated/solar.cupons'
 import { Route as AuthenticatedSolarClientesRouteImport } from './routes/_authenticated/solar.clientes'
@@ -53,6 +54,7 @@ import { Route as AuthenticatedCarregadoresPedidosRouteImport } from './routes/_
 import { Route as AuthenticatedCarregadoresMetasRouteImport } from './routes/_authenticated/carregadores.metas'
 import { Route as AuthenticatedCarregadoresLotesRouteImport } from './routes/_authenticated/carregadores.lotes'
 import { Route as AuthenticatedCarregadoresFreteRegrasRouteImport } from './routes/_authenticated/carregadores.frete-regras'
+import { Route as AuthenticatedCarregadoresEstoqueRouteImport } from './routes/_authenticated/carregadores.estoque'
 import { Route as AuthenticatedCarregadoresComissoesRouteImport } from './routes/_authenticated/carregadores.comissoes'
 import { Route as AuthenticatedCarregadoresClientesRouteImport } from './routes/_authenticated/carregadores.clientes'
 import { Route as AuthenticatedAtlasIaRadarRouteImport } from './routes/_authenticated/atlas-ia.radar'
@@ -239,6 +241,12 @@ const AuthenticatedSolarPedidosRoute =
     path: '/solar/pedidos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSolarEstoqueRoute =
+  AuthenticatedSolarEstoqueRouteImport.update({
+    id: '/solar/estoque',
+    path: '/solar/estoque',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSolarDashboardsRoute =
   AuthenticatedSolarDashboardsRouteImport.update({
     id: '/solar/dashboards',
@@ -368,6 +376,12 @@ const AuthenticatedCarregadoresFreteRegrasRoute =
   AuthenticatedCarregadoresFreteRegrasRouteImport.update({
     id: '/carregadores/frete-regras',
     path: '/carregadores/frete-regras',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCarregadoresEstoqueRoute =
+  AuthenticatedCarregadoresEstoqueRouteImport.update({
+    id: '/carregadores/estoque',
+    path: '/carregadores/estoque',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCarregadoresComissoesRoute =
@@ -821,6 +835,7 @@ export interface FileRoutesByFullPath {
   '/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/carregadores/estoque': typeof AuthenticatedCarregadoresEstoqueRoute
   '/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
   '/carregadores/lotes': typeof AuthenticatedCarregadoresLotesRoute
   '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
@@ -843,6 +858,7 @@ export interface FileRoutesByFullPath {
   '/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
   '/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/solar/estoque': typeof AuthenticatedSolarEstoqueRoute
   '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
@@ -932,6 +948,7 @@ export interface FileRoutesByTo {
   '/atlas-ia/$threadId': typeof AuthenticatedAtlasIaThreadIdRoute
   '/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/carregadores/estoque': typeof AuthenticatedCarregadoresEstoqueRoute
   '/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
   '/carregadores/lotes': typeof AuthenticatedCarregadoresLotesRoute
   '/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
@@ -953,6 +970,7 @@ export interface FileRoutesByTo {
   '/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
   '/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/solar/estoque': typeof AuthenticatedSolarEstoqueRoute
   '/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
@@ -1047,6 +1065,7 @@ export interface FileRoutesById {
   '/_authenticated/atlas-ia/radar': typeof AuthenticatedAtlasIaRadarRoute
   '/_authenticated/carregadores/clientes': typeof AuthenticatedCarregadoresClientesRouteWithChildren
   '/_authenticated/carregadores/comissoes': typeof AuthenticatedCarregadoresComissoesRoute
+  '/_authenticated/carregadores/estoque': typeof AuthenticatedCarregadoresEstoqueRoute
   '/_authenticated/carregadores/frete-regras': typeof AuthenticatedCarregadoresFreteRegrasRoute
   '/_authenticated/carregadores/lotes': typeof AuthenticatedCarregadoresLotesRoute
   '/_authenticated/carregadores/metas': typeof AuthenticatedCarregadoresMetasRoute
@@ -1069,6 +1088,7 @@ export interface FileRoutesById {
   '/_authenticated/solar/clientes': typeof AuthenticatedSolarClientesRouteWithChildren
   '/_authenticated/solar/cupons': typeof AuthenticatedSolarCuponsRoute
   '/_authenticated/solar/dashboards': typeof AuthenticatedSolarDashboardsRouteWithChildren
+  '/_authenticated/solar/estoque': typeof AuthenticatedSolarEstoqueRoute
   '/_authenticated/solar/pedidos': typeof AuthenticatedSolarPedidosRoute
   '/_authenticated/solar/tarefas': typeof AuthenticatedSolarTarefasRoute
   '/api/public/app-version': typeof ApiPublicAppVersionRoute
@@ -1163,6 +1183,7 @@ export interface FileRouteTypes {
     | '/atlas-ia/radar'
     | '/carregadores/clientes'
     | '/carregadores/comissoes'
+    | '/carregadores/estoque'
     | '/carregadores/frete-regras'
     | '/carregadores/lotes'
     | '/carregadores/metas'
@@ -1185,6 +1206,7 @@ export interface FileRouteTypes {
     | '/solar/clientes'
     | '/solar/cupons'
     | '/solar/dashboards'
+    | '/solar/estoque'
     | '/solar/pedidos'
     | '/solar/tarefas'
     | '/api/public/app-version'
@@ -1274,6 +1296,7 @@ export interface FileRouteTypes {
     | '/atlas-ia/$threadId'
     | '/atlas-ia/radar'
     | '/carregadores/comissoes'
+    | '/carregadores/estoque'
     | '/carregadores/frete-regras'
     | '/carregadores/lotes'
     | '/carregadores/metas'
@@ -1295,6 +1318,7 @@ export interface FileRouteTypes {
     | '/solar/clientes'
     | '/solar/cupons'
     | '/solar/dashboards'
+    | '/solar/estoque'
     | '/solar/pedidos'
     | '/solar/tarefas'
     | '/api/public/app-version'
@@ -1388,6 +1412,7 @@ export interface FileRouteTypes {
     | '/_authenticated/atlas-ia/radar'
     | '/_authenticated/carregadores/clientes'
     | '/_authenticated/carregadores/comissoes'
+    | '/_authenticated/carregadores/estoque'
     | '/_authenticated/carregadores/frete-regras'
     | '/_authenticated/carregadores/lotes'
     | '/_authenticated/carregadores/metas'
@@ -1410,6 +1435,7 @@ export interface FileRouteTypes {
     | '/_authenticated/solar/clientes'
     | '/_authenticated/solar/cupons'
     | '/_authenticated/solar/dashboards'
+    | '/_authenticated/solar/estoque'
     | '/_authenticated/solar/pedidos'
     | '/_authenticated/solar/tarefas'
     | '/api/public/app-version'
@@ -1651,6 +1677,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSolarPedidosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/solar/estoque': {
+      id: '/_authenticated/solar/estoque'
+      path: '/solar/estoque'
+      fullPath: '/solar/estoque'
+      preLoaderRoute: typeof AuthenticatedSolarEstoqueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/solar/dashboards': {
       id: '/_authenticated/solar/dashboards'
       path: '/solar/dashboards'
@@ -1803,6 +1836,13 @@ declare module '@tanstack/react-router' {
       path: '/carregadores/frete-regras'
       fullPath: '/carregadores/frete-regras'
       preLoaderRoute: typeof AuthenticatedCarregadoresFreteRegrasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/carregadores/estoque': {
+      id: '/_authenticated/carregadores/estoque'
+      path: '/carregadores/estoque'
+      fullPath: '/carregadores/estoque'
+      preLoaderRoute: typeof AuthenticatedCarregadoresEstoqueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/carregadores/comissoes': {
@@ -2456,6 +2496,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtlasIaRadarRoute: typeof AuthenticatedAtlasIaRadarRoute
   AuthenticatedCarregadoresClientesRoute: typeof AuthenticatedCarregadoresClientesRouteWithChildren
   AuthenticatedCarregadoresComissoesRoute: typeof AuthenticatedCarregadoresComissoesRoute
+  AuthenticatedCarregadoresEstoqueRoute: typeof AuthenticatedCarregadoresEstoqueRoute
   AuthenticatedCarregadoresFreteRegrasRoute: typeof AuthenticatedCarregadoresFreteRegrasRoute
   AuthenticatedCarregadoresLotesRoute: typeof AuthenticatedCarregadoresLotesRoute
   AuthenticatedCarregadoresMetasRoute: typeof AuthenticatedCarregadoresMetasRoute
@@ -2469,6 +2510,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSolarClientesRoute: typeof AuthenticatedSolarClientesRouteWithChildren
   AuthenticatedSolarCuponsRoute: typeof AuthenticatedSolarCuponsRoute
   AuthenticatedSolarDashboardsRoute: typeof AuthenticatedSolarDashboardsRouteWithChildren
+  AuthenticatedSolarEstoqueRoute: typeof AuthenticatedSolarEstoqueRoute
   AuthenticatedSolarPedidosRoute: typeof AuthenticatedSolarPedidosRoute
   AuthenticatedSolarTarefasRoute: typeof AuthenticatedSolarTarefasRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -2519,6 +2561,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCarregadoresClientesRouteWithChildren,
   AuthenticatedCarregadoresComissoesRoute:
     AuthenticatedCarregadoresComissoesRoute,
+  AuthenticatedCarregadoresEstoqueRoute: AuthenticatedCarregadoresEstoqueRoute,
   AuthenticatedCarregadoresFreteRegrasRoute:
     AuthenticatedCarregadoresFreteRegrasRoute,
   AuthenticatedCarregadoresLotesRoute: AuthenticatedCarregadoresLotesRoute,
@@ -2537,6 +2580,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSolarCuponsRoute: AuthenticatedSolarCuponsRoute,
   AuthenticatedSolarDashboardsRoute:
     AuthenticatedSolarDashboardsRouteWithChildren,
+  AuthenticatedSolarEstoqueRoute: AuthenticatedSolarEstoqueRoute,
   AuthenticatedSolarPedidosRoute: AuthenticatedSolarPedidosRoute,
   AuthenticatedSolarTarefasRoute: AuthenticatedSolarTarefasRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,

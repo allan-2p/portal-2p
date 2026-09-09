@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
+import { Home, Boxes, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto-sm.webp";
@@ -242,6 +242,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       ],
     });
   }
+  if (instance === "solar" && (adminAreas?.isAdmin || show("estoque")))
+    tabs.push({ id: "estoque-solar", label: "Estoque", icon: Boxes, to: "/solar/estoque" as AppPath, active: pathname.startsWith("/solar/estoque") });
   if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons"), novo: { label: "Novo cupom", to: "/solar/cupons" as AppPath, hash: "novo" } });
   if (show("carregadores.home")) tabs.push({ id: "carreg-home", label: "Home", icon: Home, to: "/carregadores", active: pathname === "/carregadores" });
   if (show("carregadores.visao-geral")) tabs.push({ id: "carreg-visao", label: "Visão Geral", icon: BarChart3, to: "/carregadores/visao-geral", active: pathname.startsWith("/carregadores/visao-geral") });
@@ -262,6 +264,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       ],
     });
   }
+  if (instance === "carregadores" && (adminAreas?.isAdmin || show("carregadores.estoque")))
+    tabs.push({ id: "estoque-carreg", label: "Estoque", icon: Boxes, to: "/carregadores/estoque" as AppPath, active: pathname.startsWith("/carregadores/estoque") });
   if (show("dashboards")) {
     tabs.push({
       id: "dashboards",

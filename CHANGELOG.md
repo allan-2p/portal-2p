@@ -37,6 +37,14 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Adicionado
 
+- Nova aba **Estoque** no topo de 2P Solar e 2P Carregadores, visível apenas para
+  administradores: lista produtos (código, descrição, NCM, custo, preço SAP, catálogo),
+  saldos por material (livre, pendente, entreposto, disponibilidade e próxima remessa) e
+  containers em trânsito, já filtrados pela instância. Mostra a data do último
+  sincronismo com o SAP; a tela consolidada em Configurações continua exibindo as duas
+  unidades juntas.
+
+
 - Botão manual **Cancelar cobrança** na tela de Integrações do pedido, visível apenas para
   administrador e financeiro: baixa o boleto no banco (ou remove a cobrança Pix), bloqueia
   o cancelamento quando o pagamento já foi confirmado e registra o resultado na auditoria

@@ -59,17 +59,17 @@ tests/                    testes unitários e de RLS
 ### Rotas do app
 
 <!-- readme:rotas -->
-81 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
+83 páginas autenticadas em `src/routes/_authenticated` (file routes do TanStack Router).
 
 | Área | Páginas | Rotas |
 | --- | --- | --- |
 | **admin** | 30 | `/admin/atividade`, `/admin/auditoria`, `/admin/comissoes`, `/admin/configuracoes`, `/admin/emails`, `/admin/estoque`, `/admin/frete-regras`, `/admin`, `/admin/integracoes`, `/admin/integracoes/$slug`, `/admin/logs/fretefy`, `/admin/logs/gatilhos`, `/admin/logs`, `/admin/logs/integracoes`, `/admin/logs/moderacao`, `/admin/logs/retencao`, `/admin/logs/sap`, `/admin/metas`, `/admin/microinversores-solar`, `/admin/moderacao`, `/admin/modulos-solar`, `/admin/perfis`, `/admin/produtos`, `/admin/produtos-solar`, `/admin/regras`, `/admin/suportes-solar`, `/admin/tabelas`, `/admin/trilhos-solar`, `/admin/usuarios`, `/admin/vinculos` |
 | **atlas-ia** | 2 | `/atlas-ia/$threadId`, `/atlas-ia/radar` |
 | **raiz** | 5 | `/busca`, `/financeiro`, `/index`, `/marketing`, `/perfil` |
-| **carregadores** | 18 | `/carregadores/clientes`, `/carregadores/clientes/cadastros`, `/carregadores/clientes`, `/carregadores/comissoes`, `/carregadores/frete-regras`, `/carregadores`, `/carregadores/lotes`, `/carregadores/metas`, `/carregadores/pedidos`, `/carregadores/produtos`, `/carregadores/propostas`, `/carregadores/propostas/auditoria`, `/carregadores/propostas`, `/carregadores/propostas/nova`, `/carregadores/propostas/visualizar`, `/carregadores/regras`, `/carregadores/tarefas`, `/carregadores/visao-geral` |
+| **carregadores** | 19 | `/carregadores/clientes`, `/carregadores/clientes/cadastros`, `/carregadores/clientes`, `/carregadores/comissoes`, `/carregadores/estoque`, `/carregadores/frete-regras`, `/carregadores`, `/carregadores/lotes`, `/carregadores/metas`, `/carregadores/pedidos`, `/carregadores/produtos`, `/carregadores/propostas`, `/carregadores/propostas/auditoria`, `/carregadores/propostas`, `/carregadores/propostas/nova`, `/carregadores/propostas/visualizar`, `/carregadores/regras`, `/carregadores/tarefas`, `/carregadores/visao-geral` |
 | **financeiro** | 3 | `/financeiro/condicoes`, `/financeiro/credito`, `/financeiro` |
 | **marketing** | 8 | `/marketing/cac`, `/marketing/cohort`, `/marketing/gargalo`, `/marketing`, `/marketing/metas`, `/marketing/pre-vendas`, `/marketing/social`, `/marketing/trafego` |
-| **solar** | 15 | `/solar/atlas`, `/solar/clientes`, `/solar/clientes/cadastros`, `/solar/clientes/negocios`, `/solar/clientes/perfil`, `/solar/clientes/ranking`, `/solar/clientes/segmentacao`, `/solar/clientes/sugestoes`, `/solar/cupons`, `/solar/dashboards`, `/solar/dashboards/metas`, `/solar/pedidos`, `/solar/propostas`, `/solar/propostas/nova`, `/solar/tarefas` |
+| **solar** | 16 | `/solar/atlas`, `/solar/clientes`, `/solar/clientes/cadastros`, `/solar/clientes/negocios`, `/solar/clientes/perfil`, `/solar/clientes/ranking`, `/solar/clientes/segmentacao`, `/solar/clientes/sugestoes`, `/solar/cupons`, `/solar/dashboards`, `/solar/dashboards/metas`, `/solar/estoque`, `/solar/pedidos`, `/solar/propostas`, `/solar/propostas/nova`, `/solar/tarefas` |
 <!-- /readme:rotas -->
 
 ### Convenções importantes
