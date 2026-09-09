@@ -162,6 +162,31 @@ export async function startJobRun(input: StartInput): Promise<string | null> {
   }
 }
 
+/**
+ * Fecha execuções que ficaram "em andamento" para sempre.
+ *
+ * Quando o agendador corta a execução no meio (tempo limite, deploy, queda), a
+ * linha nunca recebe o `finishJobRun` e o monitoramento passa a mostrar dezenas
+ * de rodadas "rodando" que já morreram. Toda rodada de cron varre as anteriores.
+ */
+export async function encerrarExecucoesTravadas(minutos = 15): Promise<void> {
+  try {
+    const db = await admin();
+    const corte = new Date(Date.now() - minutos * 60_000).toISOString();
+    await db
+      .from("job_runs")
+      .update({
+        status: "error",
+        error_message: "Execução interrompida antes de terminar (tempo limite ou reinício).",
+        finished_at: new Date().toISOString(),
+      })
+      .eq("status", "running")
+      .lt("started_at", corte);
+  } catch {
+    /* monitoramento nunca derruba o job */
+  }
+}
+
 /** Fecha a execução com o resultado final. */
 export async function finishJobRun(
   runId: string | null,
