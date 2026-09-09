@@ -409,10 +409,14 @@ export async function sincronizarPedidoSalesforce(
         // (gravadas antes dessa validação no portal) ganham o motivo como
         // prefixo em vez de ficarem eternamente com erro na fila.
         const { palavrasObsPerda, OBS_PERDA_MIN_PALAVRAS } = await import("./perda-motivos");
-        custom["Descri_o_do_Motivo_de_Perda__c"] =
+        const texto =
           palavrasObsPerda(obsPerda) < OBS_PERDA_MIN_PALAVRAS && motivoPerda
             ? `Motivo: ${motivoPerda}. ${obsPerda}`
             : obsPerda;
+        // O campo da org aceita 255 caracteres; descrições coladas de conversas
+        // estouravam o limite e o pedido ficava eternamente com erro na fila.
+        custom["Descri_o_do_Motivo_de_Perda__c"] =
+          texto.length > 255 ? `${texto.slice(0, 252)}...` : texto;
       }
     }
 
