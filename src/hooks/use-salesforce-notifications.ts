@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getSalesforceTasks } from "@/lib/salesforce.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { pushNotification } from "./use-notifications";
 import { useAuth } from "./use-auth";
 
