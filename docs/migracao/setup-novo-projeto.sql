@@ -96,8 +96,8 @@ select cron.schedule('portal-pix-reconsulta', '*/15 * * * *',
 select cron.schedule('portal-boleto-avisos', '0 12 * * *',
   $cron$select public.portal_cron_post('/api/public/hooks/boleto-avisos', '{}'::jsonb)$cron$);
 
--- Busca de notas fiscais no SAP — a cada 20 minutos
-select cron.schedule('portal-sap-nfs', '*/20 * * * *',
+-- Busca de notas fiscais no SAP — a cada 10 minutos
+select cron.schedule('portal-sap-nfs', '*/10 * * * *',
   $cron$select public.portal_cron_post('/api/public/hooks/sap-nfs', '{}'::jsonb)$cron$);
 
 -- Boletos a prazo no SharePoint — de hora em hora (min 05)
