@@ -14,7 +14,13 @@ export const DEPOSITOS_LIVRE = ["0001", "0002", "0003", "0005", "0007"];
 const IGNORAR_CONTAINER = ["LOTE", "LOT", "ETS", "ATL"];
 
 export const CENTRO_PADRAO = "9802";
-export const GRUPOS_MERCADORIA = "2P-0002,2P-0006,2P-0007,2P-0013";
+/**
+ * Grupos sincronizados: os quatro da Solar + 2P-0015 (carregadores veiculares
+ * e dispositivos de medição da 2P Carregadores).
+ */
+export const GRUPOS_MERCADORIA = "2P-0002,2P-0006,2P-0007,2P-0013,2P-0015";
+/** Grupo de mercadoria da 2P Carregadores. */
+export const GRUPO_CARREGADORES = "2P-0015";
 
 export type EstoqueRow = {
   material: string;

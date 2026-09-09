@@ -20,7 +20,7 @@ export type EstoqueSyncResult = {
 export async function executarSyncEstoque(userId: string | null): Promise<EstoqueSyncResult> {
   const inicio = Date.now();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { fetchEstoqueSap, mapearEstoque } = await import("./sap-estoque.server");
+  const { fetchEstoqueSap, mapearEstoque, GRUPO_CARREGADORES } = await import("./sap-estoque.server");
   const { getAllMaterials, classificarTipo } = await import("./sap-produtos.server");
   const { iniciarColetaNumerica, alertarSuspeitasNumericas, detectarSaltosDeEscala } = await import(
     "./sap-num.server"
@@ -122,7 +122,11 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
         grp_mercadorias: est?.grp_mercadorias ?? null,
         custo: est?.cmm ?? 0,
         preco_venda: est?.preco_venda ?? 0,
-        visibilidade: (anterior as any)?.visibilidade ?? "solar",
+        // Material novo herda a instância pelo grupo de mercadoria: 2P-0015 é da
+        // 2P Carregadores, o resto segue na Solar.
+        visibilidade:
+          (anterior as any)?.visibilidade ??
+          (est?.grp_mercadorias === GRUPO_CARREGADORES ? "carregadores" : "solar"),
         no_catalogo: !!cat?.liberado,
         // Material novo entra inativo: só vira vendável quando a varredura de
         // preço (sap.sync-produtos) encontrar preço vigente no SAP.
