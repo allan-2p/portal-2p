@@ -242,7 +242,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       ],
     });
   }
-  if (adminAreas?.isAdmin || show("estoque"))
+  if (instance === "solar" && (adminAreas?.isAdmin || show("estoque")))
     tabs.push({ id: "estoque-solar", label: "Estoque", icon: Boxes, to: "/solar/estoque" as AppPath, active: pathname.startsWith("/solar/estoque") });
   if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons"), novo: { label: "Novo cupom", to: "/solar/cupons" as AppPath, hash: "novo" } });
   if (show("carregadores.home")) tabs.push({ id: "carreg-home", label: "Home", icon: Home, to: "/carregadores", active: pathname === "/carregadores" });
