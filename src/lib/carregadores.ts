@@ -145,6 +145,18 @@ export type CarregadoresEndereco = {
   uf: string;
   contato: string;
   telefone: string;
+  /**
+   * Triangulação (remessa por conta e ordem): o endereço de entrega também
+   * guarda os dados fiscais do destinatário da mercadoria.
+   */
+  nome?: string;
+  doc?: string;
+  tipo_doc?: string;
+  ie?: string;
+  ie_situacao?: string;
+  ie_habilitada?: boolean | null;
+  contribuinte?: boolean;
+  consulta_fiscal_doc?: string;
 };
 
 export function novoEndereco(uf = ""): CarregadoresEndereco {

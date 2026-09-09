@@ -32,7 +32,8 @@ export type SalvarPropostaSolarInput = {
   formaPagamento: string | null;
   condicaoPagamento: string | null;
   entregaDiferente: boolean;
-  entrega: Record<string, string>;
+  /** Endereço de entrega; na triangulação carrega os dados fiscais do destinatário. */
+  entrega: Record<string, string | boolean>;
   freteMod: string;
   freteAreaRural: boolean;
   freteValor: number;
@@ -110,10 +111,27 @@ function validar(input: unknown): SalvarPropostaSolarInput {
     throw new Error("Informe a previsão de fechamento (projeto vendido ao cliente final).");
 
   const campos = ["cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "contato", "telefone"];
-  const entrega: Record<string, string> = {};
+  // Na triangulação o jsonb de entrega guarda também os dados fiscais do
+  // destinatário (remessa por conta e ordem).
+  const camposDestinatario = ["doc", "nome", "ie", "ie_situacao", "tipo_doc", "consulta_fiscal_doc"];
+  const ehTriangulacao = String(i.tipoNf ?? "").trim().toLowerCase().startsWith("triangul");
+  const entrega: Record<string, string | boolean> = {};
   for (const c of campos) entrega[c] = String(i.entrega?.[c] ?? "").slice(0, 160);
-  if (i.entregaDiferente && (!entrega['logradouro'] || !entrega['cidade']))
+  if (ehTriangulacao) {
+    for (const c of camposDestinatario) entrega[c] = String(i.entrega?.[c] ?? "").slice(0, 160);
+    entrega['contribuinte'] = i.entrega?.['contribuinte'] === true;
+    if (typeof i.entrega?.['ie_habilitada'] === "boolean")
+      entrega['ie_habilitada'] = i.entrega['ie_habilitada'] as boolean;
+    const docDest = String(entrega['doc'] ?? "").replace(/\D/g, "");
+    if (!String(entrega['nome'] ?? "").trim())
+      throw new Error("Informe o nome do destinatário da remessa por conta e ordem.");
+    if (docDest.length === 11 ? !cpfValido(docDest) : !cnpjValido(docDest))
+      throw new Error("CPF/CNPJ do destinatário da remessa inválido.");
+    if (!entrega['logradouro'] || !entrega['cidade'] || String(entrega['uf'] ?? "").length !== 2)
+      throw new Error("Informe o endereço completo do destinatário da remessa.");
+  } else if (i.entregaDiferente && (!entrega['logradouro'] || !entrega['cidade'])) {
     throw new Error("Informe o endereço de entrega.");
+  }
 
   // Mantém junto do CNPJ a decisão fiscal consultada, inclusive SUFRAMA, para
   // que reabrir a proposta não obrigue uma nova validação.

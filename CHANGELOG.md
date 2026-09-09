@@ -37,6 +37,16 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Adicionado
 
+- **Triangulação (remessa por conta e ordem)** nas propostas de 2P Solar e 2P Carregadores:
+  ao escolher o tipo de nota "triangulação", o vendedor informa o destinatário da mercadoria
+  (nome, CNPJ/CPF com consulta fiscal, inscrição estadual, contribuinte, contato e endereço,
+  podendo ser de outro estado). As opções de faturar o cliente final e de endereço de entrega
+  diferente saem de cena, o frete é cotado para o destinatário e os dados aparecem no resumo,
+  no detalhe do pedido e no PDF. A ordem de venda no SAP sai no cliente da proposta com as
+  observações de venda à ordem, e o fiscal, o financeiro e o consultor recebem um e-mail para
+  cadastrar o destinatário e emitir as notas.
+
+
 - Nova aba **Estoque** no topo de 2P Solar e 2P Carregadores, visível apenas para
   administradores: lista produtos (código, descrição, NCM, custo, preço SAP, catálogo),
   saldos por material (livre, pendente, entreposto, disponibilidade e próxima remessa) e

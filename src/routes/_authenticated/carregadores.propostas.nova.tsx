@@ -1,5 +1,10 @@
 import { PropostaPdfPreview } from "@/components/proposta-pdf-preview";
 import { SuframaBanner } from "@/components/suframa-banner";
+import {
+  DestinatarioTriangulacao,
+  validarDestinatario,
+  type DestinatarioValor,
+} from "@/components/destinatario-triangulacao";
 import { statusSuframa } from "@/lib/suframa";
 import { formatPropostaNumero, formatSapNumero } from "@/lib/sap-numero";
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
@@ -788,8 +793,25 @@ function PropostaCarregadoresPage() {
   const setFaturamento = (patch: Partial<CarregadoresState["faturamento"]>) =>
     setState((s) => ({ ...s, faturamento: { ...s.faturamento, ...patch } }));
 
-  /** Entrega precisa ficar no mesmo estado do faturamento. */
+  /**
+   * Triangulação (remessa por conta e ordem): a nota é do cliente da proposta e
+   * a mercadoria segue para um destinatário separado, que pode ser de outro
+   * estado. As opções de faturar o cliente final e de endereço alternativo
+   * saem de cena.
+   */
+  const triangulacao = state.tipoNf === "triangulacao";
+  useEffect(() => {
+    if (!triangulacao) return;
+    setState((s) =>
+      s.faturarClienteFinal || s.entregaDiferente
+        ? { ...s, faturarClienteFinal: false, entregaDiferente: false }
+        : s,
+    );
+  }, [triangulacao]);
+
+  /** Entrega precisa ficar no mesmo estado do faturamento (exceto triangulação). */
   const entregaUfInvalida =
+    !triangulacao &&
     state.entregaDiferente &&
     !!state.entrega.uf.trim() &&
     state.entrega.uf.trim().toUpperCase() !== state.uf.trim().toUpperCase();
@@ -840,10 +862,11 @@ function PropostaCarregadoresPage() {
         }
       : null;
 
-  const entregaEfetiva: CarregadoresState["entrega"] = state.entregaDiferente
-    ? state.entrega
-    : (entregaClienteFinal ??
-      enderecoPadraoCliente ?? { ...state.entrega, uf: state.entrega.uf || state.uf });
+  const entregaEfetiva: CarregadoresState["entrega"] =
+    triangulacao || state.entregaDiferente
+      ? state.entrega
+      : (entregaClienteFinal ??
+        enderecoPadraoCliente ?? { ...state.entrega, uf: state.entrega.uf || state.uf });
 
   /** Endereço efetivo de entrega — base da cotação de frete. */
   const destinoFrete = {
@@ -1145,6 +1168,7 @@ function PropostaCarregadoresPage() {
   if (!temProduto) errosSalvar.push("Adicione ao menos um produto à proposta.");
   if (itensSemProduto.length) errosSalvar.push(`${itensSemProduto.length} linha(ns) sem produto selecionado.`);
   if (temProduto && abaixoPolitica) errosSalvar.push(`Margem bruta abaixo da política (${fmtPct(config.politica_mb_min)}).`);
+  if (triangulacao) errosSalvar.push(...validarDestinatario(state.entrega as DestinatarioValor));
 
 
 
@@ -1302,7 +1326,11 @@ function PropostaCarregadoresPage() {
           ie: faturamentoEfetivo.ie || state.ie,
           linhas: linhasEndereco(faturamentoEfetivo),
         },
+        tipoNf: state.tipoNf,
         enderecoEntrega: {
+          nome: triangulacao ? entregaEfetiva.nome || null : null,
+          doc: triangulacao ? entregaEfetiva.doc || null : null,
+          ie: triangulacao ? entregaEfetiva.ie || null : null,
           contato: entregaEfetiva.contato || null,
           telefone: entregaEfetiva.telefone || null,
           linhas: linhasEndereco(entregaEfetiva),
@@ -1992,6 +2020,15 @@ function PropostaCarregadoresPage() {
                   )}
                 </Field>
 
+                {triangulacao ? (
+                  <div className="rounded-xl border border-border bg-surface-2 px-4 py-3">
+                    <p className="text-sm font-medium">Remessa por conta e ordem (triangulação)</p>
+                    <p className="text-xs text-muted-foreground">
+                      A nota fiscal sai no cliente desta proposta e a mercadoria vai para o destinatário
+                      informado na etapa de entrega.
+                    </p>
+                  </div>
+                ) : (
                 <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
@@ -2189,6 +2226,7 @@ function PropostaCarregadoresPage() {
                     </div>
                   ) : null}
                 </div>
+                )}
               </>
             ) : null}
 
@@ -2426,6 +2464,12 @@ function PropostaCarregadoresPage() {
 
             {etapa === 4 ? (
             <>
+            {triangulacao ? (
+              <DestinatarioTriangulacao
+                valor={state.entrega as DestinatarioValor}
+                onChange={(patch) => setEntrega(patch as Partial<CarregadoresState["entrega"]>)}
+              />
+            ) : (
             <div className="rounded-xl border border-border bg-surface-2 px-4 py-3 space-y-3">
               <div>
                 <p className="text-sm font-medium">Endereço de entrega</p>
@@ -2525,6 +2569,7 @@ function PropostaCarregadoresPage() {
               </div>
               ) : null}
             </div>
+            )}
 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2734,10 +2779,32 @@ function PropostaCarregadoresPage() {
                     />
                   )}
 
-                  <ResumoLinha
-                    k="Endereço de entrega"
-                    v={linhasEndereco(entregaEfetiva).join(" · ") || "—"}
-                  />
+                  {triangulacao ? (
+                    <>
+                      <ResumoLinha
+                        k="Destinatário (remessa por conta e ordem)"
+                        v={
+                          [
+                            entregaEfetiva.nome,
+                            entregaEfetiva.doc ? `Doc. ${entregaEfetiva.doc}` : "",
+                            entregaEfetiva.ie ? `IE ${entregaEfetiva.ie}` : "",
+                            entregaEfetiva.contribuinte ? "Contribuinte de ICMS" : "Não contribuinte",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "—"
+                        }
+                      />
+                      <ResumoLinha
+                        k="Entrega no destinatário"
+                        v={linhasEndereco(entregaEfetiva).join(" · ") || "—"}
+                      />
+                    </>
+                  ) : (
+                    <ResumoLinha
+                      k="Endereço de entrega"
+                      v={linhasEndereco(entregaEfetiva).join(" · ") || "—"}
+                    />
+                  )}
                   <ResumoLinha
                     k="Frete"
                     v={
