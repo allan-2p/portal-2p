@@ -35,7 +35,19 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Banco de dados
+
+- **Catálogo de itens (planilha "Itens do portal")**: 320 materiais marcados como inativos
+  com `ativo_override = false` (trava contra reativação no `varrerCatalogoVendaveis`), 100
+  materiais ativados e visíveis em Solar e 5 em Carregadores (`ativo_override = true` +
+  `visibilidade`), com espelho refletido em `produtos` (`ativo`, `visibilidade`,
+  `no_catalogo`). Códigos inexistentes no SAP: 100000267, 100000268, 200000382.
+- **Prioridade da calculadora Solar**: as 12 opções prioritárias de `solar_suportes` foram
+  para as ordens 1–12 e o trilho 2P para a ordem 1 em `solar_trilhos`; as demais opções
+  foram deslocadas para 100+.
+
 ### Adicionado
+
 
 - **Integrações › Pedidos sem atualização**: nova tela que lista os pedidos em andamento
   que não mudam de status há um tempo escolhido (4h a 7 dias), mostra o último status
