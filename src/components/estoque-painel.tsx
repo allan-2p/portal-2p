@@ -275,7 +275,7 @@ export function EstoquePainel({
                   ))}
                   {containers.length === 0 && (
                     <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={5}>
+                      <td className="p-6 text-center text-muted-foreground" colSpan={6}>
                         Nenhum pedido em trânsito.
                       </td>
                     </tr>
