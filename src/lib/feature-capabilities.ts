@@ -102,6 +102,9 @@ const MAP: Partial<Record<FeatureKey, CapabilityId[]>> = {
   // Moderação
   "admin.area.moderacao": VECM,
   "admin.produtos": VEM,
+  estoque: VEM,
+  "carregadores.estoque": VEM,
+  "admin.emails": V,
   "admin.metas": VEM,
   "admin.regras": VEM,
   "admin.comissoes": VEM,
