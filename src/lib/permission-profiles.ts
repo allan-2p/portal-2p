@@ -49,6 +49,7 @@ const CARREGADORES_VENDEDOR: FeatureKey[] = [
 
 const CARREGADORES_GESTOR: FeatureKey[] = [
   ...CARREGADORES_VENDEDOR,
+  "carregadores.visao-geral.valores",
   "carregadores.produtos",
   "carregadores.comissoes",
   "carregadores.regras",
