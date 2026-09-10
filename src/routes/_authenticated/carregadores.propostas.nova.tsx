@@ -1017,6 +1017,16 @@ function PropostaCarregadoresPage() {
     ),
   );
 
+  // Se todo item tem estoque pronto (livre ou entreposto), mês/lote de chegada
+  // é opcional; faltando estoque, vira obrigatório para fechar o pedido.
+  const semEstoquePronto = state.itens.some((i) => {
+    const codigo = String(produtos.find((p) => p.id === i.produtoId)?.codigo ?? "").trim();
+    if (!codigo || !(i.qtd > 0)) return false;
+    const info = disponibilidade[codigo];
+    if (!info) return false;
+    return info.ok === false || (info.tipo !== "imediato" && info.tipo !== "entreposto");
+  });
+
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
   const erroFreteMsg = !state.freteMod
