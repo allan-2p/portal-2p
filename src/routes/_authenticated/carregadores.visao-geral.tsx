@@ -148,7 +148,7 @@ function CarregadoresVisaoGeralPage() {
         data: {
           organizacao: "carregadores",
           select:
-            "id,numero,cliente_nome,status,totais,itens,created_at,aguardando_pagamento_em,processando_em,faturado_em,nf_numero,frete_valor,frete_bonificado",
+            "id,numero,cliente_nome,cliente_doc,created_by,consultor_id,sap_vendedor_codigo,status,totais,itens,created_at,aguardando_pagamento_em,processando_em,faturado_em,nf_numero,frete_valor,frete_bonificado",
           statusIn: STATUS_VENDIDOS as unknown as string[],
         },
       });
