@@ -40,6 +40,8 @@ export type AdminNavItem = {
   label: string;
   icon: typeof Users;
   feature?: FeatureKey;
+  /** Abre uma aba específica da tela (ex.: "aba:produtos-solar=estoque"). */
+  hash?: string;
   /** Ativa apenas no match exato (usado pelas "Visão geral" das seções). */
   exact?: boolean;
   /** Sub-itens exibidos num toggle abaixo do item. */
