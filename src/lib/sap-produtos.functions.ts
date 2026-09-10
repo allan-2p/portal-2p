@@ -94,7 +94,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: produto, error: readError } = await (await catalogoDb()).from("sap_produtos")
-      .select("id, descricao, origem, custo, ncm_id, visibilidade")
+      .select("id, descricao, origem, custo, ncm_id, ncm_codigo, visibilidade, ativo_override")
       .eq("id", data.id)
       .maybeSingle();
     if (readError) throw new Error(readError.message);
@@ -115,11 +115,14 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     if (bloqueio) throw new Error(bloqueio);
 
     // Ao entrar em Carregadores sem NCM/custo o produto vai para a Gestão de
-    // Produtos como inativo — a ativação acontece lá, depois do NCM definido.
+    // Produtos como inativo — a menos que o status tenha sido definido
+    // manualmente, que é a regra máxima de aparecer ou não na instância.
     const { validateAtivacaoCarregadores, showsInCarregadores } = await import("@/lib/product-visibility");
     const pendente =
+      (produto as any).ativo_override !== true &&
       showsInCarregadores(data.visibilidade) &&
       validateAtivacaoCarregadores({ custo: Number(produto.custo ?? 0), ncm_id: produto.ncm_id, ncm_codigo: (produto as any).ncm_codigo ?? null }) !== null;
+
 
     // Decisão manual: grava também o override, para que as sincronizações do
     // SAP (catálogo e estoque) não voltem a visibilidade para o padrão.
