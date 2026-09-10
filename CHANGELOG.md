@@ -44,7 +44,16 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 
 
+- **Contatos completos no cadastro do cliente**: todos os contatos que existiam apenas no
+  Salesforce foram trazidos para o banco do portal (7.137 cadastros), agora com vários
+  contatos por cliente e o vínculo do contato do Salesforce guardado apenas para
+  atualização. O portal passa a ser a fonte da verdade dos contatos.
+
 ### Corrigido
+
+- **Contato principal e financeiro em branco**: cadastros vindos da plataforma antiga
+  gravavam o contato como "adicional"; agora o contato preenchido vira o contato
+  principal e é replicado para o financeiro quando este está vazio.
 
 - **Fila do Salesforce travando o envio dos pedidos**: os pedidos eram enviados um a um e
   o ciclo estourava o tempo do agendador; agora vão 6 por vez. Pedidos com descrição de

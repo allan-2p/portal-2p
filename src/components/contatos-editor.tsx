@@ -13,6 +13,8 @@ export type Contato = {
   cargo: string;
   emails: string[];
   telefones: string[];
+  /** Id do Contact no Salesforce (só vínculo — o portal é a fonte da verdade). */
+  sf_contact_id?: string | null;
 };
 
 export const TIPO_ROTULO: Record<ContatoTipo, string> = {
@@ -56,20 +58,37 @@ export function normalizarContatos(raw: unknown, legado?: {
         .map((c) => {
           const emails = lista0(c["emails"] ?? c["email"]);
           const telefones = lista0(c["telefones"] ?? c["telefone"] ?? c["fone"]);
+          // Cadastros antigos gravavam o tipo na chave `papel`.
+          const tipoBruto = String(c["tipo"] ?? c["papel"] ?? "");
           return {
-            tipo: (["principal", "financeiro", "outro"].includes(String(c["tipo"])) ? c["tipo"] : "outro") as ContatoTipo,
+            tipo: (["principal", "financeiro", "outro"].includes(tipoBruto) ? tipoBruto : "outro") as ContatoTipo,
             nome: String(c["nome"] ?? ""),
             cargo: String(c["cargo"] ?? ""),
             emails: emails.length ? emails : [""],
             telefones: telefones.length ? telefones : [""],
+            sf_contact_id: (c["sf_contact_id"] ?? null) as string | null,
           };
         })
     : [];
 
+  const preenchido = (c?: Contato) =>
+    !!c && !!(c.nome.trim() || c.cargo.trim() || c.emails.some((v) => v.trim()) || c.telefones.some((v) => v.trim()));
 
-  let principal = lista.find((c) => c.tipo === "principal");
-  let financeiro = lista.find((c) => c.tipo === "financeiro");
-  const outros = lista.filter((c) => c !== principal && c !== financeiro);
+  let principal = lista.find((c) => c.tipo === "principal" && preenchido(c)) ?? lista.find((c) => c.tipo === "principal");
+  let financeiro = lista.find((c) => c.tipo === "financeiro" && preenchido(c)) ?? lista.find((c) => c.tipo === "financeiro");
+  let outros = lista.filter((c) => c !== principal && c !== financeiro);
+
+  // Sem contato principal preenchido: promove o primeiro contato com dados
+  // (financeiro ou adicional) a principal, em vez de deixar a ficha vazia.
+  if (!preenchido(principal)) {
+    const candidato = preenchido(financeiro) ? financeiro : outros.find(preenchido);
+    if (candidato) {
+      if (candidato === financeiro) financeiro = undefined;
+      else outros = outros.filter((c) => c !== candidato);
+      candidato.tipo = "principal";
+      principal = candidato;
+    }
+  }
 
   if (!principal) {
     principal = novoContato("principal");
@@ -80,7 +99,24 @@ export function normalizarContatos(raw: unknown, legado?: {
       principal.telefones = [legado.telefone ?? ""];
     }
   }
+
+  // Financeiro vazio replica o principal (mesma regra do botão "copiar dados").
+  if (!preenchido(financeiro) && preenchido(principal)) {
+    financeiro = {
+      tipo: "financeiro",
+      nome: principal.nome,
+      cargo: principal.cargo,
+      emails: [...principal.emails],
+      telefones: [...principal.telefones],
+      sf_contact_id: principal.sf_contact_id ?? null,
+    };
+  }
   if (!financeiro) financeiro = novoContato("financeiro");
+
+  // Remove adicionais que ficaram idênticos ao principal (duplicidade do legado).
+  const chave = (c: Contato) =>
+    `${c.nome.trim().toLowerCase()}|${c.emails.map((e) => e.trim().toLowerCase()).filter(Boolean).join(",")}`;
+  outros = outros.filter((c) => preenchido(c) && chave(c) !== chave(principal!));
 
   return [principal, financeiro, ...outros];
 }
