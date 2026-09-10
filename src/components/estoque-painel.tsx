@@ -256,6 +256,7 @@ export function EstoquePainel({
                   <tr>
                     <th className="p-3">Container</th>
                     <th className="p-3">Material</th>
+                    <th className="p-3">Descrição</th>
                     <th className="p-3">Fornecedor</th>
                     <th className="p-3 text-right">Quantidade</th>
                     <th className="p-3">Remessa</th>
