@@ -368,6 +368,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
     qc.invalidateQueries({ queryKey: ["carregadores-products"] });
     qc.invalidateQueries({ queryKey: ["carregadores-products-admin"] });
     qc.invalidateQueries({ queryKey: ["sap-catalogo-completo"] });
+    qc.invalidateQueries({ queryKey: ["catalogo-fotos"] });
     qc.invalidateQueries({ queryKey: ["produtos"] });
   };
 
