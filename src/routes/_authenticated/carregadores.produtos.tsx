@@ -52,13 +52,8 @@ function ProdutosCarregadoresPage() {
           </p>
         </div>
 
+        {/* Sem barra de abas no topo: a navegação acontece pelos itens da lateral. */}
         <Tabs value={abaAtual} onValueChange={setAba}>
-          <TabsList>
-            <TabsTrigger value="sap">Catálogo</TabsTrigger>
-            <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>
-            <TabsTrigger value="estoque">Estoque</TabsTrigger>
-            <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
-          </TabsList>
           <TabsContent value="fotos" className="mt-4">
             <Suspense fallback={<p className="py-10 text-center text-muted-foreground">Carregando catálogo…</p>}>
               <CatalogoFotos org="carregadores" />

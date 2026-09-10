@@ -48,12 +48,9 @@ function ProdutosSolarPage() {
           </p>
         </div>
 
+        {/* Sem barra de abas no topo: a navegação entre Catálogo, Fotos e
+            Estoque acontece pelos itens da lateral. */}
         <Tabs value={abaAtual} onValueChange={setAba}>
-          <TabsList>
-            <TabsTrigger value="sap">Catálogo</TabsTrigger>
-            <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>
-            <TabsTrigger value="estoque">Estoque</TabsTrigger>
-          </TabsList>
           <TabsContent value="sap" className="mt-4">
             <CatalogoProdutosSap org="solar" />
           </TabsContent>
