@@ -425,6 +425,9 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
 
   const lastRun = data?.lastRun ?? null;
 
+  /** Colunas visíveis da tabela (usado em colSpan). */
+  const totalCols = 9 + (org !== "solar" ? 1 : 0) + (audit ? 2 : 0);
+
 
   return (
     <div className="p-4 md:p-6 space-y-4">
