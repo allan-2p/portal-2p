@@ -992,7 +992,7 @@ function HomePage() {
                 <MiniKpi
                   label="Retenção"
                   value={`${retentionKpis.retentionActive} / ${retentionKpis.retentionGoal}`}
-                  sub={`${retentionKpis.retentionPct.toFixed(1)}% · base A/B tri anterior: ${retentionKpis.retentionBase}`}
+                  sub={`${retentionKpis.retentionPct.toFixed(1)}% · base A+B tri anterior: ${retentionKpis.retentionBase} (A ${retentionKpis.retentionBaseA} · B ${retentionKpis.retentionBaseB}) · meta 80%`}
                 />
                 <MiniKpi
                   label="Novos recorrentes"
