@@ -110,6 +110,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "clientes.ranking",
       "cupons",
       "atlas",
+      "estoque",
       "admin.usuarios",
       "admin.metas",
       "admin.tabelas",
@@ -140,6 +141,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
       "carregadores.propostas",
       "carregadores.pedidos",
       "carregadores.produtos",
+      "carregadores.estoque",
       "admin.objetos.produtos",
       "carregadores.comissoes",
       "carregadores.regras",
@@ -286,7 +288,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "clientes.sugestoes": "Clientes • Radar do Atlas (Sugestões)",
   "clientes.ranking": "Clientes • Ranking",
   atlas: "Atlas (AI)",
-  estoque: "Estoque",
+  estoque: "Moderação • Solar • Estoque",
   "carregadores.home": "Carregadores • Home",
   "carregadores.visao-geral": "Carregadores • Visão Geral",
   "carregadores.visao-geral.valores": "Carregadores • Visão Geral: detalhar valores (margem R$ e comissões)",
@@ -298,7 +300,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "carregadores.comissoes": "Moderação • Carregadores • Regras de Comissões",
   "carregadores.regras": "Moderação • Carregadores • Regras de Propostas",
   "carregadores.metas": "Moderação • Carregadores • Regras de Metas",
-  "carregadores.estoque": "Estoque",
+  "carregadores.estoque": "Moderação • Carregadores • Estoque",
   "admin.usuarios": "Admin • Usuários",
   "admin.metas": "Moderação • Solar • Regras de Metas",
   "admin.regras": "Moderação • Solar • Regras de Propostas",
@@ -350,9 +352,11 @@ export const GROUP_FEATURE_KEYS: FeatureKey[] = [
   // Itens de Moderação da unidade Carregadores também devem ser visíveis
   // para administradores em qualquer instância.
   "carregadores.produtos",
+  "carregadores.estoque",
   "carregadores.comissoes",
   "carregadores.regras",
   "carregadores.metas",
+  "estoque",
 ];
 for (const id of INSTANCE_IDS) {
   for (const key of GROUP_FEATURE_KEYS) {

@@ -101,6 +101,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       "admin.auditoria",
       "admin.vinculos",
       "admin.tabelas",
+      "admin.emails",
     ],
   },
   {
@@ -112,11 +113,13 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     keys: [
       "admin.area.moderacao",
       "admin.produtos",
+      "estoque",
       "admin.objetos.produtos",
       "admin.metas",
       "admin.regras",
       "admin.comissoes",
       "carregadores.produtos",
+      "carregadores.estoque",
       "carregadores.comissoes",
       "carregadores.regras",
       "carregadores.metas",
