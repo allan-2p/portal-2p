@@ -37,6 +37,12 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Alterado
 
+- **Fotos do catálogo**: a galeria agora existe também na Gestão de Produtos do
+  **2P Solar**, aparece como item na lateral das duas unidades e usa a mesma foto
+  exibida na aba Catálogo (fonte única do catálogo do portal).
+
+
+
 - **Gestão de Produtos**: o **Catálogo** passou a ser a única fonte dos produtos.
   As abas "Produtos do portal" (Solar) e "Produtos" (Carregadores) foram removidas;
   nome, custo (Carregadores), preço sugerido, foto, ativação e visibilidade agora são
