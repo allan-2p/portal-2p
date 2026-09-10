@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -16,7 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { Anchor, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { useSolarSuportes } from "@/hooks/use-solar-catalogo";
 import type { SolarSuporte } from "@/lib/solar-calculadora";
@@ -135,8 +135,8 @@ function SuportesSolarPage() {
       ordem: Number(form.ordem) || 0,
     };
     const res = form.id
-      ? await supabase.from("solar_suportes").update(payload).eq("id", form.id)
-      : await supabase.from("solar_suportes").insert(payload);
+      ? await catalogoFrom("solar_suportes").update(payload).eq("id", form.id)
+      : await catalogoFrom("solar_suportes").insert(payload);
     if (res.error) return toast.error(res.error.message);
     void logModeration({
       area: "produtos",
@@ -150,7 +150,7 @@ function SuportesSolarPage() {
   }
 
   async function alternarAtivo(s: SolarSuporte) {
-    const { error } = await supabase.from("solar_suportes").update({ ativo: !s.ativo }).eq("id", s.id);
+    const { error } = await catalogoFrom("solar_suportes").update({ ativo: !s.ativo }).eq("id", s.id);
     if (error) return toast.error(error.message);
     void qc.invalidateQueries({ queryKey: ["solar-suportes"] });
   }

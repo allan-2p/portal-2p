@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -23,7 +24,6 @@ import {
 } from "@/components/ui/dialog";
 import { Pencil, Plus, Rows3, Search } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { useSolarTrilhos } from "@/hooks/use-solar-catalogo";
 import type { SolarTrilho } from "@/lib/solar-calculadora";
@@ -135,8 +135,8 @@ function TrilhosSolarPage() {
       ordem: Number(form.ordem) || 0,
     };
     const res = form.id
-      ? await supabase.from("solar_trilhos").update(payload).eq("id", form.id)
-      : await supabase.from("solar_trilhos").insert(payload);
+      ? await catalogoFrom("solar_trilhos").update(payload).eq("id", form.id)
+      : await catalogoFrom("solar_trilhos").insert(payload);
     if (res.error) return toast.error(res.error.message);
     void logModeration({
       area: "produtos",
@@ -150,7 +150,7 @@ function TrilhosSolarPage() {
   }
 
   async function alternarAtivo(t: SolarTrilho) {
-    const { error } = await supabase.from("solar_trilhos").update({ ativo: !t.ativo }).eq("id", t.id);
+    const { error } = await catalogoFrom("solar_trilhos").update({ ativo: !t.ativo }).eq("id", t.id);
     if (error) return toast.error(error.message);
     void qc.invalidateQueries({ queryKey: ["solar-trilhos"] });
   }

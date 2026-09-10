@@ -5,6 +5,7 @@ import { requireFeature } from "@/lib/guards.server";
 import { recordModeration } from "@/lib/moderation-audit.server";
 import { precoSugeridoPadrao } from "@/lib/carregadores";
 
+import { catalogoDb } from "@/lib/catalogo-db.server";
 export type CarregadoresProductAdmin = {
   id: string;
   codigo: string | null;
@@ -46,8 +47,7 @@ export const listCarregadoresProductsForProposal = createServerFn({ method: "GET
     // Leitura pelo client de servidor: a coluna `custo` fica trancada para o
     // papel `authenticated` no banco, mas o cálculo de CMV/margem precisa dela.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data, error } = await (await catalogoDb()).from("sap_produtos")
       .select(COLS)
       .in("visibilidade", ["carregadores", "ambos"])
       .eq("ativo", true)
@@ -68,8 +68,7 @@ export const adminListCarregadoresProducts = createServerFn({ method: "GET" })
     });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data, error } = await (await catalogoDb()).from("sap_produtos")
       .select(COLS)
       .in("visibilidade", ["carregadores", "ambos"])
       .order("descricao");
@@ -104,8 +103,7 @@ export const updateCarregadoresProduct = createServerFn({ method: "POST" })
     });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: atual, error: readError } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data: atual, error: readError } = await (await catalogoDb()).from("sap_produtos")
       .select(COLS)
       .eq("id", data.id)
       .maybeSingle();
@@ -124,8 +122,7 @@ export const updateCarregadoresProduct = createServerFn({ method: "POST" })
 
     // A edição também é decisão manual: grava o override para a varredura de
     // preço do SAP não reativar/desativar o produto no próximo ciclo.
-    const { data: updated, error } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data: updated, error } = await (await catalogoDb()).from("sap_produtos")
       .update({
         descricao: data.nome,
         custo: data.custo,
@@ -169,8 +166,7 @@ export const setCarregadoresProductAtivo = createServerFn({ method: "POST" })
     });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: atual, error: readError } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data: atual, error: readError } = await (await catalogoDb()).from("sap_produtos")
       .select(COLS)
       .eq("id", data.id)
       .maybeSingle();
@@ -190,8 +186,7 @@ export const setCarregadoresProductAtivo = createServerFn({ method: "POST" })
     // Decisão manual vira override: a varredura de preço do SAP (que ativa/
     // desativa pelo critério "tem preço na VK12") não desfaz o que o time
     // definiu aqui. O override fica registrado na auditoria de moderação.
-    const { data: updated, error } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data: updated, error } = await (await catalogoDb()).from("sap_produtos")
       .update({
         ativo: data.ativo,
         ativo_override: data.ativo,

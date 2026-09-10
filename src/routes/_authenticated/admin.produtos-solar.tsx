@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -14,7 +15,6 @@ import {
 } from "@/components/ui/select";
 import { Search, Package, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 
@@ -61,8 +61,7 @@ function ProdutosSolarPage() {
   const { data: produtos = [], isLoading } = useQuery({
     queryKey: ["produtos-solar"],
     queryFn: async (): Promise<Row[]> => {
-      const { data, error } = await supabase
-        .from("sap_produtos")
+      const { data, error } = await catalogoFrom("sap_produtos")
         .select("id, codigo, descricao, tipo, ativo, visibilidade, preco_sugerido, last_synced_at")
         .in("visibilidade", ["solar", "ambos"])
         .order("descricao");
@@ -98,7 +97,7 @@ function ProdutosSolarPage() {
   async function salvarPreco(p: Row, valor: string) {
     const novo = Math.max(0, Math.round((Number(String(valor).replace(",", ".")) || 0) * 100) / 100);
     if (novo === Number(p.preco_sugerido ?? 0)) return;
-    const { error } = await supabase.from("sap_produtos").update({ preco_sugerido: novo }).eq("id", p.id);
+    const { error } = await catalogoFrom("sap_produtos").update({ preco_sugerido: novo }).eq("id", p.id);
     if (error) return toast.error(error.message);
     void logModeration({
       area: "produtos",
@@ -111,7 +110,7 @@ function ProdutosSolarPage() {
   }
 
   async function toggleAtivo(p: Row) {
-    const { error } = await supabase.from("sap_produtos").update({ ativo: !p.ativo }).eq("id", p.id);
+    const { error } = await catalogoFrom("sap_produtos").update({ ativo: !p.ativo }).eq("id", p.id);
     if (error) return toast.error(error.message);
     void logModeration({
       area: "produtos",

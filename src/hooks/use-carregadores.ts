@@ -1,7 +1,7 @@
 import { invalidarCachePropostas } from "@/lib/propostas-cache";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import { adminListCarregadoresProducts, listCarregadoresProductsForProposal } from "@/lib/carregadores-produtos.functions";
 import {
   CARREGADORES_CONFIG_FALLBACK,
@@ -43,12 +43,11 @@ export function useCarregadoresUfs() {
   return useQuery({
     queryKey: ["carregadores-ufs"],
     queryFn: async (): Promise<CarregadoresUf[]> => {
-      const { data, error } = await supabase
-        .from("carregadores_uf_rates")
+      const { data, error } = await catalogoFrom("carregadores_uf_rates")
         .select("uf, nome, aliq_interna, fcp")
         .order("uf");
       if (error) throw error;
-      return (data ?? []).map((u) => ({
+      return (data ?? []).map((u: any) => ({
         uf: u.uf,
         nome: u.nome,
         aliq_interna: Number(u.aliq_interna),
@@ -63,8 +62,7 @@ export function useCarregadoresNcms() {
   return useQuery({
     queryKey: ["carregadores-ncm"],
     queryFn: async (): Promise<CarregadoresNcm[]> => {
-      const { data, error } = await supabase
-        .from("carregadores_ncm")
+      const { data, error } = await catalogoFrom("carregadores_ncm")
         .select("id, codigo, descricao, ipi, pis_cofins, aliq_inter, tem_st, gera_difal, observacoes, ativo")
         .order("codigo");
       if (error) throw error;
@@ -89,8 +87,7 @@ export function useCarregadoresConfig() {
   return useQuery({
     queryKey: ["carregadores-config"],
     queryFn: async (): Promise<CarregadoresConfig> => {
-      const { data, error } = await supabase
-        .from("carregadores_config")
+      const { data, error } = await catalogoFrom("carregadores_config")
         .select("*")
         .eq("id", 1)
         .maybeSingle();

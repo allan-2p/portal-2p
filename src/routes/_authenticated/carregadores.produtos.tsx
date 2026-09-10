@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { AppLayout } from "@/components/app-layout";
@@ -16,7 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { AlertCircle, Pencil, Save, Search } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { validateAtivacaoCarregadores } from "@/lib/product-visibility";
 import { useServerFn } from "@tanstack/react-start";
 import { useCarregadoresInvalidate, useCarregadoresProductsAdmin, useCarregadoresUfs } from "@/hooks/use-carregadores";
@@ -129,7 +129,7 @@ function ProdutosTab() {
     } catch (e) {
       return toast.error(e instanceof Error ? e.message : "Falha ao enviar a foto.");
     }
-    const { error } = await supabase.from("sap_produtos").update({ imagem_path: path }).eq("id", p.id);
+    const { error } = await catalogoFrom("sap_produtos").update({ imagem_path: path }).eq("id", p.id);
     if (error) return toast.error(error.message);
     toast.success("Foto do produto atualizada.");
     invalidate();
@@ -438,8 +438,7 @@ function UfsTab() {
   async function salvar() {
     setSaving(true);
     for (const [uf, v] of Object.entries(edits)) {
-      const { error } = await supabase
-        .from("carregadores_uf_rates")
+      const { error } = await catalogoFrom("carregadores_uf_rates")
         .update({ aliq_interna: Number(v.aliq) / 100, fcp: Number(v.fcp) / 100 })
         .eq("uf", uf);
       if (error) {

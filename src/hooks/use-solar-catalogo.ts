@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import {
   SOLAR_CALC_CONFIG_FALLBACK,
   type SolarCalcConfig,
@@ -49,7 +49,7 @@ export function useSolarModulos(incluirInativos = false) {
   return useQuery({
     queryKey: ["solar-modulos", incluirInativos],
     queryFn: async (): Promise<SolarModulo[]> => {
-      let q = supabase.from("solar_modulos").select("*").order("ordem");
+      let q = catalogoFrom("solar_modulos").select("*").order("ordem");
       if (!incluirInativos) q = q.eq("ativo", true);
       const { data, error } = await q;
       if (error) throw error;
@@ -63,8 +63,7 @@ export function useSolarGeradores() {
   return useQuery({
     queryKey: ["solar-geradores"],
     queryFn: async (): Promise<SolarGerador[]> => {
-      const { data, error } = await supabase
-        .from("solar_geradores")
+      const { data, error } = await catalogoFrom("solar_geradores")
         .select("*")
         .eq("ativo", true)
         .order("ordem");
@@ -90,7 +89,7 @@ export function useSolarMicroinversores(incluirInativos = false) {
   return useQuery({
     queryKey: ["solar-microinversores", incluirInativos],
     queryFn: async (): Promise<SolarMicroinversor[]> => {
-      let q = supabase.from("solar_microinversores").select("*").order("ordem");
+      let q = catalogoFrom("solar_microinversores").select("*").order("ordem");
       if (!incluirInativos) q = q.eq("ativo", true);
       const { data, error } = await q;
       if (error) throw error;
@@ -104,7 +103,7 @@ export function useSolarTrilhos(incluirInativos = false) {
   return useQuery({
     queryKey: ["solar-trilhos", incluirInativos],
     queryFn: async (): Promise<SolarTrilho[]> => {
-      let q = supabase.from("solar_trilhos").select("*").order("ordem");
+      let q = catalogoFrom("solar_trilhos").select("*").order("ordem");
       if (!incluirInativos) q = q.eq("ativo", true);
       const { data, error } = await q;
       if (error) throw error;
@@ -118,7 +117,7 @@ export function useSolarSuportes(incluirInativos = false) {
   return useQuery({
     queryKey: ["solar-suportes", incluirInativos],
     queryFn: async (): Promise<SolarSuporte[]> => {
-      let q = supabase.from("solar_suportes").select("*").order("ordem");
+      let q = catalogoFrom("solar_suportes").select("*").order("ordem");
       if (!incluirInativos) q = q.eq("ativo", true);
       const { data, error } = await q;
       if (error) throw error;
@@ -134,7 +133,7 @@ export function useSolarTrilhoSuportes() {
   return useQuery({
     queryKey: ["solar-trilho-suportes"],
     queryFn: async (): Promise<Record<string, string[]>> => {
-      const { data, error } = await supabase.from("solar_trilho_suportes").select("*");
+      const { data, error } = await catalogoFrom("solar_trilho_suportes").select("*");
       if (error) throw error;
       const mapa: Record<string, string[]> = {};
       for (const r of (data ?? []) as unknown as { trilho_id: string; suporte_id: string }[]) {
@@ -150,8 +149,7 @@ export function useSolarCalcConfig() {
   return useQuery({
     queryKey: ["solar-calc-config"],
     queryFn: async (): Promise<SolarCalcConfig> => {
-      const { data, error } = await supabase
-        .from("solar_calc_config")
+      const { data, error } = await catalogoFrom("solar_calc_config")
         .select("*")
         .eq("id", 1)
         .maybeSingle();
@@ -175,8 +173,7 @@ export function useSolarProdutos() {
   return useQuery({
     queryKey: ["solar-produtos"],
     queryFn: async (): Promise<SolarProduto[]> => {
-      const { data, error } = await supabase
-        .from("sap_produtos")
+      const { data, error } = await catalogoFrom("sap_produtos")
         .select("id, codigo, descricao, tipo, preco_sugerido, imagem_path, ncm_id")
         .in("visibilidade", ["solar", "ambos"])
         .eq("ativo", true)
@@ -207,8 +204,7 @@ export function useSolarKitBase(habilitado = true) {
     enabled: habilitado,
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<SolarProduto | null> => {
-      const { data, error } = await supabase
-        .from("sap_produtos")
+      const { data, error } = await catalogoFrom("sap_produtos")
         .select("id, codigo, descricao, tipo, preco_sugerido, imagem_path, ncm_id")
         .eq("codigo", "200000691")
         .maybeSingle();
@@ -234,8 +230,7 @@ export function useSolarCupons() {
   return useQuery({
     queryKey: ["solar-cupons"],
     queryFn: async (): Promise<SolarCupom[]> => {
-      const { data, error } = await supabase
-        .from("solar_cupons")
+      const { data, error } = await catalogoFrom("solar_cupons")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -264,8 +259,7 @@ export function useSolarCupomPorCodigo(codigo: string, habilitado: boolean) {
     gcTime: 0,
     retry: false,
     queryFn: async (): Promise<SolarCupom | null> => {
-      const { data, error } = await supabase
-        .from("solar_cupons")
+      const { data, error } = await catalogoFrom("solar_cupons")
         .select("*")
         .ilike("codigo", alvo)
         .limit(1)
@@ -294,8 +288,7 @@ export function useSolarCupomUsoProprio(cupomId: string | null, propostaId: stri
     enabled: !!cupomId && !!propostaId,
     staleTime: 30_000,
     queryFn: async (): Promise<boolean> => {
-      const { count, error } = await supabase
-        .from("solar_cupom_usos")
+      const { count, error } = await catalogoFrom("solar_cupom_usos")
         .select("id", { count: "exact", head: true })
         .eq("cupom_id", cupomId!)
         .eq("proposta_id", propostaId!);

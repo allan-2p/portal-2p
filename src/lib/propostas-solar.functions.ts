@@ -4,6 +4,7 @@ import { tpOvDoPedido, contribuinteDoFaturamento, documentoDaSimulacao } from "@
 import { finalidadeDaTela } from "@/lib/sap-clientes-map";
 import { cnpjValido, cpfValido } from "@/lib/cnpj";
 
+import { catalogoDb } from "@/lib/catalogo-db.server";
 /**
  * Proposta 2P Solar — os valores NUNCA vêm da tela: o servidor recalcula tudo
  * a partir do catálogo e da tabela de preço escolhida (simulação do SAP), e
@@ -256,10 +257,10 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
 
     const [porId, porCodigo] = await Promise.all([
       ids.length
-        ? supabase.from("sap_produtos").select(SELECT_PRODUTO).in("id", ids)
+        ? (await catalogoDb()).from("sap_produtos").select(SELECT_PRODUTO).in("id", ids)
         : Promise.resolve({ data: [], error: null } as any),
       codigos.length
-        ? supabase.from("sap_produtos").select(SELECT_PRODUTO).in("codigo", codigos)
+        ? (await catalogoDb()).from("sap_produtos").select(SELECT_PRODUTO).in("codigo", codigos)
         : Promise.resolve({ data: [], error: null } as any),
     ]);
     if (porId.error) throw new Error(porId.error.message);
@@ -289,8 +290,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     // Kit fotovoltaico: o servidor é a autoridade — o kit-base entra sempre com
     // quantidade 1 e não pode ser removido nem alterado pela tela.
     if (data.ehKit) {
-      const { data: kitRow } = await supabase
-        .from("sap_produtos")
+      const { data: kitRow } = await (await catalogoDb()).from("sap_produtos")
         .select("id, codigo, descricao, preco_sugerido, imagem_path, ativo")
         .eq("codigo", KIT_FOTOVOLTAICO_MATERIAL)
         .maybeSingle();
@@ -461,8 +461,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     // Cupom: validado no servidor (existe, ativo e dentro da validade).
     let cupom: { id: string; codigo: string; desconto: number; freteGratis: boolean } | null = null;
     if (data.cupomCodigo) {
-      const { data: c } = await supabase
-        .from("solar_cupons")
+      const { data: c } = await (await catalogoDb()).from("solar_cupons")
         .select("*")
         .ilike("codigo", data.cupomCodigo.trim())
         .eq("ativo", true)
@@ -476,8 +475,7 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
         );
       if (new Date(`${row.validade}T00:00:00`) < hoje) throw new Error("Cupom expirado.");
       // Usos reais = histórico registrado, desconsiderando a própria proposta em edição.
-      let q = supabase
-        .from("solar_cupom_usos")
+      let q = (await catalogoDb()).from("solar_cupom_usos")
         .select("id", { count: "exact", head: true })
         .eq("cupom_id", row.id);
       if (data.propostaId) q = q.neq("proposta_id", data.propostaId);
@@ -624,9 +622,9 @@ export const salvarPropostaSolar = createServerFn({ method: "POST" })
     const registrarUsoCupom = async (propostaId: string) => {
       try {
         // Histórico é imutável: sempre apaga o registro anterior e grava de novo.
-        await supabase.from("solar_cupom_usos").delete().eq("proposta_id", propostaId);
+        await (await catalogoDb()).from("solar_cupom_usos").delete().eq("proposta_id", propostaId);
         if (!cupom) return;
-        await supabase.from("solar_cupom_usos").insert({
+        await (await catalogoDb()).from("solar_cupom_usos").insert({
           codigo: cupom.codigo,
           proposta_numero: numeroProposta,
           cliente_nome: data.cliente.nome,

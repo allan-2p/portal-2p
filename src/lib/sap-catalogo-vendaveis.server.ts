@@ -20,6 +20,7 @@
 
 import { simularSap } from "./sap-precos.server";
 
+import { catalogoDb } from "@/lib/catalogo-db.server";
 export type VarreduraResult = {
   verificados: number;
   comPreco: number;
@@ -88,8 +89,7 @@ export async function varrerCatalogoVendaveis(
   const limite = Math.max(1, Math.min(900, Number(opts?.limite ?? 250)));
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  let q = supabaseAdmin
-    .from("sap_produtos")
+  let q = (await catalogoDb()).from("sap_produtos")
     .select("codigo, descricao, ativo, ativo_override, vendavel_sap, preco_sugerido, listas_com_preco, preco_vk12")
     .eq("origem", "sap");
   if (opts?.codigos?.length) q = q.in("codigo", opts.codigos);
@@ -158,8 +158,7 @@ export async function varrerCatalogoVendaveis(
   }
 
   for (let i = 0; i < updates.length; i += 200) {
-    const { error: upErr } = await supabaseAdmin
-      .from("sap_produtos")
+    const { error: upErr } = await (await catalogoDb()).from("sap_produtos")
       .upsert(updates.slice(i, i + 200) as any, { onConflict: "codigo" });
     if (upErr) throw new Error(`gravação do catálogo: ${upErr.message}`);
   }
@@ -168,8 +167,7 @@ export async function varrerCatalogoVendaveis(
   for (const grupo of [true, false]) {
     const codigos = updates.filter((u) => u["ativo"] === grupo).map((u) => String(u["codigo"]));
     for (let i = 0; i < codigos.length; i += 200) {
-      await supabaseAdmin
-        .from("produtos")
+      await (await catalogoDb()).from("produtos")
         .update({ ativo: grupo })
         .eq("origem", "sap")
         .in("codigo", codigos.slice(i, i + 200));

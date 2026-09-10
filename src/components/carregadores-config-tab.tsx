@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { useCarregadoresConfig, useCarregadoresInvalidate } from "@/hooks/use-carregadores";
 import type { CarregadoresConfig } from "@/lib/carregadores";
@@ -34,7 +34,7 @@ export function CarregadoresConfigTab() {
   async function salvar() {
     if (!form) return;
     setSaving(true);
-    const { error } = await supabase.from("carregadores_config").update({ ...form }).eq("id", 1);
+    const { error } = await catalogoFrom("carregadores_config").update({ ...form }).eq("id", 1);
     setSaving(false);
     if (error) return toast.error(error.message);
     void logModeration({

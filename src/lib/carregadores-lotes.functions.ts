@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+import { catalogoDb } from "@/lib/catalogo-db.server";
 /**
  * Lotes de chegada de mercadoria (2P Carregadores). Ao fechar o pedido o
  * consultor escolhe em qual mês/lote a mercadoria chega; a lista é mantida em
@@ -61,8 +62,8 @@ export const listarOpcoesEntrega = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<OpcaoEntrega[]> => {
     const [{ data: produtos }, { data: containers }, { data: lotes }] = await Promise.all([
-      context.supabase.from("produtos").select("codigo, visibilidade").in("visibilidade", ["carregadores", "ambos"]),
-      context.supabase.from("containers").select("id_container, material, dt_remessa").not("dt_remessa", "is", null),
+      (await catalogoDb()).from("produtos").select("codigo, visibilidade").in("visibilidade", ["carregadores", "ambos"]),
+      (await catalogoDb()).from("containers").select("id_container, material, dt_remessa").not("dt_remessa", "is", null),
       context.supabase
         .from("carregadores_lotes")
         .select("id, mes_referencia, lote, previsao_chegada")

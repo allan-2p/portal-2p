@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireFeature } from "@/lib/guards.server";
 import { recordModeration } from "@/lib/moderation-audit.server";
 
+import { catalogoDb } from "@/lib/catalogo-db.server";
 export const updateCarregadoresMargemMinima = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -19,8 +20,7 @@ export const updateCarregadoresMargemMinima = createServerFn({ method: "POST" })
     });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: atual, error: readError } = await supabaseAdmin
-      .from("carregadores_config")
+    const { data: atual, error: readError } = await (await catalogoDb()).from("carregadores_config")
       .select("politica_mb_min")
       .eq("id", 1)
       .maybeSingle();
@@ -28,8 +28,7 @@ export const updateCarregadoresMargemMinima = createServerFn({ method: "POST" })
     if (!atual) throw new Error("Configuração de Carregadores não encontrada.");
 
     const anterior = Number(atual.politica_mb_min ?? 0);
-    const { error } = await supabaseAdmin
-      .from("carregadores_config")
+    const { error } = await (await catalogoDb()).from("carregadores_config")
       .update({ politica_mb_min: data.margemMinima })
       .eq("id", 1);
     if (error) throw new Error(error.message);

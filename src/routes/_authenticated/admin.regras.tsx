@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useSolarCalcConfig } from "@/hooks/use-solar-catalogo";
 import { SOLAR_CALC_CONFIG_FALLBACK } from "@/lib/solar-calculadora";
 import { resolverProduto } from "@/lib/solar-sku";
@@ -116,7 +116,7 @@ function Calculadora2P() {
       cod_terminal_zmi: form['cod_terminal_zmi'] ?? "",
       cod_terminal_zmil: form['cod_terminal_zmil'] ?? "",
     };
-    const { error } = await supabase.from("solar_calc_config").update(payload).eq("id", 1);
+    const { error } = await catalogoFrom("solar_calc_config").update(payload).eq("id", 1);
     setSalvando(false);
     if (error) return toast.error(error.message);
     void qc.invalidateQueries({ queryKey: ["solar-calc-config"] });

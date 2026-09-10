@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { catalogoFrom } from "@/lib/catalogo-client";
+import {
+  BUCKET_PRODUTOS,
+  fotosAssinarLeitura,
+  fotosRemover,
+  fotosUrlUpload,
+} from "@/lib/produto-fotos.functions";
 
-export const BUCKET_PRODUTOS = "produtos";
+export { BUCKET_PRODUTOS };
 
 /** Validade da URL assinada (bucket privado). */
 const TTL_SEG = 60 * 60;
@@ -43,10 +49,7 @@ async function assinar(paths: string[]) {
 
   const assinarLote = async (lista: string[]) => {
     if (!lista.length) return;
-    const { data, error } = await supabase.storage
-      .from(BUCKET_PRODUTOS)
-      .createSignedUrls(lista, TTL_SEG);
-    if (error) throw error;
+    const data = await fotosAssinarLeitura({ data: { caminhos: lista, segundos: TTL_SEG } });
     for (const d of data ?? []) {
       if (d.path && d.signedUrl) cache.set(d.path, { url: d.signedUrl, expiraEm: agora + TTL_SEG * 1000 });
     }
@@ -95,8 +98,7 @@ export function useImagensPorCodigo(codigos: (string | null | undefined)[]) {
     queryFn: async () => {
       const desconhecidos = limpos.filter((c) => !porCodigo.has(c));
       if (desconhecidos.length) {
-        const { data, error } = await supabase
-          .from("sap_produtos")
+        const { data, error } = await catalogoFrom("sap_produtos")
           .select("codigo, imagem_path")
           .in("codigo", desconhecidos);
         if (error) throw error;
@@ -156,26 +158,31 @@ export function limparCacheImagem(path: string) {
   cache.delete(caminhoMiniatura(path));
 }
 
+/** Sobe um arquivo usando o endereço temporário liberado pelo servidor. */
+async function enviarArquivo(path: string, corpo: Blob, contentType: string) {
+  const { url } = await fotosUrlUpload({ data: { caminho: path } });
+  const resp = await fetch(url, {
+    method: "PUT",
+    headers: { "content-type": contentType, "x-upsert": "true", "cache-control": "31536000" },
+    body: corpo,
+  });
+  if (!resp.ok) throw new Error(`Falha ao enviar a foto (${resp.status}).`);
+}
+
 /**
  * Envia a foto do produto e, junto, a miniatura WebP correspondente.
  * Devolve o caminho do original (o que fica gravado em `sap_produtos`).
  */
 export async function enviarFotoProduto(path: string, file: File): Promise<string> {
-  const up = await supabase.storage
-    .from(BUCKET_PRODUTOS)
-    .upload(path, file, { upsert: true, contentType: file.type || undefined });
-  if (up.error) throw new Error(up.error.message);
+  await enviarArquivo(path, file, file.type || "application/octet-stream");
 
   const thumb = await gerarMiniaturaWebp(file);
   if (thumb) {
-    const t = await supabase.storage
-      .from(BUCKET_PRODUTOS)
-      .upload(caminhoMiniatura(path), thumb, {
-        upsert: true,
-        contentType: "image/webp",
-        cacheControl: "31536000",
-      });
-    if (t.error) console.warn("[produto-imagens] miniatura não gerada:", t.error.message);
+    try {
+      await enviarArquivo(caminhoMiniatura(path), thumb, "image/webp");
+    } catch (e) {
+      console.warn("[produto-imagens] miniatura não gerada:", e instanceof Error ? e.message : e);
+    }
   }
 
   limparCacheImagem(path);
@@ -185,5 +192,5 @@ export async function enviarFotoProduto(path: string, file: File): Promise<strin
 /** Remove a foto do produto e sua miniatura do bucket. */
 export async function removerFotoProduto(path: string) {
   limparCacheImagem(path);
-  await supabase.storage.from(BUCKET_PRODUTOS).remove([path, caminhoMiniatura(path)]);
+  await fotosRemover({ data: { caminhos: [path, caminhoMiniatura(path)] } });
 }
