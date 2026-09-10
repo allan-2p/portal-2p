@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/app-layout";
 import { BarChart3, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { listarPropostasFn } from "@/lib/propostas.functions";
