@@ -35,6 +35,25 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Consolidação do catálogo no Grupo 2P (Fase 1)
+
+- **Chave única de destino**: `src/lib/catalogo-db.server.ts` decide, por `CATALOGO_DB`,
+  se o catálogo é lido/gravado no Lovable Cloud (padrão) ou no Grupo 2P. Todo o código
+  de catálogo (server functions, sync SAP, estoque, calculadora Solar, Carregadores)
+  passou a usar `catalogoDb()` no lugar do cliente do Lovable.
+- **Navegador sem acesso direto**: leituras/escritas de catálogo feitas nas telas agora
+  passam por `catalogo-rest.functions.ts` (lista branca de tabelas, sessão obrigatória e
+  permissão de moderação para escrita), com a ponte `catalogo-client.ts` mantendo a
+  mesma API usada pelos hooks.
+- **Fotos**: assinatura, envio e exclusão do acervo `produtos` saíram do navegador para
+  `produto-fotos.functions.ts`; o envio usa endereço temporário liberado pelo servidor.
+- **Espelho aposentado**: `espelharProdutos` não copia mais nada quando o catálogo já
+  está no Grupo 2P.
+- **Migração**: `docs/migracao/grupo2p-fase1-schema.sql` (schema + RPCs + grants,
+  preservando os UUIDs de `sap_produtos`) e `scripts/migrar-catalogo-grupo2p.mjs`
+  (`--conferir`, `--aplicar`, `--fotos`). O SQL precisa ser aplicado por alguém com
+  acesso administrativo ao Grupo 2P antes de virar `CATALOGO_DB=grupo2p`.
+
 ### Banco de dados
 
 - **Catálogo de itens (planilha "Itens do portal")**: 320 materiais marcados como inativos
