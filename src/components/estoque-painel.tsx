@@ -369,7 +369,7 @@ export function EstoquePainel({
                   </tr>
                 </thead>
                 <tbody>
-                  {containers.map((c) => (
+                  {containersPagina.map((c) => (
                     <tr key={`${c.id_container}-${c.material}`} className="border-t">
                       <td className="p-3 font-mono text-xs">{c.id_container}</td>
                       <td className="p-3 font-mono text-xs">{c.material}</td>
@@ -389,7 +389,14 @@ export function EstoquePainel({
                 </tbody>
               </table>
             </div>
+            <Paginacao
+              total={containers.length}
+              pagina={pgContainers}
+              paginas={totalContainers}
+              onPagina={setPageContainers}
+            />
           </TabsContent>
+
         </Tabs>
       )}
     </div>
