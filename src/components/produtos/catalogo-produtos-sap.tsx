@@ -41,7 +41,7 @@ const SYNC_ETAPAS = [
 import { VISIBILIDADE_LABELS, validateVisibilidadeChange } from "@/lib/product-visibility";
 
 const VIS_LABELS: Record<string, string> = VISIBILIDADE_LABELS;
-import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download, Pencil } from "lucide-react";
+import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download, Pencil, Plus } from "lucide-react";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath, enviarFotoProduto } from "@/lib/produto-imagens";
 import {
@@ -424,6 +424,9 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
   const rows = linhas.slice(current * pageSize, current * pageSize + pageSize);
 
   const lastRun = data?.lastRun ?? null;
+
+  /** Colunas visíveis da tabela (usado em colSpan). */
+  const totalCols = 9 + (org !== "solar" ? 1 : 0) + (audit ? 2 : 0);
 
 
   return (
@@ -848,38 +851,34 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
         </div>
 
 
-        <div className="border border-border rounded-lg overflow-x-auto">
-          <table className="w-full min-w-max text-sm">
+        <div className="border border-border rounded-lg overflow-hidden">
+          <table className="w-full table-fixed text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="text-left px-3 py-2">Foto</th>
-                <th className="text-left px-3 py-2">Código</th>
-                <th className="text-left px-3 py-2">Descrição</th>
-                <th className="text-left px-3 py-2">Tipo</th>
-                <th className="text-left px-3 py-2">NCM</th>
-                {org !== "solar" && <th className="text-left px-3 py-2">Custo</th>}
-                <th className="text-left px-3 py-2">Preço sugerido</th>
-                <th className="text-left px-3 py-2">Lista de preço</th>
-                <th className="text-left px-3 py-2">Permissão</th>
-                <th className="text-left px-3 py-2">Visibilidade</th>
-                <th className="text-left px-3 py-2">Preço no SAP</th>
-                <th className="text-left px-3 py-2">Status</th>
-                {audit && <th className="text-left px-3 py-2">Regra aplicada</th>}
-                {audit && <th className="text-left px-3 py-2">Motivo</th>}
-                <th className="text-left px-3 py-2">Sincronizado</th>
-                <th className="text-right px-3 py-2">Ações</th>
+                <th className="text-left px-2 py-2 w-[52px]">Foto</th>
+                <th className="text-left px-2 py-2 w-[110px]">Código</th>
+                <th className="text-left px-2 py-2">Descrição</th>
+                <th className="text-left px-2 py-2 w-[120px]">Tipo</th>
+                {org !== "solar" && <th className="text-left px-2 py-2 w-[104px]">Custo</th>}
+                <th className="text-left px-2 py-2 w-[104px]">Preço</th>
+                <th className="text-left px-2 py-2 w-[140px]">Visibilidade</th>
+                <th className="text-left px-2 py-2 w-[120px]">Preço no SAP</th>
+                <th className="text-left px-2 py-2 w-[112px]">Status</th>
+                {audit && <th className="text-left px-2 py-2 w-[140px]">Regra aplicada</th>}
+                {audit && <th className="text-left px-2 py-2 w-[160px]">Motivo</th>}
+                <th className="text-right px-2 py-2 w-[56px]">Ações</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 16 : 14} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={totalCols} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 16 : 14} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={totalCols} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
@@ -889,25 +888,31 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                     const s = linha.s;
                     return (
                       <tr key={`sap-${s.codigo}`} className="border-t border-border bg-muted/20 hover:bg-muted/40">
-                        <td className="px-3 py-2">
+                        <td className="px-2 py-2">
                           <div className="h-10 w-10 rounded-md bg-muted" />
                         </td>
-                        <td className="px-3 py-2 font-mono text-xs">{s.codigo}</td>
-                        <td className="px-3 py-2">{s.descricao}</td>
-                        <td className="px-3 py-2">
-                          <Badge variant="outline">Fora do catálogo</Badge>
+                        <td className="px-2 py-2 font-mono text-xs">
+                          <div className="truncate">{s.codigo}</div>
+                          <div className="text-[10px] text-muted-foreground truncate">NCM {s.ncm_codigo ?? "—"}</div>
                         </td>
-                        <td className="px-3 py-2 font-mono text-xs">{s.ncm_codigo ?? "—"}</td>
-                        <td
-                          className="px-3 py-2 text-xs text-muted-foreground"
-                          colSpan={7 + (org !== "solar" ? 1 : 0) + (audit ? 2 : 0)}
-                        >
-                          Material do SAP ainda não incluído no catálogo do portal.
+                        <td className="px-2 py-2">
+                          <div className="truncate" title={s.descricao ?? ""}>
+                            {s.descricao}
+                          </div>
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-2 py-2">
+                          <Badge variant="outline" className="text-[10px]">
+                            Fora do catálogo
+                          </Badge>
+                        </td>
+                        <td className="px-2 py-2 text-xs text-muted-foreground" colSpan={totalCols - 5}>
+                          <span className="block truncate">Material do SAP ainda não incluído no catálogo.</span>
+                        </td>
+                        <td className="px-2 py-2 text-right">
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="outline"
+                            title="Incluir no catálogo"
                             onClick={() =>
                               setIncluir({
                                 codigo: s.codigo,
@@ -916,7 +921,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                               })
                             }
                           >
-                            Incluir no catálogo
+                            <Plus className="h-4 w-4" />
                           </Button>
                         </td>
                       </tr>
@@ -926,7 +931,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                   return (
                   <tr key={p.id} className="border-t border-border hover:bg-muted/30">
 
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <label className="cursor-pointer inline-flex" title="Enviar/alterar foto">
                         <ProdutoFoto
                           url={fotos[(p as any).imagem_path ?? ""] ?? null}
@@ -945,46 +950,55 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                         />
                       </label>
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs">{p.codigo}</td>
-                    <td className="px-3 py-2">{p.descricao}</td>
-                    <td className="px-3 py-2">
-                      <Badge variant="secondary">{TIPO_LABELS[p.tipo] ?? p.tipo}</Badge>
+                    <td className="px-2 py-2 font-mono text-xs">
+                      <div className="truncate">{p.codigo}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        NCM {p.ncm_codigo ?? "—"}
+                        {p.ncm_codigo && !p.ncm_id ? (
+                          <span className="ml-1 text-amber-500" title="NCM do SAP ainda não cadastrado na tabela de alíquotas">
+                            !
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs">
-                      {p.ncm_codigo ?? "—"}
-                      {p.ncm_codigo && !p.ncm_id ? (
-                        <span className="ml-1 text-amber-500" title="NCM do SAP ainda não cadastrado na tabela de alíquotas">
-                          !
-                        </span>
-                      ) : null}
+                    <td className="px-2 py-2">
+                      <div className="truncate" title={p.descricao}>
+                        {p.descricao}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        Lista {p.lista_preco ?? "—"} • {p.permissao} • sinc. {fmt(p.last_synced_at)}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {TIPO_LABELS[p.tipo] ?? p.tipo}
+                      </Badge>
                     </td>
                     {org !== "solar" && (
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2">
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
-                          className="h-8 w-28"
+                          className="h-8 w-full text-xs"
                           defaultValue={Number((p as any).custo ?? 0)}
                           onBlur={(e) => void salvarNumero(p, "custo", e.target.value, Number((p as any).custo ?? 0))}
                         />
                       </td>
                     )}
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
-                        className="h-8 w-28"
+                        className="h-8 w-full text-xs"
                         defaultValue={Number((p as any).preco_sugerido ?? 0)}
                         onBlur={(e) =>
                           void salvarNumero(p, "preco_sugerido", e.target.value, Number((p as any).preco_sugerido ?? 0))
                         }
                       />
                     </td>
-                    <td className="px-3 py-2 text-muted-foreground">{p.lista_preco ?? "—"}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <Select
                         value={p.visibilidade ?? "ambos"}
                         onValueChange={(v) =>
@@ -995,7 +1009,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                           })
                         }
                       >
-                        <SelectTrigger className="h-8 w-[168px] text-xs" title="Instância em que o produto aparece.">
+                        <SelectTrigger className="h-8 w-full text-xs" title="Instância em que o produto aparece.">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1006,14 +1020,15 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       </Select>
                     </td>
 
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       {p.vendavel_sap === null || p.vendavel_sap === undefined ? (
-                        <Badge variant="outline" title="Nunca verificado — clique em “Verificar preços”.">
+                        <Badge variant="outline" className="text-[10px]" title="Nunca verificado — clique em “Verificar preços”.">
                           Não verificado
                         </Badge>
                       ) : p.vendavel_sap ? (
                         <Badge
                           variant="secondary"
+                          className="text-[10px] max-w-full truncate"
                           title={`Preço encontrado no SAP${p.preco_checado_em ? ` em ${fmt(p.preco_checado_em)}` : ""}`}
                         >
                           Com preço
@@ -1022,18 +1037,18 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                             : ""}
                         </Badge>
                       ) : (
-                        <Badge variant="destructive" title="Sem condição de preço vigente (VK12) — não pode ser vendido.">
+                        <Badge variant="destructive" className="text-[10px]" title="Sem condição de preço vigente (VK12) — não pode ser vendido.">
                           Sem preço
                         </Badge>
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <Select
                         value={p.ativo ? "on" : "off"}
                         onValueChange={(v) => overrideMut.mutate({ id: p.id, override: v === "on" })}
                       >
                         <SelectTrigger
-                          className="h-8 w-[112px] text-xs"
+                          className="h-8 w-full text-xs"
                           title="Define se o produto aparece na instância. Vale sobre o SAP."
                         >
                           <SelectValue />
@@ -1046,7 +1061,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                     </td>
 
                     {audit && (
-                      <td className="px-3 py-2 text-xs">
+                      <td className="px-2 py-2 text-[11px]">
                         {p.det.prefixo ? (
                           <span className="font-mono">
                             {p.det.prefixo} → {p.det.tipoDescricao}
@@ -1057,7 +1072,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       </td>
                     )}
                     {audit && (
-                      <td className="px-3 py-2 text-xs">
+                      <td className="px-2 py-2 text-[11px]">
                         {p.det.tipo !== p.tipo ? (
                           <span className="text-destructive">
                             gravado como “{TIPO_LABELS[p.tipo] ?? p.tipo}”, regra indica “{p.det.tipoDescricao}”
@@ -1073,8 +1088,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                         )}
                       </td>
                     )}
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(p.last_synced_at)}</td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-2 py-2 text-right">
                       <Button
                         variant="ghost"
                         size="icon"
