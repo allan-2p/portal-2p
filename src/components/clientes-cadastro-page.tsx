@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   AlertCircle, Plus, Search, Pencil, Building2, Filter, X, Eye,
   ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, ShieldCheck, Loader2, Sparkles,
-  ArrowRight, History, Users, MapPin, CreditCard,
+  ArrowRight, ArrowRightLeft, History, Users, MapPin, CreditCard,
 } from "lucide-react";
 import { ClienteIntegracoesDialog } from "@/components/cliente-integracoes-dialog";
 import { CreditoClienteCard } from "@/components/credito-cliente-card";
@@ -41,6 +41,7 @@ import { FINALIDADES, TABELAS_PRECO, TABELA_PRECO_PADRAO } from "@/lib/sap-clien
 import {
   listClientesPaginaFn, verificarDocFn, enriquecerCnpjFn, salvarClienteFn, ampliarAtuacaoFn,
   listConsultoresFn,
+  transferirConsultorClienteFn,
 
 } from "@/lib/clientes.functions";
 import {
@@ -334,6 +335,29 @@ export function ClientesCadastroPage({ instancia, buscaInicial }: { instancia: I
   const opcoesConsultor: ConsultorOpcao[] = consultorImportado
     ? [...consultores, { id: consultorImportado.sap, sap: consultorImportado.sap, nome: `${consultorImportado.nome} (importado)` }]
     : consultores;
+  // === Transferência de consultor (ação da lista) ===
+  const podeTransferirConsultor = useCan("admin.clientes.transferir");
+  const transferirFn = useServerFn(transferirConsultorClienteFn);
+  const [transferirDe, setTransferirDe] = useState<Cliente | null>(null);
+  const [transferirPara, setTransferirPara] = useState<string>("");
+  const transferirM = useMutation({
+    mutationFn: (v: { id: string; sap: string }) =>
+      transferirFn({ data: { instancia, id: v.id, consultor_sap: v.sap } }),
+    onSuccess: (r: any) => {
+      const avisos: string[] = [];
+      if (r?.sync?.sap && r.sync.sap.ok === false) avisos.push("SAP");
+      if (r?.sync?.salesforce && r.sync.salesforce.ok === false) avisos.push("Salesforce");
+      if (r?.semMudanca) toast.info("Este cliente já é do consultor selecionado.");
+      else if (avisos.length)
+        toast.warning(`Transferido para ${r?.consultor}. Falha ao atualizar: ${avisos.join(" e ")}.`);
+      else toast.success(`Cliente transferido para ${r?.consultor}.`);
+      setTransferirDe(null);
+      setTransferirPara("");
+      qc.invalidateQueries({ queryKey: ["clientes"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Não foi possível transferir o cliente."),
+  });
+
   /** Quem pode atribuir o cadastro a outro consultor (senão assume o próprio). */
   const podeEscolherConsultor =
     !!consultoresQ.data?.podeEscolher || consultoresQ.data?.souConsultor === false;
@@ -1246,6 +1270,17 @@ export function ClientesCadastroPage({ instancia, buscaInicial }: { instancia: I
                     {podeVerIntegracoes && (
                       <Button variant="ghost" size="icon" aria-label="Integrações e histórico" onClick={() => setIntegracoesDe(c)}><History className="h-4 w-4" /></Button>
                     )}
+                    {podeTransferirConsultor && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Transferir consultor"
+                        title="Transferir consultor"
+                        onClick={() => { setTransferirDe(c); setTransferirPara(""); }}
+                      >
+                        <ArrowRightLeft className="h-4 w-4" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -1471,6 +1506,39 @@ export function ClientesCadastroPage({ instancia, buscaInicial }: { instancia: I
         open={!!integracoesDe}
         onOpenChange={(v) => !v && setIntegracoesDe(null)}
       />
+
+      <Dialog open={!!transferirDe} onOpenChange={(v) => { if (!v) { setTransferirDe(null); setTransferirPara(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Transferir consultor</DialogTitle>
+            <DialogDescription>
+              {transferirDe?.razao_social} — hoje com {consultorDoCliente(transferirDe ?? ({} as Cliente), instancia) || "sem consultor"}.
+              A troca também é enviada para o SAP e o Salesforce.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Novo consultor</Label>
+            <Select value={transferirPara} onValueChange={setTransferirPara}>
+              <SelectTrigger><SelectValue placeholder="Escolha o consultor" /></SelectTrigger>
+              <SelectContent>
+                {consultores.map((c) => (
+                  <SelectItem key={c.sap} value={c.sap}>{c.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTransferirDe(null); setTransferirPara(""); }}>Cancelar</Button>
+            <Button
+              disabled={!transferirPara || transferirM.isPending}
+              onClick={() => transferirDe && transferirM.mutate({ id: transferirDe.id, sap: transferirPara })}
+            >
+              {transferirM.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Transferir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

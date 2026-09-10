@@ -1017,3 +1017,131 @@ export const statusTabelasClientesFn = createServerFn({ method: "POST" })
       carregadores: await db.clientesTableExists("carregadores"),
     };
   });
+
+/**
+ * Transferência de consultor de um cadastro de cliente.
+ *
+ * Ação isolada da edição: só quem tem a permissão
+ * "Clientes • Transferir consultor do cadastro" (ou "Modify All Records" em
+ * Contas) pode executar. Atualiza o par canônico consultor_sap/consultor_nome
+ * (e o responsável da unidade aberta, quando o banco tem colunas por
+ * instância) e replica o novo dono no SAP (campo VENDEDOR) e no Salesforce
+ * (OwnerId da Account e do Contact principal).
+ */
+export const transferirConsultorClienteFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        instancia: instanciaSchema,
+        id: z.string().uuid(),
+        consultor_sap: z.string().trim().min(1).max(20),
+        motivo: z.string().trim().max(300).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: temFeature } = await (context as any).supabase.rpc("has_feature", {
+      _user_id: context.userId,
+      _key: "admin.clientes.transferir",
+    });
+    const perm = await getPerm(context as any, data.instancia, "contas");
+    if (!temFeature && !perm.modify_all) {
+      throw new Error("Seu perfil não permite transferir o consultor do cadastro.");
+    }
+
+    const db = await import("./clientes-db.server");
+    const atual = await db.getClienteById(data.instancia, data.id);
+    if (!atual) throw new Error("Cadastro não encontrado.");
+
+    const { consultorPorSap, consultorDaInstancia, prefixoConsultor, idDeUsuario } =
+      await import("./consultor-sap.server");
+    const novo = await consultorPorSap(data.consultor_sap);
+    if (!novo) throw new Error("Consultor não encontrado no portal.");
+
+    const anterior = consultorDaInstancia(atual, data.instancia);
+    if (String(anterior.sap ?? "") === novo.sap) {
+      return { ok: true as const, semMudanca: true as const, consultor: novo.nome, sync: null };
+    }
+
+    const patch: Record<string, unknown> = {
+      consultor_sap: novo.sap,
+      consultor_nome: novo.nome,
+    };
+    const uuid = idDeUsuario(novo.id);
+    if (uuid) patch["consultor_id"] = uuid;
+
+    // Cadastros Grupo 2P guardam um responsável por unidade — quando o banco
+    // tem essas colunas, a transferência vale para a unidade aberta.
+    if (await db.temConsultorPorInstancia()) {
+      const p = prefixoConsultor(data.instancia);
+      patch[`${p}_sap`] = novo.sap;
+      patch[`${p}_nome`] = novo.nome;
+      if (uuid) patch[`${p}_id`] = uuid;
+    }
+
+    await db.updateCliente(data.instancia, data.id, patch);
+
+    const atualizado = { ...(atual as Record<string, any>), ...patch };
+    let sync: any = null;
+    try {
+      const { sincronizarCliente } = await import("./clientes-integracoes.server");
+      sync = await sincronizarCliente(data.instancia, data.id, atualizado, {
+        vendedorSap: novo.sap,
+        ownerSfId: novo.sfUserId ?? null,
+        alvos: ["sap", "salesforce"],
+      });
+    } catch (err) {
+      sync = {
+        sap: { ok: false, numero_sap: null, erro: (err as Error)?.message ?? String(err) },
+        salesforce: { ok: false, accountId: null, contactId: null, erro: (err as Error)?.message ?? String(err) },
+      };
+    }
+
+    try {
+      const { logIntegrationEvent } = await import("./integration-logs.server");
+      await logIntegrationEvent({
+        slug: "clientes-cadastro",
+        level: sync?.sap?.ok === false || sync?.salesforce?.ok === false ? "warn" : "info",
+        event: "cadastro.consultor.transferido",
+        message: `Cliente ${atual["razao_social"]} transferido de ${anterior.nome ?? "sem consultor"} para ${novo.nome}.`,
+        actorId: context.userId,
+        detail: {
+          cliente_id: data.id,
+          instancia: data.instancia,
+          doc: String(atual["doc"] ?? ""),
+          de: { sap: anterior.sap, nome: anterior.nome },
+          para: { sap: novo.sap, nome: novo.nome },
+          motivo: data.motivo ?? null,
+          sap: sync?.sap ?? null,
+          salesforce: sync?.salesforce ?? null,
+        },
+      });
+    } catch (err) {
+      console.error("[clientes] falha ao registrar log da transferência", err);
+    }
+
+    try {
+      const { recordModeration } = await import("./moderation-audit.server");
+      await recordModeration(
+        { supabase: context.supabase, userId: context.userId },
+        {
+          area: "clientes",
+          instanceId: data.instancia,
+          action: "update",
+          target: String(atual["razao_social"] ?? data.id),
+          summary: `Consultor transferido de ${anterior.nome ?? "sem consultor"} para ${novo.nome}`,
+          details: {
+            id: data.id,
+            de: anterior.sap,
+            para: novo.sap,
+            motivo: data.motivo ?? null,
+          },
+        },
+      );
+    } catch (err) {
+      console.error("[clientes] falha ao registrar auditoria da transferência", err);
+    }
+
+    return { ok: true as const, semMudanca: false as const, consultor: novo.nome, sync };
+  });
