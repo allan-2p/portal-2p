@@ -1539,6 +1539,8 @@ function PropostaCarregadoresPage() {
           observacoes: observacoesFinal.trim() || null,
           observacoesInternas: state.observacoesInternas.trim() || null,
           entregaLoteId: state.entregaLoteId || null,
+          entregaLoteMes: state.entregaLoteMes || null,
+          entregaLoteNome: state.entregaLoteNome || null,
           itens: state.itens
             .filter((i) => i.produtoId)
             .map((i) => ({ produtoId: i.produtoId, qtd: i.qtd, valor: money2(i.valor) })),
