@@ -22,8 +22,7 @@ function useUltimaSync() {
     queryKey: ["sap-produtos-ultima-sync"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sap_produtos_sync_runs")
+      const { data, error } = await catalogoFrom("sap_produtos_sync_runs")
         .select("started_at, finished_at, status, inserted_count, updated_count, error_message")
         .order("started_at", { ascending: false })
         .limit(1)

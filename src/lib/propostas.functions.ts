@@ -1463,7 +1463,7 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
         const material = String(i?.codigo ?? "").trim();
         const qtd = Number(i?.qtd ?? 0);
         if (!material || !(qtd > 0)) continue;
-        const { data: res, error } = await supabase.rpc("check_disponibilidade", {
+        const { data: res, error } = await (await catalogoDb()).rpc("check_disponibilidade", {
           p_material: material,
           p_qtd: qtd,
         });

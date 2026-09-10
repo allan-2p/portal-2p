@@ -61,6 +61,10 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Virada de chave**: `CATALOGO_DB=grupo2p` ativado — catálogo, estoque, calculadora Solar
   e Carregadores passam a ler e gravar no Grupo 2P (dados ressincronizados e conferidos
   antes do corte). O login e o restante do portal seguem no Lovable Cloud.
+- **Tudo no Grupo 2P**: consultas de disponibilidade (`check_disponibilidade`), reserva de
+  estoque na conclusão do pedido (`reservar_estoque_pendente`) e o painel de última
+  sincronização do catálogo passaram a usar o banco do Grupo 2P — novos itens, ajustes
+  manuais e sincronizações SAP gravam somente lá.
 
 ### Banco de dados
 
