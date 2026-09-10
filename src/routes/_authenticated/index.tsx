@@ -666,9 +666,8 @@ function HomePage() {
     let newRecurring = 0;
     for (const id of curAB) if (!prevAB.has(id)) newRecurring++;
     const retentionBase = prevAB.size;
-    // Meta padrão: 80% das contas A+B do trimestre anterior seguem A ou B.
-    const retentionGoal =
-      configuredRetentionGoal > 0 ? configuredRetentionGoal : Math.round(retentionBase * 0.8);
+    // Meta: 80% das contas A+B do trimestre anterior seguem A ou B.
+    const retentionGoal = Math.round(retentionBase * 0.8);
     const retentionPct = retentionGoal > 0 ? (retained / retentionGoal) * 100 : 0;
     return {
       retentionBase,
