@@ -287,6 +287,7 @@ export function EstoquePainel({
                     <th className="p-3">Material</th>
                     <th className="p-3">Descrição</th>
                     <th className="p-3">NCM</th>
+                    <th className="p-3">Catálogo</th>
                     <th className="p-3 text-right">Livre</th>
                     <th className="p-3 text-right">Pendente</th>
                     
@@ -295,7 +296,7 @@ export function EstoquePainel({
                   </tr>
                 </thead>
                 <tbody>
-                  {estoque.map((e) => {
+                  {estoquePagina.map((e) => {
                     const proxima = proximaRemessaPorMaterial.get(e.material) ?? null;
                     const info = infoEstoque(
                       e.est_livre,
@@ -303,11 +304,28 @@ export function EstoquePainel({
                       e.est_entreposto,
                       proxima,
                     );
+                    const cat = catalogoPorMaterial.get(String(e.material));
                     return (
                       <tr key={e.material} className="border-t">
                         <td className="p-3 font-mono text-xs">{e.material}</td>
                         <td className="p-3">{e.descricao}</td>
                         <td className="p-3 font-mono text-xs">{e.ncm ?? "—"}</td>
+                        <td className="p-3">
+                          {cat ? (
+                            <div className="flex flex-wrap items-center gap-1">
+                              <Badge variant={cat.ativo ? "default" : "secondary"} className="text-[10px]">
+                                {cat.ativo ? "Ativo" : "Inativo"}
+                              </Badge>
+                              <Badge variant="outline" className="text-[10px]">
+                                {rotuloVisibilidade(cat.visibilidade)}
+                              </Badge>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">
+                              Fora do catálogo
+                            </Badge>
+                          )}
+                        </td>
                         <td className="p-3 text-right">{qtd(e.est_livre)}</td>
                         <td className="p-3 text-right">{qtd(e.qtd_pend_faturar)}</td>
                         
@@ -320,7 +338,7 @@ export function EstoquePainel({
                   })}
                   {estoque.length === 0 && (
                     <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={7}>
+                      <td className="p-6 text-center text-muted-foreground" colSpan={8}>
                         Sem dados de estoque.
                       </td>
                     </tr>
@@ -328,7 +346,14 @@ export function EstoquePainel({
                 </tbody>
               </table>
             </div>
+            <Paginacao
+              total={estoque.length}
+              pagina={pgEstoque}
+              paginas={totalEstoque}
+              onPagina={setPageEstoque}
+            />
           </TabsContent>
+
 
           <TabsContent value="containers" className="mt-4">
             <div className="overflow-x-auto rounded-lg border">
