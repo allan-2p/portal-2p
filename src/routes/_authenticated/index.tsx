@@ -56,8 +56,8 @@ import {
 } from "@/lib/salesforce.functions";
 
 import { getMonthGoalTotal } from "@/lib/admin.functions";
-import { listRetentionGoals } from "@/lib/goals.functions";
-import { CARTEIRA_OWNER_IDS } from "@/lib/salespeople";
+import { CARTEIRA_OWNER_IDS, CARTEIRA_OWNER_NAMES } from "@/lib/salespeople";
+import { getSegmentacaoFn } from "@/lib/segmentacao.functions";
 import { businessDaysOfMonth } from "@/lib/business-days";
 import { PermissionGate } from "@/components/permission-gate";
 import {
