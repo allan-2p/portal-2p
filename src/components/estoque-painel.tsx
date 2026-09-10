@@ -267,6 +267,7 @@ export function EstoquePainel({
                     <tr key={`${c.id_container}-${c.material}`} className="border-t">
                       <td className="p-3 font-mono text-xs">{c.id_container}</td>
                       <td className="p-3 font-mono text-xs">{c.material}</td>
+                      <td className="p-3">{c.descricao || "—"}</td>
                       <td className="p-3">{c.supplier ?? "—"}</td>
                       <td className="p-3 text-right">{qtd(c.est_entreposto)}</td>
                       <td className="p-3">{c.dt_remessa ?? "Pronta entrega"}</td>
