@@ -108,9 +108,16 @@ export function EstoquePainel({
       ? rows
       : rows.filter((r) => campos.some((c) => String(r[c] ?? "").toLowerCase().includes(termo)));
 
-  const produtos = filtrar(q.data?.produtos ?? [], ["codigo", "descricao", "ncm"]);
   const estoque = filtrar(q.data?.estoque ?? [], ["material", "descricao", "ncm"]);
-  const containers = filtrar(q.data?.containers ?? [], ["id_container", "material", "supplier"]);
+  // Descrição do material para a lista de em trânsito (os containers só trazem o código).
+  const descricaoPorMaterial = new Map<string, string>();
+  for (const p of q.data?.produtos ?? []) descricaoPorMaterial.set(p.codigo, p.descricao ?? "");
+  for (const e of q.data?.estoque ?? []) if (e.descricao) descricaoPorMaterial.set(e.material, e.descricao);
+  const containersBase = (q.data?.containers ?? []).map((c) => ({
+    ...c,
+    descricao: descricaoPorMaterial.get(c.material) ?? "",
+  }));
+  const containers = filtrar(containersBase, ["id_container", "material", "supplier", "descricao"]);
   const lastRun = q.data?.lastRun ?? null;
   const atualizadoEm =
     lastRun?.finished_at ??
