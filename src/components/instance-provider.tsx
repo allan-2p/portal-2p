@@ -26,7 +26,7 @@ const HOME_FEATURE: Record<InstanceId, FeatureKey> = {
   marketing: "marketing.home",
   financeiro: "financeiro.home",
 };
-const HOME_ROUTE: Record<InstanceId, string> = {
+export const HOME_ROUTE: Record<InstanceId, string> = {
   solar: "/",
   carregadores: "/carregadores",
   marketing: "/marketing",
