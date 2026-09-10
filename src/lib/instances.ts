@@ -289,6 +289,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   estoque: "Estoque",
   "carregadores.home": "Carregadores • Home",
   "carregadores.visao-geral": "Carregadores • Visão Geral",
+  "carregadores.visao-geral.valores": "Carregadores • Visão Geral: detalhar valores (margem R$ e comissões)",
   "carregadores.tarefas": "Carregadores • Tarefas",
   "carregadores.clientes": "Carregadores • Clientes",
   "carregadores.propostas": "Carregadores • Propostas",
