@@ -28,6 +28,7 @@ export type FeatureKey =
   | "estoque"
   | "carregadores.home"
   | "carregadores.visao-geral"
+  | "carregadores.visao-geral.valores"
   | "carregadores.tarefas"
   | "carregadores.clientes"
   | "carregadores.propostas"
