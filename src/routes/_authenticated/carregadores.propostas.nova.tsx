@@ -403,6 +403,8 @@ function PropostaCarregadoresPage() {
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         observacoesInternas: ((data as any).observacoes_internas as string | null) ?? "",
         entregaLoteId: ((data as any).entrega_lote_id as string | null) ?? "",
+        entregaLoteMes: ((data as any).entrega_lote_mes as string | null) ?? "",
+        entregaLoteNome: ((data as any).entrega_lote_nome as string | null) ?? "",
         itens: itens.length ? itens : [novoItem()],
       });
       setConsultorProposta(((data as any).consultor_nome as string | null) ?? null);
@@ -494,11 +496,24 @@ function PropostaCarregadoresPage() {
   });
   const logoCliente = ((logoQ.data as any)?.data_url as string | undefined) ?? null;
 
-  // Lotes de chegada ativos (Moderação › Carregadores › Lotes de Entrega).
-  const listarLotes = useServerFn(listarLotesAtivos);
-  const lotesQ = useQuery({ queryKey: ["carregadores-lotes-ativos"], queryFn: () => listarLotes() });
-  const lotes = (lotesQ.data ?? []) as Awaited<ReturnType<typeof listarLotesAtivos>>;
-  const loteSelecionado = lotes.find((l) => l.id === state.entregaLoteId) ?? null;
+  // Chegada da mercadoria: containers de carregadores em trânsito + lotes
+  // cadastrados em Moderação › Carregadores › Lotes de Entrega.
+  const listarLotes = useServerFn(listarOpcoesEntrega);
+  const lotesQ = useQuery({ queryKey: ["carregadores-opcoes-entrega"], queryFn: () => listarLotes() });
+  const lotes = (lotesQ.data ?? []) as OpcaoEntrega[];
+  const mesesEntrega = [...new Set(lotes.map((l) => l.mes_referencia))].sort();
+  const lotesDoMes = lotes.filter((l) => l.mes_referencia === state.entregaLoteMes);
+  const loteSelecionado =
+    lotesDoMes.find((l) => l.lote === state.entregaLoteNome) ??
+    (state.entregaLoteMes && state.entregaLoteNome
+      ? {
+          id: state.entregaLoteId || null,
+          mes_referencia: state.entregaLoteMes,
+          lote: state.entregaLoteNome,
+          previsao_chegada: null,
+          origem: "cadastro" as const,
+        }
+      : null);
 
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
 
