@@ -160,9 +160,8 @@ export function EstoquePainel({
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         {[
-          { icon: Package, label: "Produtos consolidados", valor: q.data?.produtos.length ?? 0 },
           { icon: Boxes, label: "Materiais com estoque", valor: q.data?.estoque.length ?? 0 },
           { icon: Ship, label: "Containers em trânsito", valor: q.data?.containers.length ?? 0 },
         ].map((c) => (
