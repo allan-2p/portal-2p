@@ -6,7 +6,7 @@ import { Loader2, RefreshCw, Search, Boxes, Ship, AlertTriangle } from "lucide-r
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DisponibilidadeBadge } from "@/components/disponibilidade-badge";
