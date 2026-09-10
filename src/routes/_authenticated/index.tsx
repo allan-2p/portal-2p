@@ -578,27 +578,7 @@ function HomePage() {
 
 
   // ---- Retenção / Recorrência / Novos recorrentes (por trimestre calendário) ----
-  const quarterRange = useMemo(() => {
-    const y = today.getFullYear();
-    const m = today.getMonth();
-    const qStartMonth = Math.floor(m / 3) * 3; // 0,3,6,9
-    const curStart = new Date(y, qStartMonth, 1);
-    const curEnd = new Date(y, qStartMonth + 3, 0);
-    const prevStart = new Date(y, qStartMonth - 3, 1);
-    const prevEnd = new Date(y, qStartMonth, 0);
-    return {
-      prevStart, prevEnd, curStart, curEnd,
-      start: fmtKey(prevStart),
-      end: fmtKey(curEnd),
-    };
-  }, [today]);
 
-  const vendasQuarterQ = useQuery({
-    queryKey: ["sf-home-vendas-quarters", quarterRange.start, quarterRange.end, ownerParam],
-    queryFn: () => fetchVendas({ data: { start: quarterRange.start, end: quarterRange.end, ownerId: ownerParam } }),
-    enabled: dataEnabled,
-    staleTime: 60_000,
-  });
 
   // Retenção — mesma base da tela de Segmentação: contas classificadas pelas
   // vendas do trimestre anterior (A ≥ R$30k, B entre R$15k e R$30k) e por
