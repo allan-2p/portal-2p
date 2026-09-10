@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, Boxes, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
+import { Home, Boxes, TicketPercent, CreditCard, CalendarClock, Landmark, BadgeDollarSign, Share2, PhoneCall, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto-sm.webp";
@@ -206,7 +206,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     tabs.push({
       id: "clientes",
       label: "Clientes",
-      icon: Layers,
+      icon: Users,
       active: clientesActive,
       to: principal,
       novo: show("clientes.cadastros")
@@ -244,7 +244,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
   if (instance === "solar" && (adminAreas?.isAdmin || show("estoque")))
     tabs.push({ id: "estoque-solar", label: "Estoque", icon: Boxes, to: "/solar/estoque" as AppPath, active: pathname.startsWith("/solar/estoque") });
-  if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: KeyRound, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons"), novo: { label: "Novo cupom", to: "/solar/cupons" as AppPath, hash: "novo" } });
+  if (show("cupons")) tabs.push({ id: "cupons", label: "Cupons", icon: TicketPercent, to: "/solar/cupons", active: pathname.startsWith("/solar/cupons"), novo: { label: "Novo cupom", to: "/solar/cupons" as AppPath, hash: "novo" } });
   if (show("carregadores.home")) tabs.push({ id: "carreg-home", label: "Home", icon: Home, to: "/carregadores", active: pathname === "/carregadores" });
   if (show("carregadores.visao-geral")) tabs.push({ id: "carreg-visao", label: "Visão Geral", icon: BarChart3, to: "/carregadores/visao-geral", active: pathname.startsWith("/carregadores/visao-geral") });
   if (show("carregadores.tarefas")) tabs.push({ id: "carreg-tarefas", label: "Tarefas", icon: Calendar, to: "/carregadores/tarefas", active: pathname.startsWith("/carregadores/tarefas"), novo: { label: "Nova tarefa", to: "/carregadores/tarefas" as AppPath, hash: "novo" } });
@@ -253,13 +253,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
     tabs.push({
       id: "propostas-carregadores",
       label: "Propostas",
-      icon: Zap,
+      icon: ClipboardList,
       active: propostasCarregadoresActive,
       to: "/carregadores/propostas",
       novo: { label: "Nova proposta", to: "/carregadores/propostas/nova" as AppPath },
       items: [
         ...(show("carregadores.pedidos")
-          ? [{ to: "/carregadores/pedidos" as AppPath, label: "Acompanhamento", icon: ShoppingCart, active: pathname.startsWith("/carregadores/pedidos") }]
+          ? [{ to: "/carregadores/pedidos" as AppPath, label: "Acompanhamento", icon: KanbanSquare, active: pathname.startsWith("/carregadores/pedidos") }]
           : []),
       ],
     });
@@ -280,18 +280,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }
   if (show("marketing.home")) {
     tabs.push({ id: "mkt-home", label: "Home", icon: Megaphone, to: "/marketing", active: pathname === "/marketing" });
-    if (show("marketing.social")) tabs.push({ id: "mkt-social", label: "Social Mídia", icon: Users, to: "/marketing/social", active: pathname.startsWith("/marketing/social") });
-    if (show("marketing.trafego")) tabs.push({ id: "mkt-trafego", label: "Mídia Paga", icon: Filter, to: "/marketing/trafego", active: pathname.startsWith("/marketing/trafego") });
+    if (show("marketing.social")) tabs.push({ id: "mkt-social", label: "Social Mídia", icon: Share2, to: "/marketing/social", active: pathname.startsWith("/marketing/social") });
+    if (show("marketing.trafego")) tabs.push({ id: "mkt-trafego", label: "Mídia Paga", icon: BadgeDollarSign, to: "/marketing/trafego", active: pathname.startsWith("/marketing/trafego") });
     if (show("marketing.cohort")) tabs.push({ id: "mkt-cohort", label: "Análise Cohort", icon: LineChart, to: "/marketing/cohort", active: pathname.startsWith("/marketing/cohort") });
     if (show("marketing.cac")) tabs.push({ id: "mkt-cac", label: "CAC", icon: TrendingUp, to: "/marketing/cac", active: pathname.startsWith("/marketing/cac") });
     if (show("marketing.gargalo")) tabs.push({ id: "mkt-gargalo", label: "Mapa de Gargalo", icon: Filter, to: "/marketing/gargalo", active: pathname.startsWith("/marketing/gargalo") });
-    if (show("marketing.prevendas")) tabs.push({ id: "mkt-prevendas", label: "Pré-Vendas", icon: ClipboardList, to: "/marketing/pre-vendas", active: pathname.startsWith("/marketing/pre-vendas") });
+    if (show("marketing.prevendas")) tabs.push({ id: "mkt-prevendas", label: "Pré-Vendas", icon: PhoneCall, to: "/marketing/pre-vendas", active: pathname.startsWith("/marketing/pre-vendas") });
     if (show("marketing.metas")) tabs.push({ id: "mkt-metas", label: "Metas", icon: Target, to: "/marketing/metas", active: pathname.startsWith("/marketing/metas") });
   }
   if (show("financeiro.home")) {
-    tabs.push({ id: "fin-home", label: "Home", icon: Building2, to: "/financeiro", active: pathname === "/financeiro" });
-    if (show("financeiro.condicoes")) tabs.push({ id: "fin-condicoes", label: "Condições de Pagamento", icon: Percent, to: "/financeiro/condicoes", active: pathname.startsWith("/financeiro/condicoes") });
-    if (show("financeiro.credito")) tabs.push({ id: "fin-credito", label: "Análise de Crédito", icon: ShieldCheck, to: "/financeiro/credito", active: pathname.startsWith("/financeiro/credito") });
+    tabs.push({ id: "fin-home", label: "Home", icon: Landmark, to: "/financeiro", active: pathname === "/financeiro" });
+    if (show("financeiro.condicoes")) tabs.push({ id: "fin-condicoes", label: "Condições de Pagamento", icon: CalendarClock, to: "/financeiro/condicoes", active: pathname.startsWith("/financeiro/condicoes") });
+    if (show("financeiro.credito")) tabs.push({ id: "fin-credito", label: "Análise de Crédito", icon: CreditCard, to: "/financeiro/credito", active: pathname.startsWith("/financeiro/credito") });
   }
 
   /** Itens "planos" para a busca global (command palette) — só o menu, sem dados. */
@@ -393,7 +393,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               )
             )}
             {show("cupons") && (
-              <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: KeyRound }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
+              <NavLink item={{ to: "/solar/cupons", label: "Cupons", icon: TicketPercent }} active={pathname.startsWith("/solar/cupons")} collapsed={collapsed} />
             )}
 
             {/* Módulo Carregadores — navegação exclusiva da instância */}
@@ -421,9 +421,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {show("carregadores.propostas") && (
                   collapsed ? (
                     <>
-                      <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: Zap }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
+                      <NavLink item={{ to: "/carregadores/propostas", label: "Propostas", icon: ClipboardList }} active={pathname.startsWith("/carregadores/propostas")} collapsed={collapsed} />
                       {show("carregadores.pedidos") && (
-                        <NavLink item={{ to: "/carregadores/pedidos", label: "Acompanhamento", icon: ShoppingCart }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
+                        <NavLink item={{ to: "/carregadores/pedidos", label: "Acompanhamento", icon: KanbanSquare }} active={pathname.startsWith("/carregadores/pedidos")} collapsed={collapsed} />
                       )}
                     </>
                   ) : (
@@ -560,10 +560,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <div className="mb-1 space-y-0.5">
                   <NavLink item={{ to: "/marketing", label: "Home", icon: Megaphone }} active={pathname === "/marketing"} collapsed={false} />
                   {show("marketing.social") && (
-                    <NavLink item={{ to: "/marketing/social", label: "Social Mídia", icon: Users }} active={pathname.startsWith("/marketing/social")} collapsed={false} />
+                    <NavLink item={{ to: "/marketing/social", label: "Social Mídia", icon: Share2 }} active={pathname.startsWith("/marketing/social")} collapsed={false} />
                   )}
                   {show("marketing.trafego") && (
-                    <NavLink item={{ to: "/marketing/trafego", label: "Mídia Paga", icon: Filter }} active={pathname.startsWith("/marketing/trafego")} collapsed={false} />
+                    <NavLink item={{ to: "/marketing/trafego", label: "Mídia Paga", icon: BadgeDollarSign }} active={pathname.startsWith("/marketing/trafego")} collapsed={false} />
                   )}
                   {show("marketing.cohort") && (
                     <NavLink item={{ to: "/marketing/cohort", label: "Análise Cohort", icon: LineChart }} active={pathname.startsWith("/marketing/cohort")} collapsed={false} />
@@ -575,7 +575,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     <NavLink item={{ to: "/marketing/gargalo", label: "Mapa de Gargalo", icon: Filter }} active={pathname.startsWith("/marketing/gargalo")} collapsed={false} />
                   )}
                   {show("marketing.prevendas") && (
-                    <NavLink item={{ to: "/marketing/pre-vendas", label: "Pré-Vendas", icon: ClipboardList }} active={pathname.startsWith("/marketing/pre-vendas")} collapsed={false} />
+                    <NavLink item={{ to: "/marketing/pre-vendas", label: "Pré-Vendas", icon: PhoneCall }} active={pathname.startsWith("/marketing/pre-vendas")} collapsed={false} />
                   )}
                   {show("marketing.metas") && (
                     <NavLink item={{ to: "/marketing/metas", label: "Metas", icon: Target }} active={pathname.startsWith("/marketing/metas")} collapsed={false} />
@@ -600,12 +600,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </Link>
               ) : (
                 <div className="mb-1 space-y-0.5">
-                  <NavLink item={{ to: "/financeiro", label: "Home", icon: Building2 }} active={pathname === "/financeiro"} collapsed={false} />
+                  <NavLink item={{ to: "/financeiro", label: "Home", icon: Landmark }} active={pathname === "/financeiro"} collapsed={false} />
                   {show("financeiro.condicoes") && (
-                    <NavLink item={{ to: "/financeiro/condicoes", label: "Condições de Pagamento", icon: Percent }} active={pathname.startsWith("/financeiro/condicoes")} collapsed={false} />
+                    <NavLink item={{ to: "/financeiro/condicoes", label: "Condições de Pagamento", icon: CalendarClock }} active={pathname.startsWith("/financeiro/condicoes")} collapsed={false} />
                   )}
                   {show("financeiro.credito") && (
-                    <NavLink item={{ to: "/financeiro/credito", label: "Análise de Crédito", icon: ShieldCheck }} active={pathname.startsWith("/financeiro/credito")} collapsed={false} />
+                    <NavLink item={{ to: "/financeiro/credito", label: "Análise de Crédito", icon: CreditCard }} active={pathname.startsWith("/financeiro/credito")} collapsed={false} />
                   )}
                 </div>
               )
