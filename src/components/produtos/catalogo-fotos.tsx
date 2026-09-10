@@ -1,15 +1,24 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { catalogoFrom } from "@/lib/catalogo-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, ImageOff, Upload, RefreshCw, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useImagensPorPath, enviarFotoProduto, removerFotoProduto } from "@/lib/produto-imagens";
 import { atualizarSapProdutoCampos } from "@/lib/sap-produtos.functions";
 
 type Filtro = "todos" | "com" | "sem";
+type FiltroStatus = "todos" | "ativos" | "inativos";
+
 
 /** Item do catálogo exibido na galeria de fotos (fonte única: `sap_produtos`). */
 type ItemFoto = {
