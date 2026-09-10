@@ -25,7 +25,11 @@ import { fmtBRL, precoSugeridoPadrao, MARGEM_PRECO_SUGERIDO, type CarregadoresPr
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath, enviarFotoProduto } from "@/lib/produto-imagens";
+import { EstoquePainel } from "@/components/estoque-painel";
 // Catálogo de fotos só é baixado quando a aba é aberta (chunk separado).
+const CatalogoProdutosSap = lazy(() =>
+  import("@/components/produtos/catalogo-produtos-sap").then((m) => ({ default: m.CatalogoProdutosSap })),
+);
 const CatalogoFotos = lazy(() =>
   import("@/components/produtos/catalogo-fotos").then((m) => ({ default: m.CatalogoFotos })),
 );
@@ -64,6 +68,8 @@ function ProdutosCarregadoresPage() {
           <TabsList>
             <TabsTrigger value="produtos">Produtos</TabsTrigger>
             <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>
+            <TabsTrigger value="sap">Catálogo SAP</TabsTrigger>
+            <TabsTrigger value="estoque">Estoque</TabsTrigger>
             <TabsTrigger value="ufs">Alíquotas por UF</TabsTrigger>
           </TabsList>
           <TabsContent value="produtos" className="mt-4"><ProdutosTab /></TabsContent>
@@ -71,6 +77,18 @@ function ProdutosCarregadoresPage() {
             <Suspense fallback={<p className="py-10 text-center text-muted-foreground">Carregando catálogo…</p>}>
               <CatalogoFotos />
             </Suspense>
+          </TabsContent>
+          <TabsContent value="sap" className="mt-4">
+            <Suspense fallback={<p className="py-10 text-center text-muted-foreground">Carregando catálogo…</p>}>
+              <CatalogoProdutosSap org="carregadores" />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="estoque" className="mt-0">
+            <EstoquePainel
+              org="carregadores"
+              titulo="Estoque — 2P Carregadores"
+              descricao="Saldos, NCM, custo e containers em trânsito dos materiais da 2P Carregadores, vindos do SAP."
+            />
           </TabsContent>
           <TabsContent value="ufs" className="mt-4"><UfsTab /></TabsContent>
         </Tabs>
