@@ -37,6 +37,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Moderação: catálogo por unidade
 
+- **Menu lateral**: Gestão de Produtos de Solar e de Carregadores ganhou os
+  sub-itens *Catálogo* e *Estoque*, que abrem direto a aba correspondente da
+  tela (link com hash de aba, destacado conforme a aba ativa).
 - **Calculadora**: Módulos, Trilhos, Suportes e Microinversores saíram da Gestão de
   Produtos e agora ficam em *Regras de Propostas › Calculadora* (2P Solar), com a
   permissão `admin.regras`.

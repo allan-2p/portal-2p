@@ -15,6 +15,7 @@ import {
   Target,
   Table as TableIcon,
   Package,
+  Boxes,
   Calculator,
   Percent,
   BookOpen,
@@ -40,6 +41,8 @@ export type AdminNavItem = {
   label: string;
   icon: typeof Users;
   feature?: FeatureKey;
+  /** Abre uma aba específica da tela (ex.: "aba:produtos-solar=estoque"). */
+  hash?: string;
   /** Ativa apenas no match exato (usado pelas "Visão geral" das seções). */
   exact?: boolean;
   /** Sub-itens exibidos num toggle abaixo do item. */
@@ -177,6 +180,22 @@ export const ADMIN_SECTIONS: AdminSection[] = [
             label: "Gestão de Produtos",
             icon: Package,
             feature: "admin.produtos",
+            children: [
+              {
+                to: "/admin/produtos-solar",
+                label: "Catálogo",
+                icon: Package,
+                feature: "admin.produtos",
+                hash: "aba:produtos-solar=catalogo",
+              },
+              {
+                to: "/admin/produtos-solar",
+                label: "Estoque",
+                icon: Boxes,
+                feature: "admin.produtos",
+                hash: "aba:produtos-solar=estoque",
+              },
+            ],
           },
           {
             to: "/admin/regras",
@@ -209,7 +228,28 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         label: "2P Carregadores",
         collapsible: true,
         items: [
-          { to: "/carregadores/produtos", label: "Gestão de Produtos", icon: Package, feature: "carregadores.produtos" },
+          {
+            to: "/carregadores/produtos",
+            label: "Gestão de Produtos",
+            icon: Package,
+            feature: "carregadores.produtos",
+            children: [
+              {
+                to: "/carregadores/produtos",
+                label: "Catálogo",
+                icon: Package,
+                feature: "carregadores.produtos",
+                hash: "aba:carregadores-produtos=produtos",
+              },
+              {
+                to: "/carregadores/produtos",
+                label: "Estoque",
+                icon: Boxes,
+                feature: "carregadores.produtos",
+                hash: "aba:carregadores-produtos=estoque",
+              },
+            ],
+          },
           { to: "/carregadores/regras", label: "Regras de Propostas", icon: BookOpen, feature: "carregadores.regras" },
           { to: "/carregadores/frete-regras", label: "Regras de Fretes", icon: Truck, feature: "carregadores.regras" },
           { to: "/carregadores/lotes", label: "Lotes de Entrega", icon: CalendarDays, feature: "carregadores.regras" },
