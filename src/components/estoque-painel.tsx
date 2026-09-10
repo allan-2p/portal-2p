@@ -16,8 +16,6 @@ import {
   type DisponibilidadeInfo,
 } from "@/lib/estoque.functions";
 
-const money = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v ?? 0));
 const qtd = (v: number) => new Intl.NumberFormat("pt-BR").format(Number(v ?? 0));
 
 const fmtDataCurta = (v?: string | null) => {
