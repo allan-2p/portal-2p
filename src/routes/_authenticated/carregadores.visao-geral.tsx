@@ -537,21 +537,28 @@ function Num({ label, v, destaque }: { label: string; v: number; destaque?: bool
   );
 }
 
-function TotaisLinha({ rotulo, s }: { rotulo: string; s: Somatorio }) {
+function TotaisLinha({ rotulo, s, detalhar }: { rotulo: string; s: Somatorio; detalhar?: boolean }) {
   return (
-    <div className="grid lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px] gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center bg-surface-2/30 font-semibold">
+    <div
+      className={cn(
+        "grid gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center bg-surface-2/30 font-semibold",
+        detalhar
+          ? "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px]"
+          : "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px]",
+      )}
+    >
       <span className="lg:col-span-6 capitalize">{rotulo}</span>
       <Num label="Produtos" v={s.valorProdutos} />
       <Num label="Valor NF" v={s.valorNf} destaque />
       <Num label="Frete" v={s.frete} />
       <span className="lg:text-right tabular-nums">
         <span className="lg:hidden text-xs text-muted-foreground">Margem: </span>
-        {fmtBRL(s.margem)}
-        <span className="block text-[10px] text-muted-foreground font-normal">
-          {s.valorProdutos ? fmtPct(s.margem / s.valorProdutos) : "—"}
-        </span>
+        {s.valorProdutos ? fmtPct(s.margem / s.valorProdutos) : "—"}
+        {detalhar ? (
+          <span className="block text-[10px] text-muted-foreground font-normal">{fmtBRL(s.margem)}</span>
+        ) : null}
       </span>
-      <Num label="Comissão" v={s.comissaoTotal} />
+      {detalhar ? <Num label="Comissão" v={s.comissaoTotal} /> : null}
     </div>
   );
 }
