@@ -37,6 +37,17 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Alterado
 
+- **Catálogo (Solar e Carregadores)**: lista única com os produtos do catálogo do
+  portal e os materiais do SAP que ainda não estão no catálogo (filtro
+  "No catálogo / Fora do catálogo / Catálogo + SAP"). Materiais de fora ganham o
+  botão **Incluir no catálogo**, que pede a instância (2P Solar, 2P Carregadores
+  ou Grupo 2P) e já grava o produto **ativo** nela.
+- **Catálogo**: status agora é apenas **Ativo/Inativo** e visibilidade apenas
+  **2P Solar / 2P Carregadores / Grupo 2P** — a escolha manual passa a ser a
+  regra máxima sobre o que o SAP traz (sem "Automático", "Forçar" ou
+  "Sem visibilidade").
+
+
 - **Fotos do catálogo**: a galeria agora existe também na Gestão de Produtos do
   **2P Solar**, aparece como item na lateral das duas unidades e usa a mesma foto
   exibida na aba Catálogo (fonte única do catálogo do portal).
