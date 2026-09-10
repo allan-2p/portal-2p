@@ -338,6 +338,45 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
           })}
         </div>
       )}
+
+      {lista.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="text-muted-foreground">
+            {lista.length} item(ns) • página {paginaAtual + 1} de {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+              <SelectTrigger className="h-8 w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[12, 24, 48, 96].map((s) => (
+                  <SelectItem key={s} value={String(s)}>
+                    {s} / pág
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={paginaAtual === 0}
+              onClick={() => setPage(paginaAtual - 1)}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={paginaAtual >= totalPages - 1}
+              onClick={() => setPage(paginaAtual + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
     </div>
   );
 }
