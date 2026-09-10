@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { CatalogoProdutosSap } from "@/components/produtos/catalogo-produtos-sap";
 import { EstoquePainel } from "@/components/estoque-painel";

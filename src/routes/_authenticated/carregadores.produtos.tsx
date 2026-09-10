@@ -6,7 +6,7 @@ import { AppLayout } from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import { useCarregadoresInvalidate, useCarregadoresUfs } from "@/hooks/use-carregadores";
