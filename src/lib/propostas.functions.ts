@@ -329,7 +329,7 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       (await catalogoDb()).from("carregadores_config").select("*").eq("id", 1).maybeSingle(),
       (await catalogoDb()).from("carregadores_uf_rates").select("uf, nome, aliq_interna, fcp, convenio_st"),
       (await catalogoDb()).from("carregadores_ncm").select("*"),
-      (await import("@/integrations/supabase/client.server")).(await catalogoDb()).from("sap_produtos")
+      (await catalogoDb()).from("sap_produtos")
         .select("id, codigo, descricao, custo, preco_sugerido, ativo, ncm_id, ncm_codigo")
         .in("id", data.itens.map((i) => i.produtoId)),
     ]);
