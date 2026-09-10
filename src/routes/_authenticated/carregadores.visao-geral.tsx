@@ -147,10 +147,12 @@ function CarregadoresVisaoGeralPage() {
 
   const produtos = useCarregadoresProducts();
 
+  const listarPropostas = useServerFn(listarPropostasFn);
+
   const q = useQuery({
     queryKey: ["carregadores-visao-geral"],
     queryFn: async (): Promise<PedidoVendido[]> => {
-      const data = await listarPropostasFn({
+      const data = await listarPropostas({
         data: {
           organizacao: "carregadores",
           select:
