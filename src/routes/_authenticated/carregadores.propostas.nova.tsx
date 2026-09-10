@@ -3068,8 +3068,6 @@ function PropostaCarregadoresPage() {
                   </p>
                 </Field>
 
-                </Field>
-
                 <Field label="Observações do Pedido">
                   <Textarea
                     rows={3}
