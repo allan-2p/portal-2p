@@ -37,6 +37,19 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Alterado
 
+- **Catálogo**: o que é definido à mão (nome, custo, preço sugerido e foto) fica
+  travado e deixa de ser regravado pelas sincronizações do SAP (catálogo,
+  varredura de preço e estoque). Status e visibilidade já eram travados pelos
+  overrides manuais.
+
+### Banco de dados
+
+- Nova coluna `campos_manuais` em `sap_produtos` (lista dos campos editados
+  manualmente), com backfill de custo/foto já preenchidos. Aplicada no Lovable
+  Cloud pela migração; no banco do catálogo (Grupo 2P) rodar
+  `docs/migracao/grupo2p-catalogo-travas.sql`.
+
+
 - **Gestão de Produtos (Solar e Carregadores)**: removida a barra de abas do topo
   (Catálogo / Fotos do catálogo / Estoque) — a navegação entre elas é feita
   apenas pelos itens da lateral. **Alíquotas por UF** de Carregadores ganhou

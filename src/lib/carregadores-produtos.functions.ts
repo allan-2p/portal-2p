@@ -103,8 +103,10 @@ export const updateCarregadoresProduct = createServerFn({ method: "POST" })
     });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: atual, error: readError } = await (await catalogoDb()).from("sap_produtos")
-      .select(COLS)
+    const dbLeitura = await catalogoDb();
+    const { colunasComTravas } = await import("@/lib/catalogo-travas.server");
+    const { data: atual, error: readError } = await dbLeitura.from("sap_produtos")
+      .select(await colunasComTravas(dbLeitura, COLS))
       .eq("id", data.id)
       .maybeSingle();
     if (readError) throw new Error(readError.message);
@@ -122,12 +124,25 @@ export const updateCarregadoresProduct = createServerFn({ method: "POST" })
 
     // A edição também é decisão manual: grava o override para a varredura de
     // preço do SAP não reativar/desativar o produto no próximo ciclo.
-    const { data: updated, error } = await (await catalogoDb()).from("sap_produtos")
+    const dbCat = await catalogoDb();
+    const { temColunaCamposManuais } = await import("@/lib/catalogo-travas.server");
+    const { unirCamposTravados } = await import("@/lib/catalogo-travas");
+    const travas = (await temColunaCamposManuais(dbCat))
+      ? {
+          campos_manuais: unirCamposTravados((atual as any).campos_manuais, [
+            "descricao",
+            "custo",
+            "preco_sugerido",
+          ]),
+        }
+      : {};
+    const { data: updated, error } = await dbCat.from("sap_produtos")
       .update({
         descricao: data.nome,
         custo: data.custo,
         preco_sugerido: data.preco_sugerido,
         ativo: data.ativo,
+        ...travas,
         ativo_override: data.ativo,
         ativo_override_por: (context as any).userId ?? null,
         ativo_override_em: new Date().toISOString(),

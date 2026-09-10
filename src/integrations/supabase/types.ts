@@ -2685,6 +2685,7 @@ export type Database = {
           ativo_override_em: string | null
           ativo_override_motivo: string | null
           ativo_override_por: string | null
+          campos_manuais: string[]
           codigo: string
           created_at: string
           custo: number
@@ -2717,6 +2718,7 @@ export type Database = {
           ativo_override_em?: string | null
           ativo_override_motivo?: string | null
           ativo_override_por?: string | null
+          campos_manuais?: string[]
           codigo: string
           created_at?: string
           custo?: number
@@ -2749,6 +2751,7 @@ export type Database = {
           ativo_override_em?: string | null
           ativo_override_motivo?: string | null
           ativo_override_por?: string | null
+          campos_manuais?: string[]
           codigo?: string
           created_at?: string
           custo?: number

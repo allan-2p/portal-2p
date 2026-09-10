@@ -335,9 +335,17 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
 
-      const { data: existentes } = await (await catalogoDb()).from("sap_produtos")
-        .select("codigo, ativo, ativo_override, origem, descricao, tipo, permissao, lista_preco, ncm_codigo, ncm_id");
-      const known = new Set((existentes ?? []).map((r: { codigo: string }) => r.codigo));
+      const dbCat = await catalogoDb();
+      const { colunasComTravas } = await import("@/lib/catalogo-travas.server");
+      const { semCamposTravados } = await import("@/lib/catalogo-travas");
+      const { data: existentes } = await dbCat.from("sap_produtos")
+        .select(
+          await colunasComTravas(
+            dbCat,
+            "codigo, ativo, ativo_override, origem, descricao, tipo, permissao, lista_preco, ncm_codigo, ncm_id",
+          ),
+        );
+      const known = new Set(((existentes ?? []) as any[]).map((r: any) => r.codigo as string));
       const atuaisMap = new Map((existentes ?? []).map((r: any) => [r.codigo as string, r]));
 
       // NCM do SAP alimenta o produto e, quando o código existir na tabela de
@@ -361,9 +369,12 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         const ncm = ncmDe(m);
         const ncmId = ncm ? (ncmMap.get(ncm) ?? null) : null;
         const atual: any = atuaisMap.get(m.codigo);
+        // Nome editado na Gestão de Produtos é trava: o SAP não o reescreve.
+        // (o valor atual entra no payload para o lote manter as mesmas chaves)
+        const descricaoTravada = Object.keys(semCamposTravados({ descricao: 1 }, atual)).length === 0;
         return {
           codigo: m.codigo,
-          descricao: m.descricao,
+          descricao: descricaoTravada ? (atual?.descricao ?? m.descricao) : m.descricao,
           tipo: classificarTipo(m.descricao),
           permissao: m.permissao,
           lista_preco: m.lista_preco,
@@ -749,7 +760,7 @@ export const atualizarSapProdutoCampos = createServerFn({ method: "POST" })
         descricao: z.string().trim().min(1).max(200).optional(),
         custo: z.number().nonnegative().optional(),
         preco_sugerido: z.number().nonnegative().optional(),
-        imagem_path: z.string().trim().min(1).max(300).optional(),
+        imagem_path: z.string().trim().max(300).nullable().optional(),
       })
       .parse(d),
   )
@@ -758,9 +769,17 @@ export const atualizarSapProdutoCampos = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const db = await catalogoDb();
+    const { colunasComTravas } = await import("@/lib/catalogo-travas.server");
+    const { unirCamposTravados } = await import("@/lib/catalogo-travas");
+    const temTravas = await (await import("@/lib/catalogo-travas.server")).temColunaCamposManuais(db);
     const { data: atual, error: readErr } = await db
       .from("sap_produtos")
-      .select("id, codigo, descricao, custo, preco_sugerido, imagem_path, ativo, visibilidade, ncm_id, ncm_codigo")
+      .select(
+        await colunasComTravas(
+          db,
+          "id, codigo, descricao, custo, preco_sugerido, imagem_path, ativo, visibilidade, ncm_id, ncm_codigo",
+        ),
+      )
       .eq("id", data.id)
       .maybeSingle();
     if (readErr) throw new Error(readErr.message);
@@ -772,6 +791,11 @@ export const atualizarSapProdutoCampos = createServerFn({ method: "POST" })
     if (data.preco_sugerido !== undefined) patch['preco_sugerido'] = data.preco_sugerido;
     if (data.imagem_path !== undefined) patch['imagem_path'] = data.imagem_path;
     if (Object.keys(patch).length === 0) return { ok: true };
+
+    // Trava: campo editado à mão deixa de ser regravado por qualquer sincronização.
+    if (temTravas) {
+      patch['campos_manuais'] = unirCamposTravados((atual as any).campos_manuais, Object.keys(patch));
+    }
 
     // Produto ativo em Carregadores continua exigindo custo e NCM válidos.
     const { showsInCarregadores, validateAtivacaoCarregadores } = await import("@/lib/product-visibility");

@@ -89,8 +89,16 @@ export async function varrerCatalogoVendaveis(
   const limite = Math.max(1, Math.min(900, Number(opts?.limite ?? 250)));
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  let q = (await catalogoDb()).from("sap_produtos")
-    .select("codigo, descricao, ativo, ativo_override, vendavel_sap, preco_sugerido, listas_com_preco, preco_vk12")
+  const dbCat = await catalogoDb();
+  const { colunasComTravas } = await import("@/lib/catalogo-travas.server");
+  const { camposTravados } = await import("@/lib/catalogo-travas");
+  let q = dbCat.from("sap_produtos")
+    .select(
+      await colunasComTravas(
+        dbCat,
+        "codigo, descricao, ativo, ativo_override, vendavel_sap, preco_sugerido, listas_com_preco, preco_vk12",
+      ),
+    )
     .eq("origem", "sap");
   if (opts?.codigos?.length) q = q.in("codigo", opts.codigos);
   else q = q.order("preco_checado_em", { ascending: true, nullsFirst: true }).limit(limite);
@@ -149,11 +157,16 @@ export async function varrerCatalogoVendaveis(
       preco_checado_em: now,
       ativo,
     };
-    // Preço de contingência: só substitui quando o portal ainda não tem preço.
+    // Preço de contingência: só substitui quando o portal ainda não tem preço
+    // e o preço não foi definido à mão na Gestão de Produtos.
     // A coluna é NOT NULL e o upsert insere a tupla inteira, então o valor
     // atual precisa vir sempre no payload (senão a gravação inteira falha).
+    const travados = camposTravados(linha);
     const precoAtual = Number(linha.preco_sugerido ?? 0);
-    patch["preco_sugerido"] = precoAtual > 0 ? precoAtual : (achado?.valor ?? 0);
+    patch["preco_sugerido"] =
+      travados.has("preco_sugerido") || precoAtual > 0 ? precoAtual : (achado?.valor ?? 0);
+    // Nome definido à mão também não é reescrito pela varredura.
+    if (travados.has("descricao")) patch["descricao"] = linha.descricao ?? codigo;
     updates.push(patch);
   }
 

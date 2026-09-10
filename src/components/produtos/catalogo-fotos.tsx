@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, ImageOff, Upload, RefreshCw, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useImagensPorPath, enviarFotoProduto, removerFotoProduto } from "@/lib/produto-imagens";
+import { atualizarSapProdutoCampos } from "@/lib/sap-produtos.functions";
 
 type Filtro = "todos" | "com" | "sem";
 
@@ -106,8 +107,7 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
     try {
       const path = `skus/${p.codigo || p.id}.${ext === "jpeg" ? "jpg" : ext}`;
       await enviarFotoProduto(path, file);
-      const { error } = await catalogoFrom("sap_produtos").update({ imagem_path: path }).eq("id", p.id);
-      if (error) throw new Error(error.message);
+      await atualizarSapProdutoCampos({ data: { id: p.id, imagem_path: path } });
       toast.success(`Foto de ${p.codigo || p.nome} atualizada.`);
       invalidate();
       await fotosQ.refetch();
@@ -122,8 +122,7 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
     if (!p.imagem_path) return;
     setEnviando(p.id);
     try {
-      const { error } = await catalogoFrom("sap_produtos").update({ imagem_path: null }).eq("id", p.id);
-      if (error) throw new Error(error.message);
+      await atualizarSapProdutoCampos({ data: { id: p.id, imagem_path: null } });
       await removerFotoProduto(p.imagem_path);
       toast.success("Foto removida.");
       invalidate();
