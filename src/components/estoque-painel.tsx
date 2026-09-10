@@ -2,7 +2,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
-import { Loader2, RefreshCw, Search, Boxes, Ship, Package, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, Search, Boxes, Ship, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
