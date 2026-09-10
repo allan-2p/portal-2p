@@ -998,7 +998,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                         }
                       />
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <Select
                         value={p.visibilidade ?? "ambos"}
                         onValueChange={(v) =>
@@ -1009,7 +1009,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                           })
                         }
                       >
-                        <SelectTrigger className="h-8 w-[168px] text-xs" title="Instância em que o produto aparece.">
+                        <SelectTrigger className="h-8 w-full text-xs" title="Instância em que o produto aparece.">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1020,14 +1020,15 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       </Select>
                     </td>
 
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       {p.vendavel_sap === null || p.vendavel_sap === undefined ? (
-                        <Badge variant="outline" title="Nunca verificado — clique em “Verificar preços”.">
+                        <Badge variant="outline" className="text-[10px]" title="Nunca verificado — clique em “Verificar preços”.">
                           Não verificado
                         </Badge>
                       ) : p.vendavel_sap ? (
                         <Badge
                           variant="secondary"
+                          className="text-[10px] max-w-full truncate"
                           title={`Preço encontrado no SAP${p.preco_checado_em ? ` em ${fmt(p.preco_checado_em)}` : ""}`}
                         >
                           Com preço
@@ -1036,18 +1037,18 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                             : ""}
                         </Badge>
                       ) : (
-                        <Badge variant="destructive" title="Sem condição de preço vigente (VK12) — não pode ser vendido.">
+                        <Badge variant="destructive" className="text-[10px]" title="Sem condição de preço vigente (VK12) — não pode ser vendido.">
                           Sem preço
                         </Badge>
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <Select
                         value={p.ativo ? "on" : "off"}
                         onValueChange={(v) => overrideMut.mutate({ id: p.id, override: v === "on" })}
                       >
                         <SelectTrigger
-                          className="h-8 w-[112px] text-xs"
+                          className="h-8 w-full text-xs"
                           title="Define se o produto aparece na instância. Vale sobre o SAP."
                         >
                           <SelectValue />
@@ -1060,7 +1061,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                     </td>
 
                     {audit && (
-                      <td className="px-3 py-2 text-xs">
+                      <td className="px-2 py-2 text-[11px]">
                         {p.det.prefixo ? (
                           <span className="font-mono">
                             {p.det.prefixo} → {p.det.tipoDescricao}
@@ -1071,7 +1072,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       </td>
                     )}
                     {audit && (
-                      <td className="px-3 py-2 text-xs">
+                      <td className="px-2 py-2 text-[11px]">
                         {p.det.tipo !== p.tipo ? (
                           <span className="text-destructive">
                             gravado como “{TIPO_LABELS[p.tipo] ?? p.tipo}”, regra indica “{p.det.tipoDescricao}”
@@ -1087,8 +1088,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                         )}
                       </td>
                     )}
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(p.last_synced_at)}</td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-2 py-2 text-right">
                       <Button
                         variant="ghost"
                         size="icon"
