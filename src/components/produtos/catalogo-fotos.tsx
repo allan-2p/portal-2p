@@ -1,15 +1,24 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { catalogoFrom } from "@/lib/catalogo-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, ImageOff, Upload, RefreshCw, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useImagensPorPath, enviarFotoProduto, removerFotoProduto } from "@/lib/produto-imagens";
 import { atualizarSapProdutoCampos } from "@/lib/sap-produtos.functions";
 
 type Filtro = "todos" | "com" | "sem";
+type FiltroStatus = "todos" | "ativos" | "inativos";
+
 
 /** Item do catálogo exibido na galeria de fotos (fonte única: `sap_produtos`). */
 type ItemFoto = {
@@ -79,6 +88,9 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
 
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [statusFiltro, setStatusFiltro] = useState<FiltroStatus>("todos");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(24);
   const [enviando, setEnviando] = useState<string | null>(null);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -93,9 +105,20 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
       const casaBusca = !termo || `${p.codigo ?? ""} ${p.nome}`.toLowerCase().includes(termo);
       const casaFiltro =
         filtro === "todos" ? true : filtro === "com" ? !!p.imagem_path : !p.imagem_path;
-      return casaBusca && casaFiltro;
+      const casaStatus =
+        statusFiltro === "todos" ? true : statusFiltro === "ativos" ? p.ativo : !p.ativo;
+      return casaBusca && casaFiltro && casaStatus;
     });
-  }, [produtos, busca, filtro]);
+  }, [produtos, busca, filtro, statusFiltro]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [busca, filtro, statusFiltro, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(lista.length / pageSize));
+  const paginaAtual = Math.min(page, totalPages - 1);
+  const listaPagina = lista.slice(paginaAtual * pageSize, paginaAtual * pageSize + pageSize);
+
 
 
   async function enviarFoto(p: ItemFoto, file: File) {
@@ -200,6 +223,24 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
             </Button>
           ))}
         </div>
+        <div className="flex gap-1 rounded-lg border border-border p-1">
+          {(
+            [
+              ["todos", "Todos"],
+              ["ativos", "Ativos"],
+              ["inativos", "Inativos"],
+            ] as [FiltroStatus, string][]
+          ).map(([k, label]) => (
+            <Button
+              key={k}
+              size="sm"
+              variant={statusFiltro === k ? "secondary" : "ghost"}
+              onClick={() => setStatusFiltro(k)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -219,7 +260,8 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
         <p className="py-10 text-center text-muted-foreground">Nenhum produto encontrado.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {lista.map((p) => {
+          {listaPagina.map((p) => {
+
             const url = p.imagem_path ? fotos[p.imagem_path] : undefined;
             const ocupado = enviando === p.id;
             return (
@@ -296,6 +338,45 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
           })}
         </div>
       )}
+
+      {lista.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="text-muted-foreground">
+            {lista.length} item(ns) • página {paginaAtual + 1} de {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+              <SelectTrigger className="h-8 w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[12, 24, 48, 96].map((s) => (
+                  <SelectItem key={s} value={String(s)}>
+                    {s} / pág
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={paginaAtual === 0}
+              onClick={() => setPage(paginaAtual - 1)}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={paginaAtual >= totalPages - 1}
+              onClick={() => setPage(paginaAtual + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
     </div>
   );
 }

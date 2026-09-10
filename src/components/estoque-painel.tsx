@@ -1,22 +1,35 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { Loader2, RefreshCw, Search, Boxes, Ship, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DisponibilidadeBadge } from "@/components/disponibilidade-badge";
+
 import {
   listEstoque,
   syncEstoqueProdutos,
   type DisponibilidadeInfo,
 } from "@/lib/estoque.functions";
 
+const rotuloVisibilidade = (v: string) =>
+  v === "solar" ? "2P Solar" : v === "carregadores" ? "2P Carregadores" : "Grupo 2P";
+
 const qtd = (v: number) => new Intl.NumberFormat("pt-BR").format(Number(v ?? 0));
+
 
 const fmtDataCurta = (v?: string | null) => {
   if (!v) return "—";
@@ -65,9 +78,13 @@ export function EstoquePainel({
   const sync = useServerFn(syncEstoqueProdutos);
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
+  const [pageEstoque, setPageEstoque] = useState(0);
+  const [pageContainers, setPageContainers] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [abaSalva, setAba] = useAbaPersistente(`estoque-painel-${org ?? "todos"}`, "estoque");
   // A aba "produtos" saiu do painel — quem tinha ela salva volta para Estoque.
   const aba = abaSalva === "estoque" || abaSalva === "containers" ? abaSalva : "estoque";
+
 
   const queryKey = ["estoque-consolidado", org ?? "todos"];
   const q = useQuery({ queryKey, queryFn: () => fetchAll({ data: org ? { org } : {} }) });
@@ -116,6 +133,32 @@ export function EstoquePainel({
     descricao: descricaoPorMaterial.get(c.material) ?? "",
   }));
   const containers = filtrar(containersBase, ["id_container", "material", "supplier", "descricao"]);
+
+  // Situação de catálogo por material (fonte: produtos espelhados do catálogo).
+  const catalogoPorMaterial = useMemo(() => {
+    const m = new Map<string, { ativo: boolean; visibilidade: string }>();
+    for (const p of q.data?.produtos ?? []) {
+      if (!p.no_catalogo) continue;
+      m.set(String(p.codigo), { ativo: !!p.ativo, visibilidade: String(p.visibilidade ?? "") });
+    }
+    return m;
+  }, [q.data]);
+
+  const totalEstoque = Math.max(1, Math.ceil(estoque.length / pageSize));
+  const totalContainers = Math.max(1, Math.ceil(containers.length / pageSize));
+  const pgEstoque = Math.min(pageEstoque, totalEstoque - 1);
+  const pgContainers = Math.min(pageContainers, totalContainers - 1);
+  const estoquePagina = estoque.slice(pgEstoque * pageSize, pgEstoque * pageSize + pageSize);
+  const containersPagina = containers.slice(
+    pgContainers * pageSize,
+    pgContainers * pageSize + pageSize,
+  );
+
+  useEffect(() => {
+    setPageEstoque(0);
+    setPageContainers(0);
+  }, [busca, pageSize]);
+
   const lastRun = q.data?.lastRun ?? null;
   const atualizadoEm =
     lastRun?.finished_at ??
@@ -123,6 +166,50 @@ export function EstoquePainel({
       (acc, e) => (!acc || String(e.atualizado_em) > acc ? String(e.atualizado_em) : acc),
       null,
     );
+
+  const Paginacao = ({
+    total,
+    pagina,
+    paginas,
+    onPagina,
+  }: {
+    total: number;
+    pagina: number;
+    paginas: number;
+    onPagina: (n: number) => void;
+  }) => (
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+      <span className="text-muted-foreground">
+        {total} item(ns) • página {pagina + 1} de {paginas}
+      </span>
+      <div className="flex items-center gap-2">
+        <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+          <SelectTrigger className="h-8 w-24">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[10, 25, 50, 100].map((s) => (
+              <SelectItem key={s} value={String(s)}>
+                {s} / pág
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" disabled={pagina === 0} onClick={() => onPagina(pagina - 1)}>
+          Anterior
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={pagina >= paginas - 1}
+          onClick={() => onPagina(pagina + 1)}
+        >
+          Próxima
+        </Button>
+      </div>
+    </div>
+  );
+
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -204,6 +291,7 @@ export function EstoquePainel({
                     <th className="p-3">Material</th>
                     <th className="p-3">Descrição</th>
                     <th className="p-3">NCM</th>
+                    <th className="p-3">Catálogo</th>
                     <th className="p-3 text-right">Livre</th>
                     <th className="p-3 text-right">Pendente</th>
                     
@@ -212,7 +300,7 @@ export function EstoquePainel({
                   </tr>
                 </thead>
                 <tbody>
-                  {estoque.map((e) => {
+                  {estoquePagina.map((e) => {
                     const proxima = proximaRemessaPorMaterial.get(e.material) ?? null;
                     const info = infoEstoque(
                       e.est_livre,
@@ -220,11 +308,28 @@ export function EstoquePainel({
                       e.est_entreposto,
                       proxima,
                     );
+                    const cat = catalogoPorMaterial.get(String(e.material));
                     return (
                       <tr key={e.material} className="border-t">
                         <td className="p-3 font-mono text-xs">{e.material}</td>
                         <td className="p-3">{e.descricao}</td>
                         <td className="p-3 font-mono text-xs">{e.ncm ?? "—"}</td>
+                        <td className="p-3">
+                          {cat ? (
+                            <div className="flex flex-wrap items-center gap-1">
+                              <Badge variant={cat.ativo ? "default" : "secondary"} className="text-[10px]">
+                                {cat.ativo ? "Ativo" : "Inativo"}
+                              </Badge>
+                              <Badge variant="outline" className="text-[10px]">
+                                {rotuloVisibilidade(cat.visibilidade)}
+                              </Badge>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">
+                              Fora do catálogo
+                            </Badge>
+                          )}
+                        </td>
                         <td className="p-3 text-right">{qtd(e.est_livre)}</td>
                         <td className="p-3 text-right">{qtd(e.qtd_pend_faturar)}</td>
                         
@@ -237,7 +342,7 @@ export function EstoquePainel({
                   })}
                   {estoque.length === 0 && (
                     <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={7}>
+                      <td className="p-6 text-center text-muted-foreground" colSpan={8}>
                         Sem dados de estoque.
                       </td>
                     </tr>
@@ -245,7 +350,14 @@ export function EstoquePainel({
                 </tbody>
               </table>
             </div>
+            <Paginacao
+              total={estoque.length}
+              pagina={pgEstoque}
+              paginas={totalEstoque}
+              onPagina={setPageEstoque}
+            />
           </TabsContent>
+
 
           <TabsContent value="containers" className="mt-4">
             <div className="overflow-x-auto rounded-lg border">
@@ -261,7 +373,7 @@ export function EstoquePainel({
                   </tr>
                 </thead>
                 <tbody>
-                  {containers.map((c) => (
+                  {containersPagina.map((c) => (
                     <tr key={`${c.id_container}-${c.material}`} className="border-t">
                       <td className="p-3 font-mono text-xs">{c.id_container}</td>
                       <td className="p-3 font-mono text-xs">{c.material}</td>
@@ -281,7 +393,14 @@ export function EstoquePainel({
                 </tbody>
               </table>
             </div>
+            <Paginacao
+              total={containers.length}
+              pagina={pgContainers}
+              paginas={totalContainers}
+              onPagina={setPageContainers}
+            />
           </TabsContent>
+
         </Tabs>
       )}
     </div>
