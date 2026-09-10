@@ -888,25 +888,31 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                     const s = linha.s;
                     return (
                       <tr key={`sap-${s.codigo}`} className="border-t border-border bg-muted/20 hover:bg-muted/40">
-                        <td className="px-3 py-2">
+                        <td className="px-2 py-2">
                           <div className="h-10 w-10 rounded-md bg-muted" />
                         </td>
-                        <td className="px-3 py-2 font-mono text-xs">{s.codigo}</td>
-                        <td className="px-3 py-2">{s.descricao}</td>
-                        <td className="px-3 py-2">
-                          <Badge variant="outline">Fora do catálogo</Badge>
+                        <td className="px-2 py-2 font-mono text-xs">
+                          <div className="truncate">{s.codigo}</div>
+                          <div className="text-[10px] text-muted-foreground truncate">NCM {s.ncm_codigo ?? "—"}</div>
                         </td>
-                        <td className="px-3 py-2 font-mono text-xs">{s.ncm_codigo ?? "—"}</td>
-                        <td
-                          className="px-3 py-2 text-xs text-muted-foreground"
-                          colSpan={7 + (org !== "solar" ? 1 : 0) + (audit ? 2 : 0)}
-                        >
-                          Material do SAP ainda não incluído no catálogo do portal.
+                        <td className="px-2 py-2">
+                          <div className="truncate" title={s.descricao ?? ""}>
+                            {s.descricao}
+                          </div>
                         </td>
-                        <td className="px-3 py-2 text-right">
+                        <td className="px-2 py-2">
+                          <Badge variant="outline" className="text-[10px]">
+                            Fora do catálogo
+                          </Badge>
+                        </td>
+                        <td className="px-2 py-2 text-xs text-muted-foreground" colSpan={totalCols - 5}>
+                          <span className="block truncate">Material do SAP ainda não incluído no catálogo.</span>
+                        </td>
+                        <td className="px-2 py-2 text-right">
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="outline"
+                            title="Incluir no catálogo"
                             onClick={() =>
                               setIncluir({
                                 codigo: s.codigo,
@@ -915,7 +921,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                               })
                             }
                           >
-                            Incluir no catálogo
+                            <Plus className="h-4 w-4" />
                           </Button>
                         </td>
                       </tr>
