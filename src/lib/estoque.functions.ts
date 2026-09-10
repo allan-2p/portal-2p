@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireAnyFeature } from "@/lib/guards.server";
+import { FEATURES_CATALOGO } from "@/lib/catalogo-features";
 
 import { catalogoDb } from "@/lib/catalogo-db.server";
 export type EstoqueLinha = {
@@ -52,11 +53,7 @@ export type ProdutoConsolidado = {
   last_synced_at: string | null;
 };
 
-const FEATURES_ESTOQUE = [
-  { instance: "solar" as const, feature: "admin.objetos.produtos" as const, action: "moderar" as const },
-  { instance: "carregadores" as const, feature: "admin.objetos.produtos" as const, action: "moderar" as const },
-  { instance: "carregadores" as const, feature: "carregadores.produtos" as const, action: "moderar" as const },
-];
+const FEATURES_ESTOQUE = FEATURES_CATALOGO;
 
 export const listEstoque = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

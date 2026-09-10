@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
 import { VISIBILIDADE_LABELS, validateVisibilidadeChange, type Visibilidade } from "@/lib/product-visibility";
 import { requireAnyFeature } from "@/lib/guards.server";
+import { FEATURES_CATALOGO } from "@/lib/catalogo-features";
 
 export type SapVisibilidade = Visibilidade;
 
@@ -53,11 +54,7 @@ export const limparSapProdutoVisibilidadeOverride = createServerFn({ method: "PO
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireAnyFeature(context, [
-      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
-    ]);
+    await requireAnyFeature(context, FEATURES_CATALOGO);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await (await catalogoDb()).from("sap_produtos")
       .update({
@@ -89,11 +86,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAnyFeature(context, [
-      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
-    ]);
+    await requireAnyFeature(context, FEATURES_CATALOGO);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: produto, error: readError } = await (await catalogoDb()).from("sap_produtos")
@@ -244,11 +237,7 @@ function descreverErroSap(e: unknown): string {
 export const syncSapProdutos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<SapSyncResult> => {
-    await requireAnyFeature(context, [
-      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
-    ]);
+    await requireAnyFeature(context, FEATURES_CATALOGO);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { classificarTipo, getAllMaterials, selecionarLiberados, validarRegras } = await import(
@@ -544,11 +533,7 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ codigo: z.string().min(1), no_catalogo: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireAnyFeature(context, [
-      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
-    ]);
+    await requireAnyFeature(context, FEATURES_CATALOGO);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { classificarTipo } = await import("./sap-produtos.server");
@@ -636,11 +621,7 @@ export const setSapProdutoOverride = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    await requireAnyFeature(context, [
-      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
-    ]);
+    await requireAnyFeature(context, FEATURES_CATALOGO);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: atual, error: readErr } = await (await catalogoDb()).from("sap_produtos")
@@ -692,11 +673,7 @@ export const varrerCatalogoVendaveisAction = createServerFn({ method: "POST" })
       .parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
-    await requireAnyFeature(context, [
-      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
-    ]);
+    await requireAnyFeature(context, FEATURES_CATALOGO);
     const { runJob } = await import("@/lib/job-runs.server");
     const { varrerCatalogoVendaveis } = await import("@/lib/sap-catalogo-vendaveis.server");
     const r = await runJob(
