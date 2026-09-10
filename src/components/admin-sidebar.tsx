@@ -126,18 +126,25 @@ function AdminGroupItems({
   health?: { map: Map<string, IntegrationHealthItem>; isLoading: boolean };
   alerts?: Map<string, IntegrationAlert>;
 }) {
+  // Hash atual (aba ativa da tela) — usado para destacar sub-itens de aba.
+  const currentHash = useRouterState({
+    select: (s) => s.location.hash.replace(/^#/, ""),
+  });
   return (
     <div className="space-y-0.5">
       {items.map((i) => {
         const Icon = i.icon;
         const children = (i.children ?? []) as AdminNavItem[];
-        const active = i.exact
+        let active = i.exact
           ? pathname === i.to
           : pathname === i.to || pathname.startsWith(`${i.to}/`);
+        // Quando o item aponta para uma aba (hash), só destaca se a aba bate.
+        if (active && i.hash) active = currentHash === i.hash;
         const link = (
           <Link
-            key={i.to}
+            key={`${i.to}${i.hash ?? ""}`}
             to={i.to}
+            hash={i.hash}
             preload="intent"
             title={collapsed ? i.label : undefined}
             className={cn(
