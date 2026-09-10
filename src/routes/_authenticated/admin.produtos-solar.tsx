@@ -17,6 +17,10 @@ import { Search, Package, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { logModeration } from "@/lib/moderation-audit";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAbaPersistente } from "@/hooks/use-aba-persistente";
+import { CatalogoProdutosSap } from "@/components/produtos/catalogo-produtos-sap";
+import { EstoquePainel } from "@/components/estoque-painel";
 
 export const Route = createFileRoute("/_authenticated/admin/produtos-solar")({
   head: () => ({
@@ -50,7 +54,7 @@ type Row = {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
-function ProdutosSolarPage() {
+function AtivosSolarTab() {
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState<"todos" | "ativos" | "inativos">("todos");
@@ -122,17 +126,7 @@ function ProdutosSolarPage() {
   }
 
   return (
-    <AppLayout>
-      <div className="max-w-[1500px] mx-auto space-y-5">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-primary font-semibold">Moderação · 2P Solar</div>
-          <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Catálogo vindo do SAP e mantido na base do portal. Aqui você controla quais produtos
-            ficam ativos para o 2P Solar.
-          </p>
-        </div>
-
+      <div className="space-y-5">
         <div className="grid gap-3 sm:grid-cols-3">
           <Card icon={Package} label="Produtos visíveis no Solar" value={produtos.length} />
           <Card icon={CheckCircle2} label="Ativos" value={ativos} />
@@ -241,6 +235,45 @@ function ProdutosSolarPage() {
           </div>
         </div>
 
+      </div>
+  );
+}
+
+/** Gestão de Produtos do 2P Solar: catálogo do portal, catálogo SAP e estoque. */
+function ProdutosSolarPage() {
+  const [aba, setAba] = useAbaPersistente("produtos-solar", "catalogo");
+  return (
+    <AppLayout>
+      <div className="max-w-[1500px] mx-auto space-y-5">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-primary font-semibold">Moderação · 2P Solar</div>
+          <h1 className="text-3xl font-bold mt-1">Gestão de Produtos</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Catálogo e estoque da 2P Solar. Sincronize com o SAP e escolha o que entra no catálogo
+            desta unidade.
+          </p>
+        </div>
+
+        <Tabs value={aba} onValueChange={setAba}>
+          <TabsList>
+            <TabsTrigger value="catalogo">Produtos do portal</TabsTrigger>
+            <TabsTrigger value="sap">Catálogo SAP</TabsTrigger>
+            <TabsTrigger value="estoque">Estoque</TabsTrigger>
+          </TabsList>
+          <TabsContent value="catalogo" className="mt-4">
+            <AtivosSolarTab />
+          </TabsContent>
+          <TabsContent value="sap" className="mt-4">
+            <CatalogoProdutosSap org="solar" />
+          </TabsContent>
+          <TabsContent value="estoque" className="mt-0">
+            <EstoquePainel
+              org="solar"
+              titulo="Estoque — 2P Solar"
+              descricao="Saldos, NCM, custo e containers em trânsito dos materiais da 2P Solar, vindos do SAP."
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

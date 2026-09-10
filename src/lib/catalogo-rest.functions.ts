@@ -15,6 +15,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireAnyFeature } from "@/lib/guards.server";
 import { catalogoDb } from "@/lib/catalogo-db.server";
+import { FEATURES_CATALOGO } from "@/lib/catalogo-features";
 
 /** Tabelas que a ponte aceita — nada fora daqui é acessível pelo navegador. */
 export const TABELAS_CATALOGO = [
@@ -88,11 +89,7 @@ export const catalogoSelect = createServerFn({ method: "POST" })
 
 /** Só quem modera/gerencia o catálogo pode gravar. */
 export async function exigirGestaoCatalogo(context: unknown) {
-  await requireAnyFeature(context as any, [
-    { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
-    { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
-    { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
-  ]);
+  await requireAnyFeature(context as any, FEATURES_CATALOGO);
 }
 
 const linhasSchema = z.array(z.record(z.string(), z.any())).min(1).max(2000);

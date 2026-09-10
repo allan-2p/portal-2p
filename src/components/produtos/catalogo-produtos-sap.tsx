@@ -296,7 +296,7 @@ function CatalogoSapCompleto({
   );
 }
 
-export function CatalogoProdutosSap() {
+export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } = {}) {
   const list = useServerFn(listSapProdutos);
   const setVis = useServerFn(setSapProdutoVisibilidade);
   const limparVisOverride = useServerFn(limparSapProdutoVisibilidadeOverride);
@@ -460,6 +460,8 @@ export function CatalogoProdutosSap() {
       if (tipo !== "all" && p.tipo !== tipo) return false;
       if (permissao !== "all" && (p.permissao ?? "").toLowerCase() !== permissao) return false;
       if (visibilidade !== "all" && (p.visibilidade ?? "nenhuma") !== visibilidade) return false;
+      // Dentro da Gestão de Produtos de uma unidade, só o catálogo dela aparece.
+      if (org && p.visibilidade !== org && p.visibilidade !== "ambos") return false;
       if (status === "ativos" && !p.ativo) return false;
       if (status === "inativos" && p.ativo) return false;
       if (soDivergentes && !p.divergente) return false;
@@ -471,7 +473,7 @@ export function CatalogoProdutosSap() {
         (p.lista_preco ?? "").toLowerCase().includes(term)
       );
     });
-  }, [produtos, q, tipo, permissao, visibilidade, status, soDivergentes]);
+  }, [produtos, q, tipo, permissao, visibilidade, status, soDivergentes, org]);
 
 
   const exportXlsx = async () => {
