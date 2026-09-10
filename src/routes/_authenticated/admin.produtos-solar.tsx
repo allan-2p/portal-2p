@@ -1,10 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Suspense, lazy } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { CatalogoProdutosSap } from "@/components/produtos/catalogo-produtos-sap";
 import { EstoquePainel } from "@/components/estoque-painel";
+
+// A galeria de fotos só é baixada quando a aba é aberta (chunk separado).
+const CatalogoFotos = lazy(() =>
+  import("@/components/produtos/catalogo-fotos").then((m) => ({ default: m.CatalogoFotos })),
+);
+
 
 export const Route = createFileRoute("/_authenticated/admin/produtos-solar")({
   head: () => ({
@@ -44,11 +51,18 @@ function ProdutosSolarPage() {
         <Tabs value={abaAtual} onValueChange={setAba}>
           <TabsList>
             <TabsTrigger value="sap">Catálogo</TabsTrigger>
+            <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>
             <TabsTrigger value="estoque">Estoque</TabsTrigger>
           </TabsList>
           <TabsContent value="sap" className="mt-4">
             <CatalogoProdutosSap org="solar" />
           </TabsContent>
+          <TabsContent value="fotos" className="mt-4">
+            <Suspense fallback={<p className="py-10 text-center text-muted-foreground">Carregando catálogo…</p>}>
+              <CatalogoFotos org="solar" />
+            </Suspense>
+          </TabsContent>
+
           <TabsContent value="estoque" className="mt-0">
             <EstoquePainel
               org="solar"

@@ -61,7 +61,7 @@ function ProdutosCarregadoresPage() {
           </TabsList>
           <TabsContent value="fotos" className="mt-4">
             <Suspense fallback={<p className="py-10 text-center text-muted-foreground">Carregando catálogo…</p>}>
-              <CatalogoFotos />
+              <CatalogoFotos org="carregadores" />
             </Suspense>
           </TabsContent>
           <TabsContent value="sap" className="mt-4">

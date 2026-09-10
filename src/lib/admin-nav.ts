@@ -190,11 +190,19 @@ export const ADMIN_SECTIONS: AdminSection[] = [
               },
               {
                 to: "/admin/produtos-solar",
+                label: "Fotos do catálogo",
+                icon: Package,
+                feature: "admin.produtos",
+                hash: "aba:produtos-solar=fotos",
+              },
+              {
+                to: "/admin/produtos-solar",
                 label: "Estoque",
                 icon: Boxes,
                 feature: "admin.produtos",
                 hash: "aba:produtos-solar=estoque",
               },
+
             ],
           },
           {
@@ -243,11 +251,19 @@ export const ADMIN_SECTIONS: AdminSection[] = [
               },
               {
                 to: "/carregadores/produtos",
+                label: "Fotos do catálogo",
+                icon: Package,
+                feature: "carregadores.produtos",
+                hash: "aba:carregadores-produtos=fotos",
+              },
+              {
+                to: "/carregadores/produtos",
                 label: "Estoque",
                 icon: Boxes,
                 feature: "carregadores.produtos",
                 hash: "aba:carregadores-produtos=estoque",
               },
+
             ],
           },
           { to: "/carregadores/regras", label: "Regras de Propostas", icon: BookOpen, feature: "carregadores.regras" },

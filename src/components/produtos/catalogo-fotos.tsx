@@ -1,17 +1,23 @@
 import { useMemo, useRef, useState } from "react";
 import { catalogoFrom } from "@/lib/catalogo-client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, ImageOff, Upload, RefreshCw, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useCarregadoresInvalidate, useCarregadoresProductsAdmin } from "@/hooks/use-carregadores";
 import { useImagensPorPath, enviarFotoProduto, removerFotoProduto } from "@/lib/produto-imagens";
-import type { CarregadoresProduct } from "@/lib/carregadores";
 
 type Filtro = "todos" | "com" | "sem";
+
+/** Item do catálogo exibido na galeria de fotos (fonte única: `sap_produtos`). */
+type ItemFoto = {
+  id: string;
+  codigo: string | null;
+  nome: string;
+  ativo: boolean;
+  imagem_path: string | null;
+};
 
 const EXT_OK = ["png", "jpg", "jpeg", "webp"];
 const MAX_MB = 5;
@@ -33,10 +39,42 @@ function useUltimaSync() {
   });
 }
 
-export function CatalogoFotos() {
-  const { data: produtos = [], isLoading } = useCarregadoresProductsAdmin();
-  const invalidate = useCarregadoresInvalidate();
+/** Itens do catálogo da unidade (Solar ou Carregadores). */
+function useItensCatalogo(org: "solar" | "carregadores") {
+  return useQuery({
+    queryKey: ["catalogo-fotos", org],
+    queryFn: async (): Promise<ItemFoto[]> => {
+      const { data, error } = await catalogoFrom("sap_produtos")
+        .select("id, codigo, descricao, ativo, imagem_path")
+        .in("visibilidade", [org, "ambos"])
+        .order("descricao");
+      if (error) throw error;
+      return (data ?? []).map((p: any) => ({
+        id: p.id,
+        codigo: p.codigo ?? null,
+        nome: p.descricao ?? "",
+        ativo: !!p.ativo,
+        imagem_path: p.imagem_path ?? null,
+      }));
+    },
+  });
+}
+
+export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carregadores" } = {}) {
+  const { data: produtos = [], isLoading, refetch } = useItensCatalogo(org);
+  const qc = useQueryClient();
   const syncQ = useUltimaSync();
+
+  /** Mantém Catálogo, propostas e calculadoras com a mesma foto. */
+  const invalidate = () => {
+    void refetch();
+    qc.invalidateQueries({ queryKey: ["sap-produtos"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-products"] });
+    qc.invalidateQueries({ queryKey: ["carregadores-products-admin"] });
+    qc.invalidateQueries({ queryKey: ["sap-catalogo-completo"] });
+    qc.invalidateQueries({ queryKey: ["produtos"] });
+    qc.invalidateQueries({ queryKey: ["produto-imagens-codigo"] });
+  };
 
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
@@ -58,7 +96,8 @@ export function CatalogoFotos() {
     });
   }, [produtos, busca, filtro]);
 
-  async function enviarFoto(p: CarregadoresProduct, file: File) {
+
+  async function enviarFoto(p: ItemFoto, file: File) {
     const ext = (file.name.split(".").pop() ?? "").toLowerCase();
     if (!EXT_OK.includes(ext)) return toast.error("Use uma imagem PNG, JPG ou WEBP.");
     if (file.size > MAX_MB * 1024 * 1024) return toast.error(`Imagem acima de ${MAX_MB} MB.`);
@@ -79,7 +118,7 @@ export function CatalogoFotos() {
     }
   }
 
-  async function removerFoto(p: CarregadoresProduct) {
+  async function removerFoto(p: ItemFoto) {
     if (!p.imagem_path) return;
     setEnviando(p.id);
     try {
