@@ -33,7 +33,7 @@ import {
   getSalesforceSalespeople,
   getSalesforceOpportunities,
   getSalesforceForecasts,
-  getSalesforceVendas,
+
   getSalesforceVendidoMesAtual,
   getSalesforceOppsCriadas,
 
@@ -402,7 +402,6 @@ function HomePage() {
     () => ({ start: metaRange.dateFrom, end: metaRange.dateTo }),
     [metaRange],
   );
-  const fetchVendas = useServerFn(getSalesforceVendas);
   const fetchVendidoMes = useServerFn(getSalesforceVendidoMesAtual);
   const vendidoMesQ = useQuery({
     queryKey: ["sf-home-vendido-mes", ownerParam, metaRange.dateFrom, metaRange.dateTo],
