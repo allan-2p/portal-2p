@@ -33,6 +33,10 @@ export type SapProdutoRow = {
   visibilidade_override: SapVisibilidade | null;
   preco_vk12: number | null;
   preco_checado_em: string | null;
+  /** Preço de referência do portal (usado quando o SAP não precifica). */
+  preco_sugerido: number | null;
+  /** Caminho da foto no bucket de produtos. */
+  imagem_path: string | null;
 };
 
 
@@ -166,7 +170,7 @@ export const listSapProdutos = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await (await catalogoDb()).from("sap_produtos")
       .select(
-        "id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo, vendavel_sap, ativo_override, ativo_override_motivo, visibilidade_override, preco_vk12, preco_checado_em",
+        "id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo, vendavel_sap, ativo_override, ativo_override_motivo, visibilidade_override, preco_vk12, preco_checado_em, preco_sugerido, imagem_path",
       )
       .order("descricao");
     if (error) throw new Error(error.message);
@@ -692,4 +696,89 @@ export const varrerCatalogoVendaveisAction = createServerFn({ method: "POST" })
     );
     if (!r.ok) throw new Error(r.error);
     return r.result;
+  });
+
+/**
+ * Edição manual dos campos do catálogo (nome, custo, preço sugerido e foto).
+ * Centraliza o que antes era editado nas abas "Produtos do portal" (Solar) e
+ * "Produtos" (Carregadores): o catálogo é a única fonte desses dados.
+ */
+export const atualizarSapProdutoCampos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        descricao: z.string().trim().min(1).max(200).optional(),
+        custo: z.number().nonnegative().optional(),
+        preco_sugerido: z.number().nonnegative().optional(),
+        imagem_path: z.string().trim().min(1).max(300).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    await requireAnyFeature(context, FEATURES_CATALOGO);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = await catalogoDb();
+    const { data: atual, error: readErr } = await db
+      .from("sap_produtos")
+      .select("id, codigo, descricao, custo, preco_sugerido, imagem_path, ativo, visibilidade, ncm_id, ncm_codigo")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!atual) throw new Error("Produto não encontrado.");
+
+    const patch: Record<string, unknown> = {};
+    if (data.descricao !== undefined) patch['descricao'] = data.descricao;
+    if (data.custo !== undefined) patch['custo'] = data.custo;
+    if (data.preco_sugerido !== undefined) patch['preco_sugerido'] = data.preco_sugerido;
+    if (data.imagem_path !== undefined) patch['imagem_path'] = data.imagem_path;
+    if (Object.keys(patch).length === 0) return { ok: true };
+
+    // Produto ativo em Carregadores continua exigindo custo e NCM válidos.
+    const { showsInCarregadores, validateAtivacaoCarregadores } = await import("@/lib/product-visibility");
+    if ((atual as any).ativo && showsInCarregadores((atual as any).visibilidade) && data.custo !== undefined) {
+      const impedimento = validateAtivacaoCarregadores({
+        custo: data.custo,
+        ncm_id: (atual as any).ncm_id ?? null,
+        ncm_codigo: (atual as any).ncm_codigo ?? null,
+      });
+      if (impedimento) throw new Error(impedimento);
+    }
+
+    const { error } = await db.from("sap_produtos").update(patch as any).eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    // Espelha no catálogo consolidado lido pelos wizards.
+    const espelho: Record<string, unknown> = {};
+    if (data.descricao !== undefined) espelho['nome'] = data.descricao;
+    if (data.custo !== undefined) espelho['custo'] = data.custo;
+    if (data.preco_sugerido !== undefined) espelho['preco_sugerido'] = data.preco_sugerido;
+    if ((atual as any).codigo && Object.keys(espelho).length > 0) {
+      await db
+        .from("produtos")
+        .update(espelho as any)
+        .eq("origem", "sap")
+        .eq("codigo", String((atual as any).codigo));
+    }
+
+    await recordModeration(context, {
+      area: "sap_produtos",
+      instanceId: "admin",
+      action: "atualizou",
+      target: (atual as any).descricao ?? data.id,
+      summary: `Catálogo atualizado: ${(atual as any).descricao ?? data.id}`,
+      details: {
+        de: {
+          descricao: (atual as any).descricao,
+          custo: Number((atual as any).custo ?? 0),
+          preco_sugerido: Number((atual as any).preco_sugerido ?? 0),
+          imagem_path: (atual as any).imagem_path ?? null,
+        },
+        para: patch,
+      },
+    });
+
+    return { ok: true };
   });

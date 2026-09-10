@@ -21,6 +21,7 @@ import {
   setSapProdutoVisibilidade,
   limparSapProdutoVisibilidadeOverride,
   setSapProdutoOverride,
+  atualizarSapProdutoCampos,
   varrerCatalogoVendaveisAction,
   syncSapProdutos,
   type SapSyncResult,
@@ -40,7 +41,17 @@ const SYNC_ETAPAS = [
 import { VISIBILIDADE_LABELS, VISIBILIDADE_OPTIONS, validateVisibilidadeChange } from "@/lib/product-visibility";
 
 const VIS_LABELS: Record<string, string> = VISIBILIDADE_LABELS;
-import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download } from "lucide-react";
+import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download, Pencil } from "lucide-react";
+import { ProdutoFoto } from "@/components/produto-foto";
+import { useImagensPorPath, enviarFotoProduto } from "@/lib/produto-imagens";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   classificarDetalhado,
   validarRegras,
@@ -316,6 +327,11 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [aba, setAba] = useState<"portal" | "sap">("portal");
+  const atualizarCampos = useServerFn(atualizarSapProdutoCampos);
+  const [draft, setDraft] = useState<
+    { id: string; codigo: string; descricao: string; custo: string; preco_sugerido: string } | null
+  >(null);
+  const [salvandoDraft, setSalvandoDraft] = useState(false);
 
 
 
@@ -474,6 +490,81 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
       );
     });
   }, [produtos, q, tipo, permissao, visibilidade, status, soDivergentes, org]);
+
+  /** Base da unidade (sem os filtros da tela) — alimenta os cartões de resumo. */
+  const daUnidade = useMemo(
+    () =>
+      org
+        ? produtos.filter((p) => p.visibilidade === org || p.visibilidade === "ambos")
+        : produtos,
+    [produtos, org],
+  );
+  const ativosUnidade = daUnidade.filter((p) => p.ativo).length;
+
+  const fotosQ = useImagensPorPath(daUnidade.map((p) => (p as any).imagem_path ?? null));
+  const fotos = fotosQ.data ?? {};
+
+  /** Salva um campo manual do catálogo (nome, custo, preço sugerido ou foto). */
+  const salvarCampos = async (
+    id: string,
+    campos: { descricao?: string; custo?: number; preco_sugerido?: number; imagem_path?: string },
+    msg = "Catálogo atualizado.",
+  ) => {
+    await atualizarCampos({ data: { id, ...campos } });
+    toast.success(msg);
+    refetch();
+    propagar();
+  };
+
+  const salvarNumero = async (
+    p: { id: string; codigo: string },
+    campo: "custo" | "preco_sugerido",
+    valor: string,
+    atualEm: number,
+  ) => {
+    const novo = Math.max(0, Math.round((Number(String(valor).replace(",", ".")) || 0) * 100) / 100);
+    if (novo === Number(atualEm ?? 0)) return;
+    try {
+      await salvarCampos(
+        p.id,
+        { [campo]: novo } as any,
+        `${campo === "custo" ? "Custo" : "Preço sugerido"} de ${p.codigo} salvo.`,
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao salvar o valor.");
+    }
+  };
+
+  const enviarFoto = async (p: { id: string; codigo: string }, file: File) => {
+    const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
+    const path = `skus/${p.codigo || p.id}.${ext}`;
+    try {
+      await enviarFotoProduto(path, file);
+      await salvarCampos(p.id, { imagem_path: path }, "Foto do produto atualizada.");
+      fotosQ.refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar a foto.");
+    }
+  };
+
+  const salvarDraft = async () => {
+    if (!draft) return;
+    if (!draft.descricao.trim()) return toast.error("Informe o nome do produto.");
+    setSalvandoDraft(true);
+    try {
+      await salvarCampos(draft.id, {
+        descricao: draft.descricao.trim(),
+        custo: Number(String(draft.custo).replace(",", ".")) || 0,
+        preco_sugerido: Number(String(draft.preco_sugerido).replace(",", ".")) || 0,
+      }, "Produto atualizado.");
+      setDraft(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível salvar o produto.");
+    } finally {
+      setSalvandoDraft(false);
+    }
+  };
+
 
 
   const exportXlsx = async () => {
@@ -839,6 +930,24 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
 
         {aba === "portal" ? (
         <>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            { icon: Package, label: org === "carregadores" ? "Produtos visíveis nos Carregadores" : org === "solar" ? "Produtos visíveis no Solar" : "Produtos no catálogo", valor: daUnidade.length },
+            { icon: CheckCircle2, label: "Ativos", valor: ativosUnidade },
+            { icon: XCircle, label: "Inativos", valor: daUnidade.length - ativosUnidade },
+          ].map((c) => (
+            <div key={c.label} className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <c.icon className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">{c.label}</div>
+                <div className="text-xl font-bold tabular-nums">{c.valor}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -921,10 +1030,13 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
           <table className="w-full min-w-max text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
+                <th className="text-left px-3 py-2">Foto</th>
                 <th className="text-left px-3 py-2">Código</th>
                 <th className="text-left px-3 py-2">Descrição</th>
                 <th className="text-left px-3 py-2">Tipo</th>
                 <th className="text-left px-3 py-2">NCM</th>
+                {org !== "solar" && <th className="text-left px-3 py-2">Custo</th>}
+                <th className="text-left px-3 py-2">Preço sugerido</th>
                 <th className="text-left px-3 py-2">Lista de preço</th>
                 <th className="text-left px-3 py-2">Permissão</th>
                 <th className="text-left px-3 py-2">Visibilidade</th>
@@ -933,24 +1045,44 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                 {audit && <th className="text-left px-3 py-2">Regra aplicada</th>}
                 {audit && <th className="text-left px-3 py-2">Motivo</th>}
                 <th className="text-left px-3 py-2">Sincronizado</th>
+                <th className="text-right px-3 py-2">Ações</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 16 : 14} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 12 : 10} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={audit ? 16 : 14} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
               ) : (
                 rows.map((p) => (
                   <tr key={p.id} className="border-t border-border hover:bg-muted/30">
+                    <td className="px-3 py-2">
+                      <label className="cursor-pointer inline-flex" title="Enviar/alterar foto">
+                        <ProdutoFoto
+                          url={fotos[(p as any).imagem_path ?? ""] ?? null}
+                          alt={p.descricao}
+                          className="h-10 w-10 rounded-md"
+                        />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            e.target.value = "";
+                            if (f) void enviarFoto(p, f);
+                          }}
+                        />
+                      </label>
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs">{p.codigo}</td>
                     <td className="px-3 py-2">{p.descricao}</td>
                     <td className="px-3 py-2">
@@ -963,6 +1095,30 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                           !
                         </span>
                       ) : null}
+                    </td>
+                    {org !== "solar" && (
+                      <td className="px-3 py-2">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="h-8 w-28"
+                          defaultValue={Number((p as any).custo ?? 0)}
+                          onBlur={(e) => void salvarNumero(p, "custo", e.target.value, Number((p as any).custo ?? 0))}
+                        />
+                      </td>
+                    )}
+                    <td className="px-3 py-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className="h-8 w-28"
+                        defaultValue={Number((p as any).preco_sugerido ?? 0)}
+                        onBlur={(e) =>
+                          void salvarNumero(p, "preco_sugerido", e.target.value, Number((p as any).preco_sugerido ?? 0))
+                        }
+                      />
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">{p.lista_preco ?? "—"}</td>
                     <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
@@ -1078,6 +1234,24 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       </td>
                     )}
                     <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(p.last_synced_at)}</td>
+                    <td className="px-3 py-2 text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Editar nome, custo e preço sugerido"
+                        onClick={() =>
+                          setDraft({
+                            id: p.id,
+                            codigo: p.codigo,
+                            descricao: p.descricao,
+                            custo: String(Number((p as any).custo ?? 0)),
+                            preco_sugerido: String(Number((p as any).preco_sugerido ?? 0)),
+                          })
+                        }
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -1142,6 +1316,54 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
           />
         )}
 
+        <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar produto {draft?.codigo}</DialogTitle>
+            </DialogHeader>
+            {draft ? (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label>Nome</Label>
+                  <Input
+                    value={draft.descricao}
+                    onChange={(e) => setDraft({ ...draft, descricao: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Custo</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={draft.custo}
+                      onChange={(e) => setDraft({ ...draft, custo: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Preço sugerido</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={draft.preco_sugerido}
+                      onChange={(e) => setDraft({ ...draft, preco_sugerido: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDraft(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void salvarDraft()} disabled={salvandoDraft}>
+                {salvandoDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
   );
 }
