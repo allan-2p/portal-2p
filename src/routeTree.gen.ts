@@ -73,6 +73,7 @@ import { Route as AuthenticatedAdminModeracaoRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminMicroinversoresSolarRouteImport } from './routes/_authenticated/admin.microinversores-solar'
 import { Route as AuthenticatedAdminMetasRouteImport } from './routes/_authenticated/admin.metas'
 import { Route as AuthenticatedAdminIntegracoesRouteImport } from './routes/_authenticated/admin.integracoes'
+import { Route as AuthenticatedAdminGrupo2pRouteImport } from './routes/_authenticated/admin.grupo-2p'
 import { Route as AuthenticatedAdminFreteRegrasRouteImport } from './routes/_authenticated/admin.frete-regras'
 import { Route as AuthenticatedAdminEstoqueRouteImport } from './routes/_authenticated/admin.estoque'
 import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
@@ -492,6 +493,12 @@ const AuthenticatedAdminIntegracoesRoute =
     path: '/admin/integracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminGrupo2pRoute =
+  AuthenticatedAdminGrupo2pRouteImport.update({
+    id: '/admin/grupo-2p',
+    path: '/admin/grupo-2p',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminFreteRegrasRoute =
   AuthenticatedAdminFreteRegrasRouteImport.update({
     id: '/admin/frete-regras',
@@ -824,6 +831,7 @@ export interface FileRoutesByFullPath {
   '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
+  '/admin/grupo-2p': typeof AuthenticatedAdminGrupo2pRoute
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
@@ -939,6 +947,7 @@ export interface FileRoutesByTo {
   '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
+  '/admin/grupo-2p': typeof AuthenticatedAdminGrupo2pRoute
   '/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
@@ -1056,6 +1065,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/_authenticated/admin/estoque': typeof AuthenticatedAdminEstoqueRoute
   '/_authenticated/admin/frete-regras': typeof AuthenticatedAdminFreteRegrasRoute
+  '/_authenticated/admin/grupo-2p': typeof AuthenticatedAdminGrupo2pRoute
   '/_authenticated/admin/integracoes': typeof AuthenticatedAdminIntegracoesRoute
   '/_authenticated/admin/metas': typeof AuthenticatedAdminMetasRoute
   '/_authenticated/admin/microinversores-solar': typeof AuthenticatedAdminMicroinversoresSolarRoute
@@ -1175,6 +1185,7 @@ export interface FileRouteTypes {
     | '/admin/emails'
     | '/admin/estoque'
     | '/admin/frete-regras'
+    | '/admin/grupo-2p'
     | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/microinversores-solar'
@@ -1290,6 +1301,7 @@ export interface FileRouteTypes {
     | '/admin/emails'
     | '/admin/estoque'
     | '/admin/frete-regras'
+    | '/admin/grupo-2p'
     | '/admin/integracoes'
     | '/admin/metas'
     | '/admin/microinversores-solar'
@@ -1406,6 +1418,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/emails'
     | '/_authenticated/admin/estoque'
     | '/_authenticated/admin/frete-regras'
+    | '/_authenticated/admin/grupo-2p'
     | '/_authenticated/admin/integracoes'
     | '/_authenticated/admin/metas'
     | '/_authenticated/admin/microinversores-solar'
@@ -1984,6 +1997,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIntegracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/grupo-2p': {
+      id: '/_authenticated/admin/grupo-2p'
+      path: '/admin/grupo-2p'
+      fullPath: '/admin/grupo-2p'
+      preLoaderRoute: typeof AuthenticatedAdminGrupo2pRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/frete-regras': {
       id: '/_authenticated/admin/frete-regras'
       path: '/admin/frete-regras'
@@ -2498,6 +2518,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
   AuthenticatedAdminEstoqueRoute: typeof AuthenticatedAdminEstoqueRoute
   AuthenticatedAdminFreteRegrasRoute: typeof AuthenticatedAdminFreteRegrasRoute
+  AuthenticatedAdminGrupo2pRoute: typeof AuthenticatedAdminGrupo2pRoute
   AuthenticatedAdminIntegracoesRoute: typeof AuthenticatedAdminIntegracoesRoute
   AuthenticatedAdminMetasRoute: typeof AuthenticatedAdminMetasRoute
   AuthenticatedAdminMicroinversoresSolarRoute: typeof AuthenticatedAdminMicroinversoresSolarRoute
@@ -2561,6 +2582,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,
   AuthenticatedAdminEstoqueRoute: AuthenticatedAdminEstoqueRoute,
   AuthenticatedAdminFreteRegrasRoute: AuthenticatedAdminFreteRegrasRoute,
+  AuthenticatedAdminGrupo2pRoute: AuthenticatedAdminGrupo2pRoute,
   AuthenticatedAdminIntegracoesRoute: AuthenticatedAdminIntegracoesRoute,
   AuthenticatedAdminMetasRoute: AuthenticatedAdminMetasRoute,
   AuthenticatedAdminMicroinversoresSolarRoute:

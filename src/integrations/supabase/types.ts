@@ -2706,6 +2706,10 @@ export type Database = {
           updated_at: string
           vendavel_sap: boolean | null
           visibilidade: string | null
+          visibilidade_override: string | null
+          visibilidade_override_em: string | null
+          visibilidade_override_motivo: string | null
+          visibilidade_override_por: string | null
         }
         Insert: {
           ativo?: boolean
@@ -2734,6 +2738,10 @@ export type Database = {
           updated_at?: string
           vendavel_sap?: boolean | null
           visibilidade?: string | null
+          visibilidade_override?: string | null
+          visibilidade_override_em?: string | null
+          visibilidade_override_motivo?: string | null
+          visibilidade_override_por?: string | null
         }
         Update: {
           ativo?: boolean
@@ -2762,6 +2770,10 @@ export type Database = {
           updated_at?: string
           vendavel_sap?: boolean | null
           visibilidade?: string | null
+          visibilidade_override?: string | null
+          visibilidade_override_em?: string | null
+          visibilidade_override_motivo?: string | null
+          visibilidade_override_por?: string | null
         }
         Relationships: [
           {

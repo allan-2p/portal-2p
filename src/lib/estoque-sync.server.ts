@@ -104,7 +104,9 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
     const estoqueMap = new Map(estoque.map((e) => [e.material, e]));
     const { data: atuais } = await supabaseAdmin.from("produtos").select("codigo, visibilidade, ativo");
     const atuaisMap = new Map((atuais ?? []).map((r: any) => [r.codigo as string, r]));
-    const { data: legado } = await supabaseAdmin.from("sap_produtos").select("codigo, visibilidade, ativo");
+    const { data: legado } = await supabaseAdmin
+      .from("sap_produtos")
+      .select("codigo, visibilidade, visibilidade_override, ativo");
     const legadoMap = new Map((legado ?? []).map((r: any) => [r.codigo as string, r]));
 
     const codigos = new Set<string>([...catalogo.map((c) => c.codigo), ...estoqueMap.keys()]);
@@ -112,6 +114,7 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
       const cat = catalogo.find((c) => c.codigo === codigo);
       const est = estoqueMap.get(codigo);
       const anterior = atuaisMap.get(codigo) ?? legadoMap.get(codigo);
+      const override = (legadoMap.get(codigo) as any)?.visibilidade_override ?? null;
       const descricao = cat?.descricao || est?.descricao || "";
       return {
         codigo,
@@ -122,9 +125,11 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
         grp_mercadorias: est?.grp_mercadorias ?? null,
         custo: est?.cmm ?? 0,
         preco_venda: est?.preco_venda ?? 0,
-        // Material novo herda a instância pelo grupo de mercadoria: 2P-0015 é da
-        // 2P Carregadores, o resto segue na Solar.
+        // A visibilidade definida na moderação (override) vence tudo. Sem
+        // override, mantém o valor atual; material novo herda a instância pelo
+        // grupo de mercadoria: 2P-0015 é da 2P Carregadores, o resto Solar.
         visibilidade:
+          override ??
           (anterior as any)?.visibilidade ??
           (est?.grp_mercadorias === GRUPO_CARREGADORES ? "carregadores" : "solar"),
         no_catalogo: !!cat?.liberado,

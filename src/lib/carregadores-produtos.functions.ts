@@ -122,6 +122,8 @@ export const updateCarregadoresProduct = createServerFn({ method: "POST" })
       if (impedimento) throw new Error(impedimento);
     }
 
+    // A edição também é decisão manual: grava o override para a varredura de
+    // preço do SAP não reativar/desativar o produto no próximo ciclo.
     const { data: updated, error } = await supabaseAdmin
       .from("sap_produtos")
       .update({
@@ -129,7 +131,11 @@ export const updateCarregadoresProduct = createServerFn({ method: "POST" })
         custo: data.custo,
         preco_sugerido: data.preco_sugerido,
         ativo: data.ativo,
-      })
+        ativo_override: data.ativo,
+        ativo_override_por: (context as any).userId ?? null,
+        ativo_override_em: new Date().toISOString(),
+        ativo_override_motivo: "Definido manualmente na Gestão de Produtos.",
+      } as any)
       .eq("id", data.id)
       .select(COLS)
       .maybeSingle();
