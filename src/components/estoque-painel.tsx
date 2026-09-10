@@ -25,7 +25,11 @@ import {
   type DisponibilidadeInfo,
 } from "@/lib/estoque.functions";
 
+const rotuloVisibilidade = (v: string) =>
+  v === "solar" ? "2P Solar" : v === "carregadores" ? "2P Carregadores" : "Grupo 2P";
+
 const qtd = (v: number) => new Intl.NumberFormat("pt-BR").format(Number(v ?? 0));
+
 
 const fmtDataCurta = (v?: string | null) => {
   if (!v) return "—";
