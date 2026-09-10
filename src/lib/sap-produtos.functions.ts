@@ -345,7 +345,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
             "codigo, ativo, ativo_override, origem, descricao, tipo, permissao, lista_preco, ncm_codigo, ncm_id",
           ),
         );
-      const known = new Set((existentes ?? []).map((r: { codigo: string }) => r.codigo));
+      const known = new Set(((existentes ?? []) as any[]).map((r: any) => r.codigo as string));
       const atuaisMap = new Map((existentes ?? []).map((r: any) => [r.codigo as string, r]));
 
       // NCM do SAP alimenta o produto e, quando o código existir na tabela de
