@@ -596,15 +596,22 @@ function HomePage() {
     const A_THRESHOLD = 30_000; // acima disso é A; entre 15k e 30k é B
     const norm = (s: string) =>
       s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    // Resolve o nome do consultor a partir da lista completa de vendedores do
+    // Salesforce (não só da carteira fixa), senão qualquer vendedor fora dela
+    // zeraria os indicadores.
     const selecionados = ownerParam
       ? new Set(
           ownerParam
             .split(",")
-            .map((id) => CARTEIRA_OWNER_NAMES[id.trim()])
+            .map((raw) => {
+              const id = raw.trim();
+              return salespeople.find((p) => p.id === id)?.name ?? CARTEIRA_OWNER_NAMES[id] ?? "";
+            })
             .filter(Boolean)
             .map(norm),
         )
       : null;
+
 
     let prevA = 0;
     let prevB = 0;
