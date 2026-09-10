@@ -1344,20 +1344,49 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
           </div>
         </div>
         </>
-        ) : (
-          <CatalogoSapCompleto
-            onPropagar={propagar}
-            onEnviado={(codigo) => {
-              // Material entra inativo: sem isso ele sumia atrás do filtro
-              // padrão "Ativos" e parecia que o envio não funcionou.
-              setStatus("todos");
-              setVisibilidade("all");
-              setQ(codigo);
-              setPage(0);
-              setAba("portal");
-            }}
-          />
-        )}
+
+        <Dialog open={!!incluir} onOpenChange={(o) => !o && setIncluir(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Incluir {incluir?.codigo} no catálogo</DialogTitle>
+            </DialogHeader>
+            {incluir ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">{incluir.descricao}</p>
+                <div className="space-y-1">
+                  <Label>Onde este produto aparece</Label>
+                  <Select
+                    value={incluir.visibilidade}
+                    onValueChange={(v) => setIncluir({ ...incluir, visibilidade: v as SapVisibilidade })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="solar">{VIS_LABELS.solar}</SelectItem>
+                      <SelectItem value="carregadores">{VIS_LABELS.carregadores}</SelectItem>
+                      <SelectItem value="ambos">{VIS_LABELS.ambos}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ele entra <strong>ativo</strong> na instância escolhida. Depois é possível mudar o status ou a
+                  visibilidade na própria lista.
+                </p>
+              </div>
+            ) : null}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIncluir(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void confirmarInclusao()} disabled={incluindo}>
+                {incluindo ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Incluir e ativar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
 
         <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
           <DialogContent>
