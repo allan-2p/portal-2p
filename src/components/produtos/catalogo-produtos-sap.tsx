@@ -643,9 +643,18 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
     toast.success(`${filtered.length} produto(s) exportado(s).`);
   };
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  /** Lista única: catálogo do portal + materiais do SAP fora do catálogo. */
+  const linhas = useMemo(
+    () => [
+      ...filtered.map((p) => ({ kind: "portal" as const, p })),
+      ...foraDoCatalogo.map((s) => ({ kind: "sap" as const, s })),
+    ],
+    [filtered, foraDoCatalogo],
+  );
+  const totalPages = Math.max(1, Math.ceil(linhas.length / pageSize));
   const current = Math.min(page, totalPages - 1);
-  const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
+  const rows = linhas.slice(current * pageSize, current * pageSize + pageSize);
+
   const lastRun = data?.lastRun ?? null;
 
 
