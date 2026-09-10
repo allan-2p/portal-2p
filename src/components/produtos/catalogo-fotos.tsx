@@ -79,6 +79,9 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
 
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [statusFiltro, setStatusFiltro] = useState<FiltroStatus>("todos");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(24);
   const [enviando, setEnviando] = useState<string | null>(null);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -93,9 +96,20 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
       const casaBusca = !termo || `${p.codigo ?? ""} ${p.nome}`.toLowerCase().includes(termo);
       const casaFiltro =
         filtro === "todos" ? true : filtro === "com" ? !!p.imagem_path : !p.imagem_path;
-      return casaBusca && casaFiltro;
+      const casaStatus =
+        statusFiltro === "todos" ? true : statusFiltro === "ativos" ? p.ativo : !p.ativo;
+      return casaBusca && casaFiltro && casaStatus;
     });
-  }, [produtos, busca, filtro]);
+  }, [produtos, busca, filtro, statusFiltro]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [busca, filtro, statusFiltro, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(lista.length / pageSize));
+  const paginaAtual = Math.min(page, totalPages - 1);
+  const listaPagina = lista.slice(paginaAtual * pageSize, paginaAtual * pageSize + pageSize);
+
 
 
   async function enviarFoto(p: ItemFoto, file: File) {
