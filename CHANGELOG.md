@@ -35,6 +35,15 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Alterado
+
+- **Gestão de Produtos**: o **Catálogo** passou a ser a única fonte dos produtos.
+  As abas "Produtos do portal" (Solar) e "Produtos" (Carregadores) foram removidas;
+  nome, custo (Carregadores), preço sugerido, foto, ativação e visibilidade agora são
+  editados direto no catálogo, com auditoria de moderação e espelhamento no cadastro
+  usado pelas propostas. Links e abas antigas abrem o catálogo automaticamente.
+
+
 ### Corrigido
 
 - **Cupons**: criar/editar cupom voltou a exigir a permissão de *Cupons* (Solar)
