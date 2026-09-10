@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { History, Truck } from "lucide-react";
 import {
   Dialog,
@@ -7,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
 
 export type CupomUso = {
   id: string;
@@ -43,8 +43,7 @@ export function CupomHistoricoDialog({
     queryKey: ["solar-cupom-usos", cupomId],
     enabled: open && !!cupomId,
     queryFn: async (): Promise<CupomUso[]> => {
-      const { data, error } = await supabase
-        .from("solar_cupom_usos")
+      const { data, error } = await catalogoFrom("solar_cupom_usos")
         .select(
           "id, proposta_id, proposta_numero, cliente_nome, cliente_doc, desconto, frete_gratis, valor_total, user_nome, created_at",
         )

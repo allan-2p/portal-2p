@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { normCodigo, resolverProduto, type ProdutoCatalogo } from "@/lib/solar-sku";
 
 type Item = ProdutoCatalogo & { ativo: boolean };
@@ -10,8 +10,7 @@ export function useSapCatalogoCodigos() {
   return useQuery({
     queryKey: ["sap-catalogo-codigos"],
     queryFn: async (): Promise<Item[]> => {
-      const { data, error } = await supabase
-        .from("sap_produtos")
+      const { data, error } = await catalogoFrom("sap_produtos")
         .select("id, codigo, descricao, ativo")
         .order("descricao");
       if (error) throw error;

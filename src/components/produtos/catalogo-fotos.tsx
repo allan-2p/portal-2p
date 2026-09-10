@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +68,7 @@ export function CatalogoFotos() {
     try {
       const path = `skus/${p.codigo || p.id}.${ext === "jpeg" ? "jpg" : ext}`;
       await enviarFotoProduto(path, file);
-      const { error } = await supabase.from("sap_produtos").update({ imagem_path: path }).eq("id", p.id);
+      const { error } = await catalogoFrom("sap_produtos").update({ imagem_path: path }).eq("id", p.id);
       if (error) throw new Error(error.message);
       toast.success(`Foto de ${p.codigo || p.nome} atualizada.`);
       invalidate();
@@ -83,7 +84,7 @@ export function CatalogoFotos() {
     if (!p.imagem_path) return;
     setEnviando(p.id);
     try {
-      const { error } = await supabase.from("sap_produtos").update({ imagem_path: null }).eq("id", p.id);
+      const { error } = await catalogoFrom("sap_produtos").update({ imagem_path: null }).eq("id", p.id);
       if (error) throw new Error(error.message);
       await removerFotoProduto(p.imagem_path);
       toast.success("Foto removida.");

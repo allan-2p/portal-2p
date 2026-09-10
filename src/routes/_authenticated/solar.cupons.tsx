@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useHashAction } from "@/hooks/use-hash-action";
 import { useState } from "react";
 import { AppLayout } from "@/components/app-layout";
@@ -206,7 +207,7 @@ function CuponsPage() {
 
   const handleToggleAtivo = async (c: Cupom) => {
     const novo = !c.ativo;
-    const { error } = await supabase.from("solar_cupons").update({ ativo: novo }).eq("id", c.id);
+    const { error } = await catalogoFrom("solar_cupons").update({ ativo: novo }).eq("id", c.id);
     if (error) return toast.error(error.message);
     void logModeration({
       area: "solar_cupons",
@@ -250,7 +251,7 @@ function CuponsPage() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const cli = (clientesQ.data ?? []).find((c) => c.doc === clienteDoc);
-      const { error } = await supabase.from("solar_cupons").insert({
+      const { error } = await catalogoFrom("solar_cupons").insert({
         codigo: codeFinal,
         tipos,
         valor: tipos.includes("valor") ? parseMoeda(valor) : 0,

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/app-layout";
@@ -16,7 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { Cpu, Pencil, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { useSolarMicroinversores, type SolarMicroinversor } from "@/hooks/use-solar-catalogo";
 
@@ -103,8 +103,8 @@ function MicroinversoresSolarPage() {
       ordem: Number(form.ordem) || 0,
     };
     const res = form.id
-      ? await supabase.from("solar_microinversores").update(payload).eq("id", form.id)
-      : await supabase.from("solar_microinversores").insert(payload);
+      ? await catalogoFrom("solar_microinversores").update(payload).eq("id", form.id)
+      : await catalogoFrom("solar_microinversores").insert(payload);
     if (res.error) return toast.error(res.error.message);
     void logModeration({
       area: "produtos",
@@ -118,8 +118,7 @@ function MicroinversoresSolarPage() {
   }
 
   async function alternarAtivo(m: SolarMicroinversor) {
-    const { error } = await supabase
-      .from("solar_microinversores")
+    const { error } = await catalogoFrom("solar_microinversores")
       .update({ ativo: !m.ativo })
       .eq("id", m.id);
     if (error) return toast.error(error.message);

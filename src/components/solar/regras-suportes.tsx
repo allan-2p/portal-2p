@@ -8,12 +8,12 @@
  * emitido. Os campos de código e múltiplo são editáveis aqui mesmo.
  */
 import { useMemo, useState } from "react";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { logModeration } from "@/lib/moderation-audit";
 import { useSolarSuportes } from "@/hooks/use-solar-catalogo";
 import type { SolarSuporte } from "@/lib/solar-calculadora";
@@ -104,7 +104,7 @@ export function RegrasSuportes() {
       cod_mini_trilho: e.cod_mini_trilho.trim() || null,
       multiplo: Math.max(1, Number(e.multiplo) || 2),
     };
-    const { error } = await supabase.from("solar_suportes").update(payload).eq("id", s.id);
+    const { error } = await catalogoFrom("solar_suportes").update(payload).eq("id", s.id);
     setSalvando(null);
     if (error) return toast.error(error.message);
     void logModeration({

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { catalogoFrom } from "@/lib/catalogo-client";
 import { supabase } from "@/integrations/supabase/client";
 
 export const BUCKET_PRODUTOS = "produtos";
@@ -95,8 +96,7 @@ export function useImagensPorCodigo(codigos: (string | null | undefined)[]) {
     queryFn: async () => {
       const desconhecidos = limpos.filter((c) => !porCodigo.has(c));
       if (desconhecidos.length) {
-        const { data, error } = await supabase
-          .from("sap_produtos")
+        const { data, error } = await catalogoFrom("sap_produtos")
           .select("codigo, imagem_path")
           .in("codigo", desconhecidos);
         if (error) throw error;
