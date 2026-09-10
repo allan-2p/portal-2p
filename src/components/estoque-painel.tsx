@@ -129,6 +129,32 @@ export function EstoquePainel({
     descricao: descricaoPorMaterial.get(c.material) ?? "",
   }));
   const containers = filtrar(containersBase, ["id_container", "material", "supplier", "descricao"]);
+
+  // Situação de catálogo por material (fonte: produtos espelhados do catálogo).
+  const catalogoPorMaterial = useMemo(() => {
+    const m = new Map<string, { ativo: boolean; visibilidade: string }>();
+    for (const p of q.data?.produtos ?? []) {
+      if (!p.no_catalogo) continue;
+      m.set(String(p.codigo), { ativo: !!p.ativo, visibilidade: String(p.visibilidade ?? "") });
+    }
+    return m;
+  }, [q.data]);
+
+  const totalEstoque = Math.max(1, Math.ceil(estoque.length / pageSize));
+  const totalContainers = Math.max(1, Math.ceil(containers.length / pageSize));
+  const pgEstoque = Math.min(pageEstoque, totalEstoque - 1);
+  const pgContainers = Math.min(pageContainers, totalContainers - 1);
+  const estoquePagina = estoque.slice(pgEstoque * pageSize, pgEstoque * pageSize + pageSize);
+  const containersPagina = containers.slice(
+    pgContainers * pageSize,
+    pgContainers * pageSize + pageSize,
+  );
+
+  useEffect(() => {
+    setPageEstoque(0);
+    setPageContainers(0);
+  }, [busca, pageSize]);
+
   const lastRun = q.data?.lastRun ?? null;
   const atualizadoEm =
     lastRun?.finished_at ??
@@ -136,6 +162,50 @@ export function EstoquePainel({
       (acc, e) => (!acc || String(e.atualizado_em) > acc ? String(e.atualizado_em) : acc),
       null,
     );
+
+  const Paginacao = ({
+    total,
+    pagina,
+    paginas,
+    onPagina,
+  }: {
+    total: number;
+    pagina: number;
+    paginas: number;
+    onPagina: (n: number) => void;
+  }) => (
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+      <span className="text-muted-foreground">
+        {total} item(ns) • página {pagina + 1} de {paginas}
+      </span>
+      <div className="flex items-center gap-2">
+        <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+          <SelectTrigger className="h-8 w-24">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[10, 25, 50, 100].map((s) => (
+              <SelectItem key={s} value={String(s)}>
+                {s} / pág
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" disabled={pagina === 0} onClick={() => onPagina(pagina - 1)}>
+          Anterior
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={pagina >= paginas - 1}
+          onClick={() => onPagina(pagina + 1)}
+        >
+          Próxima
+        </Button>
+      </div>
+    </div>
+  );
+
 
   return (
     <div className="space-y-6 p-4 md:p-6">
