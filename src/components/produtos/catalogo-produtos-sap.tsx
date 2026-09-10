@@ -848,38 +848,34 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
         </div>
 
 
-        <div className="border border-border rounded-lg overflow-x-auto">
-          <table className="w-full min-w-max text-sm">
+        <div className="border border-border rounded-lg overflow-hidden">
+          <table className="w-full table-fixed text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="text-left px-3 py-2">Foto</th>
-                <th className="text-left px-3 py-2">Código</th>
-                <th className="text-left px-3 py-2">Descrição</th>
-                <th className="text-left px-3 py-2">Tipo</th>
-                <th className="text-left px-3 py-2">NCM</th>
-                {org !== "solar" && <th className="text-left px-3 py-2">Custo</th>}
-                <th className="text-left px-3 py-2">Preço sugerido</th>
-                <th className="text-left px-3 py-2">Lista de preço</th>
-                <th className="text-left px-3 py-2">Permissão</th>
-                <th className="text-left px-3 py-2">Visibilidade</th>
-                <th className="text-left px-3 py-2">Preço no SAP</th>
-                <th className="text-left px-3 py-2">Status</th>
-                {audit && <th className="text-left px-3 py-2">Regra aplicada</th>}
-                {audit && <th className="text-left px-3 py-2">Motivo</th>}
-                <th className="text-left px-3 py-2">Sincronizado</th>
-                <th className="text-right px-3 py-2">Ações</th>
+                <th className="text-left px-2 py-2 w-[52px]">Foto</th>
+                <th className="text-left px-2 py-2 w-[110px]">Código</th>
+                <th className="text-left px-2 py-2">Descrição</th>
+                <th className="text-left px-2 py-2 w-[120px]">Tipo</th>
+                {org !== "solar" && <th className="text-left px-2 py-2 w-[104px]">Custo</th>}
+                <th className="text-left px-2 py-2 w-[104px]">Preço</th>
+                <th className="text-left px-2 py-2 w-[140px]">Visibilidade</th>
+                <th className="text-left px-2 py-2 w-[120px]">Preço no SAP</th>
+                <th className="text-left px-2 py-2 w-[112px]">Status</th>
+                {audit && <th className="text-left px-2 py-2 w-[140px]">Regra aplicada</th>}
+                {audit && <th className="text-left px-2 py-2 w-[160px]">Motivo</th>}
+                <th className="text-right px-2 py-2 w-[56px]">Ações</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={audit ? 16 : 14} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={totalCols} className="px-3 py-10 text-center text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={audit ? 16 : 14} className="px-3 py-10 text-center text-muted-foreground">
+                  <td colSpan={totalCols} className="px-3 py-10 text-center text-muted-foreground">
                     Nenhum produto encontrado. Clique em “Sinc. SAP” para importar o catálogo.
                   </td>
                 </tr>
