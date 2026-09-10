@@ -9,7 +9,7 @@ import { NotificationsDropdown } from "./notifications-dropdown";
 import { InstanceSwitcher } from "./instance-switcher";
 import { MarketingUnitSwitch } from "./marketing-unit-switch";
 
-import { useInstance } from "./instance-provider";
+import { useInstance, HOME_ROUTE } from "./instance-provider";
 import { INSTANCES, featureForPath, instanceForFeature, type FeatureKey } from "@/lib/instances";
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
 import { isGroupAdminPath } from "@/lib/admin-area";
@@ -98,7 +98,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
       return;
     }
     if (pathname !== defaultRoute) {
-      toast.info(`"${pathname}" não está disponível na instância ${instMeta.label}.`);
+      // Entrar pela raiz (ou pela home de outra unidade) é fluxo normal de login:
+      // apenas redireciona para a home da unidade, sem aviso de erro.
+      const isHomePath = Object.values(HOME_ROUTE).includes(pathname);
+      if (!isHomePath) {
+        toast.info(`"${pathname}" não está disponível na instância ${instMeta.label}.`);
+      }
       navigate({ to: defaultRoute });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
