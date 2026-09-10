@@ -179,6 +179,22 @@ export const ADMIN_SECTIONS: AdminSection[] = [
             label: "Gestão de Produtos",
             icon: Package,
             feature: "admin.produtos",
+            children: [
+              {
+                to: "/admin/produtos-solar",
+                label: "Catálogo",
+                icon: Package,
+                feature: "admin.produtos",
+                hash: "aba:produtos-solar=catalogo",
+              },
+              {
+                to: "/admin/produtos-solar",
+                label: "Estoque",
+                icon: Boxes,
+                feature: "admin.produtos",
+                hash: "aba:produtos-solar=estoque",
+              },
+            ],
           },
           {
             to: "/admin/regras",
