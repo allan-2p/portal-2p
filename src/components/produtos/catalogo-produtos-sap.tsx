@@ -383,6 +383,32 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
     queryFn: () => list({}),
   });
 
+  /** Espelho completo do SAP — alimenta as linhas “fora do catálogo”. */
+  const completoQ = useQuery({
+    queryKey: ["sap-catalogo-completo"],
+    queryFn: () => listCompleto({}),
+  });
+
+  /** Inclui o material no catálogo já ativo, na instância escolhida. */
+  const confirmarInclusao = async () => {
+    if (!incluir) return;
+    setIncluindo(true);
+    try {
+      await setNoPortal({
+        data: { codigo: incluir.codigo, no_catalogo: true, visibilidade: incluir.visibilidade as "solar" | "carregadores" | "ambos" },
+      });
+      toast.success(`${incluir.codigo} incluído no catálogo, ativo em ${VIS_LABELS[incluir.visibilidade]}.`);
+      setIncluir(null);
+      await Promise.all([refetch(), completoQ.refetch()]);
+      propagar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao incluir no catálogo.");
+    } finally {
+      setIncluindo(false);
+    }
+  };
+
+
   const runsQuery = useQuery({
     queryKey: ["sap-sync-runs"],
     queryFn: () => listRuns({}),
