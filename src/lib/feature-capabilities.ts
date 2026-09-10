@@ -98,6 +98,7 @@ const MAP: Partial<Record<FeatureKey, CapabilityId[]>> = {
   "admin.sistema.excluir": V,
   "admin.sistema.cancelar": V,
   "admin.clientes.integracoes": V,
+  "admin.clientes.transferir": V,
   // Moderação
   "admin.area.moderacao": VECM,
   "admin.produtos": VEM,

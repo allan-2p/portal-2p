@@ -162,7 +162,12 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     description:
       "Permissões universais do portal. Excluir registros é exclusivo do Administrador do Sistema.",
     area: "grupo",
-    keys: ["admin.sistema.excluir", "admin.sistema.cancelar", "admin.clientes.integracoes"],
+    keys: [
+      "admin.sistema.excluir",
+      "admin.sistema.cancelar",
+      "admin.clientes.integracoes",
+      "admin.clientes.transferir",
+    ],
   },
 ];
 
