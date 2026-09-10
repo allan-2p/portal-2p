@@ -35,7 +35,15 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Corrigido
+
+- **Cupons**: criar/editar cupom voltou a exigir a permissão de *Cupons* (Solar)
+  em vez da moderação de produtos, que barrava com "Forbidden". Os 4 cupons
+  criados no site publicado depois da virada de banco foram copiados para o
+  banco do Grupo 2P, então param de aparecer como inexistentes na proposta.
+
 ### Moderação: catálogo por unidade
+
 
 - **Menu lateral**: Gestão de Produtos de Solar e de Carregadores ganhou os
   sub-itens *Catálogo* e *Estoque*, que abrem direto a aba correspondente da
