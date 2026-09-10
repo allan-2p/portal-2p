@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listarLotesAtivos, rotuloLote } from "@/lib/carregadores-lotes.functions";
+import { listarOpcoesEntrega, rotuloLote, fmtMesReferencia, type OpcaoEntrega } from "@/lib/carregadores-lotes.functions";
 import { listClientesPaginaFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { cnpjValido } from "@/lib/cnpj";
@@ -403,6 +403,8 @@ function PropostaCarregadoresPage() {
         observacoes: (data.observacoes as string | null) ?? OBSERVACOES_PADRAO,
         observacoesInternas: ((data as any).observacoes_internas as string | null) ?? "",
         entregaLoteId: ((data as any).entrega_lote_id as string | null) ?? "",
+        entregaLoteMes: ((data as any).entrega_lote_mes as string | null) ?? "",
+        entregaLoteNome: ((data as any).entrega_lote_nome as string | null) ?? "",
         itens: itens.length ? itens : [novoItem()],
       });
       setConsultorProposta(((data as any).consultor_nome as string | null) ?? null);
@@ -494,11 +496,24 @@ function PropostaCarregadoresPage() {
   });
   const logoCliente = ((logoQ.data as any)?.data_url as string | undefined) ?? null;
 
-  // Lotes de chegada ativos (Moderação › Carregadores › Lotes de Entrega).
-  const listarLotes = useServerFn(listarLotesAtivos);
-  const lotesQ = useQuery({ queryKey: ["carregadores-lotes-ativos"], queryFn: () => listarLotes() });
-  const lotes = (lotesQ.data ?? []) as Awaited<ReturnType<typeof listarLotesAtivos>>;
-  const loteSelecionado = lotes.find((l) => l.id === state.entregaLoteId) ?? null;
+  // Chegada da mercadoria: containers de carregadores em trânsito + lotes
+  // cadastrados em Moderação › Carregadores › Lotes de Entrega.
+  const listarLotes = useServerFn(listarOpcoesEntrega);
+  const lotesQ = useQuery({ queryKey: ["carregadores-opcoes-entrega"], queryFn: () => listarLotes() });
+  const lotes = (lotesQ.data ?? []) as OpcaoEntrega[];
+  const mesesEntrega = [...new Set(lotes.map((l) => l.mes_referencia))].sort();
+  const lotesDoMes = lotes.filter((l) => l.mes_referencia === state.entregaLoteMes);
+  const loteSelecionado =
+    lotesDoMes.find((l) => l.lote === state.entregaLoteNome) ??
+    (state.entregaLoteMes && state.entregaLoteNome
+      ? {
+          id: state.entregaLoteId || null,
+          mes_referencia: state.entregaLoteMes,
+          lote: state.entregaLoteNome,
+          previsao_chegada: null,
+          origem: "cadastro" as const,
+        }
+      : null);
 
   // Clientes vindos do cadastro universal (Clientes > Cadastros)
 
@@ -1002,6 +1017,16 @@ function PropostaCarregadoresPage() {
     ),
   );
 
+  // Se todo item tem estoque pronto (livre ou entreposto), mês/lote de chegada
+  // é opcional; faltando estoque, vira obrigatório para fechar o pedido.
+  const semEstoquePronto = state.itens.some((i) => {
+    const codigo = String(produtos.find((p) => p.id === i.produtoId)?.codigo ?? "").trim();
+    if (!codigo || !(i.qtd > 0)) return false;
+    const info = disponibilidade[codigo];
+    if (!info) return false;
+    return info.ok === false || (info.tipo !== "imediato" && info.tipo !== "entreposto");
+  });
+
   const temItemComValor = state.itens.some((i) => i.produtoId && i.valor > 0);
   const abaixoPolitica = d.mbPct < config.politica_mb_min;
   const erroFreteMsg = !state.freteMod
@@ -1157,7 +1182,8 @@ function PropostaCarregadoresPage() {
 
   // Conclusão do pedido herda os mesmos bloqueios (inclui forma de pagamento).
   const errosConclusao: string[] = [...errosPdf];
-  if (!state.entregaLoteId) errosConclusao.push("Informe o mês de referência e o lote de chegada da mercadoria.");
+  if (semEstoquePronto && !(state.entregaLoteMes && state.entregaLoteNome))
+    errosConclusao.push("Sem estoque disponível: informe o mês e o lote de chegada da mercadoria.");
   const podeFechar = errosConclusao.length === 0;
 
   // ---- Bloqueios de salvamento ----
@@ -1513,6 +1539,8 @@ function PropostaCarregadoresPage() {
           observacoes: observacoesFinal.trim() || null,
           observacoesInternas: state.observacoesInternas.trim() || null,
           entregaLoteId: state.entregaLoteId || null,
+          entregaLoteMes: state.entregaLoteMes || null,
+          entregaLoteNome: state.entregaLoteNome || null,
           itens: state.itens
             .filter((i) => i.produtoId)
             .map((i) => ({ produtoId: i.produtoId, qtd: i.qtd, valor: money2(i.valor) })),
@@ -2979,30 +3007,64 @@ function PropostaCarregadoresPage() {
                   </>
                 )}
 
-                <Field label="Chegada da mercadoria (mês / lote)">
+                <Field label="Chegada da mercadoria — mês de referência">
                   <Select
-                    value={state.entregaLoteId || undefined}
-                    onValueChange={(v) => set("entregaLoteId", v)}
+                    value={state.entregaLoteMes || undefined}
+                    onValueChange={(v) =>
+                      setState((s) => ({ ...s, entregaLoteMes: v, entregaLoteNome: "", entregaLoteId: "" }))
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={lotesQ.isLoading ? "Carregando lotes..." : "Selecione o lote"} />
+                      <SelectValue placeholder={lotesQ.isLoading ? "Carregando..." : "Selecione o mês"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {lotes.map((l) => (
-                        <SelectItem key={l.id} value={l.id!}>
-                          {rotuloLote(l)}
+                      {mesesEntrega.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {fmtMesReferencia(m)}
+                        </SelectItem>
+                      ))}
+                      {!lotesQ.isLoading && mesesEntrega.length === 0 ? (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          Nenhum container em trânsito nem lote cadastrado.
+                        </div>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field label="Chegada da mercadoria — lote / container">
+                  <Select
+                    value={state.entregaLoteNome || undefined}
+                    disabled={!state.entregaLoteMes}
+                    onValueChange={(v) =>
+                      setState((s) => ({
+                        ...s,
+                        entregaLoteNome: v,
+                        entregaLoteId: lotesDoMes.find((l) => l.lote === v)?.id ?? "",
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={state.entregaLoteMes ? "Selecione o lote" : "Escolha o mês primeiro"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lotesDoMes.map((l) => (
+                        <SelectItem key={`${l.mes_referencia}-${l.lote}`} value={l.lote}>
+                          {l.lote}
                           {l.previsao_chegada ? ` — prev. ${l.previsao_chegada.split("-").reverse().join("/")}` : ""}
                         </SelectItem>
                       ))}
-                      {!lotesQ.isLoading && lotes.length === 0 ? (
+                      {state.entregaLoteMes && lotesDoMes.length === 0 ? (
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                          Nenhum lote ativo — cadastre em Moderação › Carregadores › Lotes de Entrega.
+                          Nenhum lote para este mês.
                         </div>
                       ) : null}
                     </SelectContent>
                   </Select>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Obrigatório para fechar o pedido: mês de referência e lote em que a mercadoria chega.
+                    {semEstoquePronto
+                      ? "Sem estoque disponível para algum item: mês e lote são obrigatórios para fechar o pedido."
+                      : "Estoque disponível — o preenchimento é opcional."}
                   </p>
                 </Field>
 

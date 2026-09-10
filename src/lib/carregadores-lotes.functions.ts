@@ -44,6 +44,71 @@ export const listarLotesAtivos = createServerFn({ method: "GET" })
     return (data ?? []) as LoteRow[];
   });
 
+/**
+ * Opções de chegada para a proposta: containers de carregadores em trânsito
+ * (mês da remessa + identificação do container) somados aos lotes cadastrados
+ * manualmente em Moderação.
+ */
+export type OpcaoEntrega = {
+  id: string | null; // id do lote cadastrado (quando houver)
+  mes_referencia: string; // AAAA-MM
+  lote: string;
+  previsao_chegada: string | null;
+  origem: "container" | "cadastro";
+};
+
+export const listarOpcoesEntrega = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<OpcaoEntrega[]> => {
+    const [{ data: produtos }, { data: containers }, { data: lotes }] = await Promise.all([
+      context.supabase.from("produtos").select("codigo, visibilidade").in("visibilidade", ["carregadores", "ambos"]),
+      context.supabase.from("containers").select("id_container, material, dt_remessa").not("dt_remessa", "is", null),
+      context.supabase
+        .from("carregadores_lotes")
+        .select("id, mes_referencia, lote, previsao_chegada")
+        .eq("ativo", true),
+    ]);
+
+    const codigos = new Set((produtos ?? []).map((p: any) => String(p.codigo)));
+    const mapa = new Map<string, OpcaoEntrega>();
+
+    for (const c of (containers ?? []) as any[]) {
+      if (!codigos.has(String(c.material))) continue;
+      const data = String(c.dt_remessa ?? "").slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) continue;
+      const mes = data.slice(0, 7);
+      const lote = String(c.id_container ?? "").trim();
+      if (!lote) continue;
+      const chave = `${mes}|${lote.toLowerCase()}`;
+      const atual = mapa.get(chave);
+      if (!atual || (atual.previsao_chegada ?? "9999") > data) {
+        mapa.set(chave, { id: null, mes_referencia: mes, lote, previsao_chegada: data, origem: "container" });
+      }
+    }
+
+    for (const l of (lotes ?? []) as any[]) {
+      const mes = String(l.mes_referencia ?? "");
+      const lote = String(l.lote ?? "").trim();
+      if (!/^\d{4}-\d{2}$/.test(mes) || !lote) continue;
+      const chave = `${mes}|${lote.toLowerCase()}`;
+      if (mapa.has(chave)) {
+        mapa.set(chave, { ...mapa.get(chave)!, id: String(l.id) });
+        continue;
+      }
+      mapa.set(chave, {
+        id: String(l.id),
+        mes_referencia: mes,
+        lote,
+        previsao_chegada: l.previsao_chegada ? String(l.previsao_chegada).slice(0, 10) : null,
+        origem: "cadastro",
+      });
+    }
+
+    return [...mapa.values()].sort(
+      (a, b) => a.mes_referencia.localeCompare(b.mes_referencia) || a.lote.localeCompare(b.lote),
+    );
+  });
+
 export const adminListarLotes = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

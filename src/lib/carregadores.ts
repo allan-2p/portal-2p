@@ -256,8 +256,10 @@ export type CarregadoresState = {
   observacoes: string;
   /** Observações internas do pedido — não vão para a NF nem para o SAP. */
   observacoesInternas: string;
-  /** Lote de chegada da mercadoria (obrigatório ao fechar o pedido). */
+  /** Chegada da mercadoria: mês e lote (obrigatórios quando falta estoque). */
   entregaLoteId: string;
+  entregaLoteMes: string;
+  entregaLoteNome: string;
   /**
    * Venda para a Zona Franca de Manaus com inscrição SUFRAMA aprovada:
    * sem PIS/COFINS, sem IPI e ICMS 4% só nos materiais importados.
@@ -455,6 +457,8 @@ export function novoEstado(): CarregadoresState {
     observacoes: OBSERVACOES_PADRAO,
     observacoesInternas: "",
     entregaLoteId: "",
+    entregaLoteMes: "",
+    entregaLoteNome: "",
     itens: [novoItem()],
   };
 }

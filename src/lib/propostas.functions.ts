@@ -63,8 +63,10 @@ export type SalvarPropostaInput = {
   /** Proposta originada de indicação (Carregadores). */
   indicacao: boolean;
   padrinhoId: string | null;
-  /** Lote de chegada da mercadoria (obrigatório ao fechar o pedido). */
+  /** Lote de chegada da mercadoria (obrigatório quando falta estoque). */
   entregaLoteId?: string | null;
+  entregaLoteMes?: string | null;
+  entregaLoteNome?: string | null;
   itens: { produtoId: string; qtd: number; valor: number }[];
 };
 
@@ -240,6 +242,8 @@ function validar(input: any): SalvarPropostaInput {
     indicacao: !!input.indicacao,
     padrinhoId: input.padrinhoId ? String(input.padrinhoId) : null,
     entregaLoteId: input.entregaLoteId ? String(input.entregaLoteId) : null,
+    entregaLoteMes: input.entregaLoteMes ? String(input.entregaLoteMes).slice(0, 7) : null,
+    entregaLoteNome: input.entregaLoteNome ? String(input.entregaLoteNome).trim().slice(0, 60) : null,
     itens,
   };
 }
@@ -408,6 +412,8 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       freteAreaRural: data.freteAreaRural,
       freteBonificado: data.freteBonificado,
       entregaLoteId: data.entregaLoteId ?? "",
+      entregaLoteMes: data.entregaLoteMes ?? "",
+      entregaLoteNome: data.entregaLoteNome ?? "",
       freteValor: data.freteValor,
       transportadora: data.transportadora,
 
@@ -472,8 +478,9 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
       padrinhoNome = (pad as any).nome as string;
     }
     if (data.indicacao && !padrinhoId) throw new Error("Selecione ou cadastre o padrinho da indicação.");
-    // Lote de chegada: valida que existe e fotografa mês/nome na proposta.
-    let lote: { id: string; mes_referencia: string; lote: string } | null = null;
+    // Chegada da mercadoria: mês e lote são campos separados. O lote pode vir
+    // de um container em trânsito (sem id) ou do cadastro de Moderação.
+    let lote: { id: string | null; mes_referencia: string; lote: string } | null = null;
     if (data.entregaLoteId) {
       const { data: lt } = await supabase
         .from("carregadores_lotes")
@@ -482,6 +489,10 @@ export const salvarPropostaCarregadores = createServerFn({ method: "POST" })
         .maybeSingle();
       if (!lt) throw new Error("Lote de entrega não encontrado.");
       lote = { id: (lt as any).id, mes_referencia: (lt as any).mes_referencia, lote: (lt as any).lote };
+    } else if (data.entregaLoteMes && data.entregaLoteNome) {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(data.entregaLoteMes))
+        throw new Error("Mês de referência da chegada inválido.");
+      lote = { id: null, mes_referencia: data.entregaLoteMes, lote: data.entregaLoteNome };
     }
     const { resolverCondicaoPagamento } = await import("./condicoes-pagamento.server");
     const cond = await resolverCondicaoPagamento(supabase, data.condicaoPagamento);
@@ -1443,6 +1454,26 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
 
 
     const itens = Array.isArray(row["itens"]) ? (row["itens"] as any[]) : [];
+    /**
+     * Chegada da mercadoria só é obrigatória quando algum item não tem estoque
+     * pronto (livre ou entreposto). Na dúvida (erro na consulta) não bloqueia.
+     */
+    async function faltaEstoque(linhas: any[]): Promise<boolean> {
+      for (const i of linhas) {
+        const material = String(i?.codigo ?? "").trim();
+        const qtd = Number(i?.qtd ?? 0);
+        if (!material || !(qtd > 0)) continue;
+        const { data: res, error } = await supabase.rpc("check_disponibilidade", {
+          p_material: material,
+          p_qtd: qtd,
+        });
+        if (error) continue;
+        const info = (res ?? {}) as { ok?: boolean; tipo?: string };
+        if (info.ok === false) return true;
+        if (info.tipo !== "imediato" && info.tipo !== "entreposto") return true;
+      }
+      return false;
+    }
     const totais = (row["totais"] ?? {}) as Record<string, number>;
     let erro: string | null = null;
     const emailCliente = String(row["cliente_email"] ?? "").trim();
@@ -1457,8 +1488,8 @@ export const concluirPropostaFn = createServerFn({ method: "POST" })
     else if (exigeFinalidade && !String(row["finalidade_uso"] ?? "").trim())
       erro = "Finalidade de uso não informada.";
     else if (!String(row["frete_mod"] ?? "").trim()) erro = "Modalidade de frete não informada.";
-    else if (org === "carregadores" && !row["entrega_lote_id"])
-      erro = "Informe o mês de referência e o lote de chegada da mercadoria.";
+    else if (org === "carregadores" && !(row["entrega_lote_mes"] && row["entrega_lote_nome"]) && (await faltaEstoque(itens)))
+      erro = "Sem estoque disponível: informe o mês e o lote de chegada da mercadoria.";
     else if (Number(row["frete_valor"] ?? 0) < 0) erro = "Valor de frete inválido.";
     else if (!itens.length) erro = "A proposta não possui itens.";
     else if (itens.some((i) => Number(i?.qtd ?? 0) <= 0)) erro = "Existe item com quantidade inválida.";
