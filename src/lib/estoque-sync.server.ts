@@ -101,8 +101,16 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
     const estoqueMap = new Map(estoque.map((e) => [e.material, e]));
     const { data: atuais } = await (await catalogoDb()).from("produtos").select("codigo, visibilidade, ativo");
     const atuaisMap = new Map((atuais ?? []).map((r: any) => [r.codigo as string, r]));
-    const { data: legado } = await (await catalogoDb()).from("sap_produtos")
-      .select("codigo, visibilidade, visibilidade_override, ativo");
+    const dbCat = await catalogoDb();
+    const { colunasComTravas } = await import("@/lib/catalogo-travas.server");
+    const { camposTravados } = await import("@/lib/catalogo-travas");
+    const { data: legado } = await dbCat.from("sap_produtos")
+      .select(
+        await colunasComTravas(
+          dbCat,
+          "codigo, descricao, custo, visibilidade, visibilidade_override, ativo",
+        ),
+      );
     const legadoMap = new Map((legado ?? []).map((r: any) => [r.codigo as string, r]));
 
     const codigos = new Set<string>([...catalogo.map((c) => c.codigo), ...estoqueMap.keys()]);
@@ -110,8 +118,13 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
       const cat = catalogo.find((c) => c.codigo === codigo);
       const est = estoqueMap.get(codigo);
       const anterior = atuaisMap.get(codigo) ?? legadoMap.get(codigo);
-      const override = (legadoMap.get(codigo) as any)?.visibilidade_override ?? null;
-      const descricao = cat?.descricao || est?.descricao || "";
+      const legadoRow = legadoMap.get(codigo) as any;
+      const override = legadoRow?.visibilidade_override ?? null;
+      // Nome e custo definidos à mão no catálogo vencem o que vem do SAP.
+      const travados = camposTravados(legadoRow);
+      const descricao = travados.has("descricao")
+        ? (legadoRow?.descricao || cat?.descricao || est?.descricao || "")
+        : cat?.descricao || est?.descricao || "";
       return {
         codigo,
         descricao,
@@ -119,7 +132,7 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
         ncm: est?.ncm ?? cat?.ncm ?? null,
         tipo: descricao ? classificarTipo(descricao) : null,
         grp_mercadorias: est?.grp_mercadorias ?? null,
-        custo: est?.cmm ?? 0,
+        custo: travados.has("custo") ? Number(legadoRow?.custo ?? 0) : (est?.cmm ?? 0),
         preco_venda: est?.preco_venda ?? 0,
         // A visibilidade definida na moderação (override) vence tudo. Sem
         // override, mantém o valor atual; material novo herda a instância pelo
