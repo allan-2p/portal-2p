@@ -35,6 +35,8 @@ export const TABELAS_CATALOGO = [
   "carregadores_ncm",
   "carregadores_config",
   "carregadores_uf_rates",
+  "sap_produtos_sync_runs",
+  "estoque_sync_runs",
 ] as const;
 
 export type TabelaCatalogo = (typeof TABELAS_CATALOGO)[number];
