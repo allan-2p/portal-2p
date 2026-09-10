@@ -8,6 +8,7 @@ import { fmtBRL, fmtPct } from "@/lib/carregadores";
 import { useCarregadoresProducts } from "@/hooks/use-carregadores";
 import { StatusDot } from "@/components/proposta-status-ui";
 import { cn } from "@/lib/utils";
+import { useInstance } from "@/components/instance-provider";
 
 export const Route = createFileRoute("/_authenticated/carregadores/visao-geral")({
   head: () => ({
