@@ -848,25 +848,8 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
           ) : null}
         </div>
 
-        <div className="flex items-center gap-1 border-b border-border">
-          {([
-            { id: "portal", label: "Catálogo do portal" },
-            { id: "sap", label: "Todos os produtos do SAP" },
-          ] as const).map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setAba(t.id)}
-              className={
-                aba === t.id
-                  ? "px-3 py-2 text-sm font-medium border-b-2 border-primary text-foreground"
-                  : "px-3 py-2 text-sm text-muted-foreground border-b-2 border-transparent hover:text-foreground"
-              }
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+
+
 
         {showRuns && (
           <div className="border border-border rounded-lg overflow-hidden">
