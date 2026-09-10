@@ -505,6 +505,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    if (escopo === "fora") return [];
     return produtos.filter((p) => {
       if (tipo !== "all" && p.tipo !== tipo) return false;
       if (permissao !== "all" && (p.permissao ?? "").toLowerCase() !== permissao) return false;
@@ -522,7 +523,24 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
         (p.lista_preco ?? "").toLowerCase().includes(term)
       );
     });
-  }, [produtos, q, tipo, permissao, visibilidade, status, soDivergentes, org]);
+  }, [produtos, q, tipo, permissao, visibilidade, status, soDivergentes, org, escopo]);
+
+  /** Materiais do SAP que ainda não fazem parte do catálogo do portal. */
+  const foraDoCatalogo = useMemo(() => {
+    if (escopo === "catalogo") return [];
+    const term = q.trim().toLowerCase();
+    const noCatalogo = new Set(produtos.map((p) => p.codigo));
+    return (completoQ.data?.itens ?? []).filter((i) => {
+      if (i.no_catalogo || noCatalogo.has(i.codigo)) return false;
+      if (!term) return true;
+      return (
+        i.codigo.toLowerCase().includes(term) ||
+        (i.descricao ?? "").toLowerCase().includes(term) ||
+        (i.ncm_codigo ?? "").includes(term)
+      );
+    });
+  }, [completoQ.data, produtos, q, escopo]);
+
 
   /** Base da unidade (sem os filtros da tela) — alimenta os cartões de resumo. */
   const daUnidade = useMemo(
