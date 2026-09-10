@@ -214,7 +214,7 @@ async function calcularSegmentacaoRaw(opts: {
     clientesParams.set("or", `(${alvos.join(",")})`);
   }
   // Clientes e oportunidades saem juntos — não há dependência entre eles.
-  const [clientes, vendasTri, vendidoAtual, geradoAtual, pedidos] = await Promise.all([
+  const [clientes, vendasTri, vendidoAtual, geradoAtual, pedidos, consultoresAtivos] = await Promise.all([
     buscarTudo("clientes", clientesParams),
     buscarTudo(
       "opportunity_sf",
