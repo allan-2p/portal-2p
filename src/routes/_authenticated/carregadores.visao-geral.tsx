@@ -139,6 +139,10 @@ function CarregadoresVisaoGeralPage() {
   const [de, setDe] = useState<string>("");
   const [ate, setAte] = useState<string>("");
 
+  /** Só quem tem a permissão vê valores em R$ de margem e comissão. */
+  const { hasFeature } = useInstance();
+  const podeDetalhar = hasFeature("carregadores.visao-geral.valores");
+
   const produtos = useCarregadoresProducts();
 
   const q = useQuery({
