@@ -134,6 +134,7 @@ export const INSTANCES: Record<InstanceId, InstanceMeta> = {
     routes: [
       "carregadores.home",
       "carregadores.visao-geral",
+      "carregadores.visao-geral.valores",
       "carregadores.tarefas",
       "carregadores.clientes",
       "carregadores.propostas",
