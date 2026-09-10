@@ -263,6 +263,13 @@ export const ADMIN_SECTIONS: AdminSection[] = [
                 feature: "carregadores.produtos",
                 hash: "aba:carregadores-produtos=estoque",
               },
+              {
+                to: "/carregadores/produtos",
+                label: "Alíquotas por UF",
+                icon: Percent,
+                feature: "carregadores.produtos",
+                hash: "aba:carregadores-produtos=ufs",
+              },
 
             ],
           },

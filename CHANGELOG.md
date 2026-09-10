@@ -37,6 +37,11 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Alterado
 
+- **Gestão de Produtos (Solar e Carregadores)**: removida a barra de abas do topo
+  (Catálogo / Fotos do catálogo / Estoque) — a navegação entre elas é feita
+  apenas pelos itens da lateral. **Alíquotas por UF** de Carregadores ganhou
+  item próprio na lateral para continuar acessível.
+
 - **Catálogo (Solar e Carregadores)**: lista única com os produtos do catálogo do
   portal e os materiais do SAP que ainda não estão no catálogo (filtro
   "No catálogo / Fora do catálogo / Catálogo + SAP"). Materiais de fora ganham o

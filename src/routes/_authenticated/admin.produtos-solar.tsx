@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, lazy } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { AdminRouteGuard } from "@/components/admin/admin-route-guard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
 import { CatalogoProdutosSap } from "@/components/produtos/catalogo-produtos-sap";
 import { EstoquePainel } from "@/components/estoque-painel";
@@ -48,12 +48,9 @@ function ProdutosSolarPage() {
           </p>
         </div>
 
+        {/* Sem barra de abas no topo: a navegação entre Catálogo, Fotos e
+            Estoque acontece pelos itens da lateral. */}
         <Tabs value={abaAtual} onValueChange={setAba}>
-          <TabsList>
-            <TabsTrigger value="sap">Catálogo</TabsTrigger>
-            <TabsTrigger value="fotos">Fotos do catálogo</TabsTrigger>
-            <TabsTrigger value="estoque">Estoque</TabsTrigger>
-          </TabsList>
           <TabsContent value="sap" className="mt-4">
             <CatalogoProdutosSap org="solar" />
           </TabsContent>
