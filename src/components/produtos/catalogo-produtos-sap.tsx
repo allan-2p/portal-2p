@@ -321,17 +321,23 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
   const [permissao, setPermissao] = useState("all");
   const [visibilidade, setVisibilidade] = useState("all");
   const [status, setStatus] = useState<"ativos" | "inativos" | "todos">("ativos");
+  const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora">("catalogo");
   const [audit, setAudit] = useState(false);
   const [showRuns, setShowRuns] = useState(false);
   const [soDivergentes, setSoDivergentes] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [aba, setAba] = useState<"portal" | "sap">("portal");
   const atualizarCampos = useServerFn(atualizarSapProdutoCampos);
+  const listCompleto = useServerFn(listSapCatalogoCompleto);
+  const setNoPortal = useServerFn(setSapCatalogoNoPortal);
+  /** Material do SAP que está sendo incluído no catálogo (escolha da instância). */
+  const [incluir, setIncluir] = useState<{ codigo: string; descricao: string; visibilidade: SapVisibilidade } | null>(null);
+  const [incluindo, setIncluindo] = useState(false);
   const [draft, setDraft] = useState<
     { id: string; codigo: string; descricao: string; custo: string; preco_sugerido: string } | null
   >(null);
   const [salvandoDraft, setSalvandoDraft] = useState(false);
+
 
 
 
