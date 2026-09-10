@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { catalogoDb } from "@/lib/catalogo-db.server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordModeration } from "@/lib/moderation-audit.server";
@@ -58,8 +59,7 @@ export const limparSapProdutoVisibilidadeOverride = createServerFn({ method: "PO
       { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
     ]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("sap_produtos")
+    const { error } = await (await catalogoDb()).from("sap_produtos")
       .update({
         visibilidade_override: null,
         visibilidade_override_por: null,
@@ -96,8 +96,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     ]);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: produto, error: readError } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data: produto, error: readError } = await (await catalogoDb()).from("sap_produtos")
       .select("id, descricao, origem, custo, ncm_id, visibilidade")
       .eq("id", data.id)
       .maybeSingle();
@@ -133,8 +132,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
       visibilidade_override_em: new Date().toISOString(),
       visibilidade_override_motivo: "Definida manualmente na moderação de produtos.",
     };
-    const { error } = await supabaseAdmin
-      .from("sap_produtos")
+    const { error } = await (await catalogoDb()).from("sap_produtos")
       .update(
         (data.visibilidade === "nenhuma"
           ? { visibilidade: null, ativo: false, ...override }
@@ -146,14 +144,12 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Espelha no catálogo consolidado, que é o lido pelos wizards.
-    const { data: codigoRow } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data: codigoRow } = await (await catalogoDb()).from("sap_produtos")
       .select("codigo")
       .eq("id", data.id)
       .maybeSingle();
     if ((codigoRow as any)?.codigo) {
-      await supabaseAdmin
-        .from("produtos")
+      await (await catalogoDb()).from("produtos")
         .update({
           visibilidade: data.visibilidade,
           ...(data.visibilidade === "nenhuma" || pendente ? { ativo: false } : {}),
@@ -175,8 +171,7 @@ export const listSapProdutos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ produtos: SapProdutoRow[]; lastRun: SapSyncRun | null }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data, error } = await (await catalogoDb()).from("sap_produtos")
       .select(
         "id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo, vendavel_sap, ativo_override, ativo_override_motivo, visibilidade_override, preco_vk12, preco_checado_em",
       )
@@ -184,8 +179,7 @@ export const listSapProdutos = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
 
-    const { data: runs } = await context.supabase
-      .from("sap_produtos_sync_runs")
+    const { data: runs } = await (await catalogoDb()).from("sap_produtos_sync_runs")
       .select("id, started_at, finished_at, status, inserted_count, updated_count, error_message")
       .order("started_at", { ascending: false })
       .limit(1);
@@ -199,8 +193,7 @@ export const listSapProdutos = createServerFn({ method: "GET" })
 export const listSapSyncRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ runs: SapSyncRun[] }> => {
-    const { data, error } = await context.supabase
-      .from("sap_produtos_sync_runs")
+    const { data, error } = await (await catalogoDb()).from("sap_produtos_sync_runs")
       .select("id, started_at, finished_at, status, inserted_count, updated_count, error_message")
       .order("started_at", { ascending: false })
       .limit(25);
@@ -271,16 +264,14 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       );
     }
 
-    const { data: run } = await supabaseAdmin
-      .from("sap_produtos_sync_runs")
+    const { data: run } = await (await catalogoDb()).from("sap_produtos_sync_runs")
       .insert({ status: "running", triggered_by: context.userId })
       .select("id")
       .single();
 
     const finish = async (patch: Record<string, unknown>) => {
       if (run?.id) {
-        await supabaseAdmin
-          .from("sap_produtos_sync_runs")
+        await (await catalogoDb()).from("sap_produtos_sync_runs")
           .update({ finished_at: new Date().toISOString(), ...patch })
           .eq("id", run.id);
       }
@@ -312,8 +303,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       // ---------- Espelho completo do SAP (aba "Todos os produtos do SAP") ----------
       // Sincronização incremental: só grava os materiais que mudaram desde a
       // última execução (comparação campo a campo com o que já está no banco).
-      const { data: espelhoExistente } = await supabaseAdmin
-        .from("sap_catalogo_sap")
+      const { data: espelhoExistente } = await (await catalogoDb()).from("sap_catalogo_sap")
         .select("codigo, descricao, unidade, ncm_codigo, no_catalogo");
       const espelhoMap = new Map(
         (espelhoExistente ?? []).map((r: any) => [
@@ -344,14 +334,12 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         });
       const catalogoInalterado = todosMateriais.length - espelho.length;
       for (let i = 0; i < espelho.length; i += 500) {
-        const { error } = await supabaseAdmin
-          .from("sap_catalogo_sap")
+        const { error } = await (await catalogoDb()).from("sap_catalogo_sap")
           .upsert(espelho.slice(i, i + 500), { onConflict: "codigo" });
         if (error) throw new Error(error.message);
       }
 
-      const { data: existentes } = await supabaseAdmin
-        .from("sap_produtos")
+      const { data: existentes } = await (await catalogoDb()).from("sap_produtos")
         .select("codigo, ativo, ativo_override, origem, descricao, tipo, permissao, lista_preco, ncm_codigo, ncm_id");
       const known = new Set((existentes ?? []).map((r: { codigo: string }) => r.codigo));
       const atuaisMap = new Map((existentes ?? []).map((r: any) => [r.codigo as string, r]));
@@ -361,8 +349,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       const ncmsSap = Array.from(new Set(materiais.map((m) => ncmDe(m)).filter(Boolean))) as string[];
       const ncmMap = new Map<string, string>();
       if (ncmsSap.length > 0) {
-        const { data: ncmRows } = await supabaseAdmin
-          .from("carregadores_ncm")
+        const { data: ncmRows } = await (await catalogoDb()).from("carregadores_ncm")
           .select("id, codigo")
           .in("codigo", ncmsSap);
         for (const n of (ncmRows ?? []) as { id: string; codigo: string }[]) {
@@ -397,8 +384,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
       // ativo/inativo definido pela moderação do portal.
       const novos = rows.filter((r) => !known.has(r.codigo)).map((r) => ({ ...r, ativo: false, visibilidade: null, origem: "sap" }));
       for (let i = 0; i < novos.length; i += 500) {
-        const { error } = await supabaseAdmin
-          .from("sap_produtos")
+        const { error } = await (await catalogoDb()).from("sap_produtos")
           .upsert(novos.slice(i, i + 500), { onConflict: "codigo" });
         if (error) throw new Error(error.message);
       }
@@ -418,8 +404,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         .map((x) => ({ ...x, ativo: (atuaisMap.get(x.codigo) as any)?.ativo ?? true }));
       const unchanged = existentesRows.length - atualizados.length;
       for (let i = 0; i < atualizados.length; i += 500) {
-        const { error } = await supabaseAdmin
-          .from("sap_produtos")
+        const { error } = await (await catalogoDb()).from("sap_produtos")
           .upsert(atualizados.slice(i, i + 500), { onConflict: "codigo" });
         if (error) throw new Error(error.message);
       }
@@ -442,8 +427,7 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         .map((r: any) => r.codigo as string);
       for (let i = 0; i < orfaos.length; i += 500) {
         const chunk = orfaos.slice(i, i + 500);
-        const { error } = await supabaseAdmin
-          .from("sap_produtos")
+        const { error } = await (await catalogoDb()).from("sap_produtos")
           .update({ ativo: false, last_synced_at: now })
           .in("codigo", chunk);
         if (error) throw new Error(error.message);
@@ -544,8 +528,7 @@ export type SapCatalogoRow = {
 export const listSapCatalogoCompleto = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ itens: SapCatalogoRow[] }> => {
-    const { data, error } = await context.supabase
-      .from("sap_catalogo_sap")
+    const { data, error } = await (await catalogoDb()).from("sap_catalogo_sap")
       .select("codigo, descricao, unidade, ncm_codigo, no_catalogo, last_synced_at")
       .order("codigo");
     if (error) throw new Error(error.message);
@@ -570,8 +553,7 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { classificarTipo } = await import("./sap-produtos.server");
 
-    const { data: material, error: readError } = await supabaseAdmin
-      .from("sap_catalogo_sap")
+    const { data: material, error: readError } = await (await catalogoDb()).from("sap_catalogo_sap")
       .select("codigo, descricao, unidade, ncm_codigo, sap_raw")
       .eq("codigo", data.codigo)
       .maybeSingle();
@@ -582,27 +564,24 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
       const ncm = (material as any).ncm_codigo as string | null;
       let ncmId: string | null = null;
       if (ncm) {
-        const { data: n } = await supabaseAdmin
-          .from("carregadores_ncm")
+        const { data: n } = await (await catalogoDb()).from("carregadores_ncm")
           .select("id")
           .eq("codigo", ncm)
           .maybeSingle();
         ncmId = (n as any)?.id ?? null;
       }
-      const { data: existente } = await supabaseAdmin
-        .from("sap_produtos")
+      const { data: existente } = await (await catalogoDb()).from("sap_produtos")
         .select("id")
         .eq("codigo", material.codigo)
         .maybeSingle();
 
       if (existente) {
-        const { error } = await supabaseAdmin
-          .from("sap_produtos")
+        const { error } = await (await catalogoDb()).from("sap_produtos")
           .update({ descricao: material.descricao, ...(ncm ? { ncm_codigo: ncm } : {}), ...(ncmId ? { ncm_id: ncmId } : {}) })
           .eq("codigo", material.codigo);
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await supabaseAdmin.from("sap_produtos").insert({
+        const { error } = await (await catalogoDb()).from("sap_produtos").insert({
           codigo: material.codigo,
           descricao: material.descricao ?? "",
           tipo: classificarTipo(material.descricao ?? ""),
@@ -618,15 +597,13 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
     } else {
-      const { error } = await supabaseAdmin
-        .from("sap_produtos")
+      const { error } = await (await catalogoDb()).from("sap_produtos")
         .update({ ativo: false, visibilidade: null })
         .eq("codigo", material.codigo);
       if (error) throw new Error(error.message);
     }
 
-    const { error: flagError } = await supabaseAdmin
-      .from("sap_catalogo_sap")
+    const { error: flagError } = await (await catalogoDb()).from("sap_catalogo_sap")
       .update({ no_catalogo: data.no_catalogo })
       .eq("codigo", material.codigo);
     if (flagError) throw new Error(flagError.message);
@@ -666,8 +643,7 @@ export const setSapProdutoOverride = createServerFn({ method: "POST" })
     ]);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: atual, error: readErr } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data: atual, error: readErr } = await (await catalogoDb()).from("sap_produtos")
       .select("codigo, descricao, ativo, vendavel_sap")
       .eq("id", data.id)
       .maybeSingle();
@@ -676,8 +652,7 @@ export const setSapProdutoOverride = createServerFn({ method: "POST" })
 
     // Sem override, o status volta a ser o que a varredura encontrou.
     const ativo = data.override ?? Boolean((atual as any).vendavel_sap);
-    const { error } = await supabaseAdmin
-      .from("sap_produtos")
+    const { error } = await (await catalogoDb()).from("sap_produtos")
       .update({
         ativo,
         ativo_override: data.override,
@@ -688,8 +663,7 @@ export const setSapProdutoOverride = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
-    await supabaseAdmin
-      .from("produtos")
+    await (await catalogoDb()).from("produtos")
       .update({ ativo })
       .eq("origem", "sap")
       .eq("codigo", String((atual as any).codigo));
