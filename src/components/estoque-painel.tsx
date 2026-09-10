@@ -2,11 +2,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useAbaPersistente } from "@/hooks/use-aba-persistente";
-import { Loader2, RefreshCw, Search, Boxes, Ship, Package, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, Search, Boxes, Ship, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DisponibilidadeBadge } from "@/components/disponibilidade-badge";
@@ -16,8 +16,6 @@ import {
   type DisponibilidadeInfo,
 } from "@/lib/estoque.functions";
 
-const money = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v ?? 0));
 const qtd = (v: number) => new Intl.NumberFormat("pt-BR").format(Number(v ?? 0));
 
 const fmtDataCurta = (v?: string | null) => {
@@ -67,7 +65,9 @@ export function EstoquePainel({
   const sync = useServerFn(syncEstoqueProdutos);
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
-  const [aba, setAba] = useAbaPersistente(`estoque-painel-${org ?? "todos"}`, "produtos");
+  const [abaSalva, setAba] = useAbaPersistente(`estoque-painel-${org ?? "todos"}`, "estoque");
+  // A aba "produtos" saiu do painel — quem tinha ela salva volta para Estoque.
+  const aba = abaSalva === "estoque" || abaSalva === "containers" ? abaSalva : "estoque";
 
   const queryKey = ["estoque-consolidado", org ?? "todos"];
   const q = useQuery({ queryKey, queryFn: () => fetchAll({ data: org ? { org } : {} }) });
@@ -106,9 +106,16 @@ export function EstoquePainel({
       ? rows
       : rows.filter((r) => campos.some((c) => String(r[c] ?? "").toLowerCase().includes(termo)));
 
-  const produtos = filtrar(q.data?.produtos ?? [], ["codigo", "descricao", "ncm"]);
   const estoque = filtrar(q.data?.estoque ?? [], ["material", "descricao", "ncm"]);
-  const containers = filtrar(q.data?.containers ?? [], ["id_container", "material", "supplier"]);
+  // Descrição do material para a lista de em trânsito (os containers só trazem o código).
+  const descricaoPorMaterial = new Map<string, string>();
+  for (const p of q.data?.produtos ?? []) descricaoPorMaterial.set(p.codigo, p.descricao ?? "");
+  for (const e of q.data?.estoque ?? []) if (e.descricao) descricaoPorMaterial.set(e.material, e.descricao);
+  const containersBase = (q.data?.containers ?? []).map((c) => ({
+    ...c,
+    descricao: descricaoPorMaterial.get(c.material) ?? "",
+  }));
+  const containers = filtrar(containersBase, ["id_container", "material", "supplier", "descricao"]);
   const lastRun = q.data?.lastRun ?? null;
   const atualizadoEm =
     lastRun?.finished_at ??
@@ -116,8 +123,6 @@ export function EstoquePainel({
       (acc, e) => (!acc || String(e.atualizado_em) > acc ? String(e.atualizado_em) : acc),
       null,
     );
-  const mostrarVisibilidade = !org;
-  const colsProdutos = mostrarVisibilidade ? 7 : 6;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -153,9 +158,8 @@ export function EstoquePainel({
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         {[
-          { icon: Package, label: "Produtos consolidados", valor: q.data?.produtos.length ?? 0 },
           { icon: Boxes, label: "Materiais com estoque", valor: q.data?.estoque.length ?? 0 },
           { icon: Ship, label: "Containers em trânsito", valor: q.data?.containers.length ?? 0 },
         ].map((c) => (
@@ -188,56 +192,9 @@ export function EstoquePainel({
       ) : (
         <Tabs value={aba} onValueChange={setAba}>
           <TabsList>
-            <TabsTrigger value="produtos">Produtos</TabsTrigger>
             <TabsTrigger value="estoque">Estoque</TabsTrigger>
             <TabsTrigger value="containers">Em trânsito</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="produtos" className="mt-4">
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="p-3">Código</th>
-                    <th className="p-3">Descrição</th>
-                    <th className="p-3">NCM</th>
-                    {mostrarVisibilidade && <th className="p-3">Visibilidade</th>}
-                    <th className="p-3 text-right">Custo</th>
-                    <th className="p-3 text-right">Preço SAP</th>
-                    <th className="p-3">Catálogo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {produtos.map((p) => (
-                    <tr key={p.codigo} className="border-t">
-                      <td className="p-3 font-mono text-xs">{p.codigo}</td>
-                      <td className="p-3">{p.descricao}</td>
-                      <td className="p-3 font-mono text-xs">
-                        {p.ncm ?? <span className="text-muted-foreground">—</span>}
-                      </td>
-                      {mostrarVisibilidade && <td className="p-3 capitalize">{p.visibilidade}</td>}
-                      <td className="p-3 text-right">{money(p.custo)}</td>
-                      <td className="p-3 text-right">{money(p.preco_venda)}</td>
-                      <td className="p-3">
-                        {p.no_catalogo ? (
-                          <Badge variant="secondary">No catálogo</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {produtos.length === 0 && (
-                    <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={colsProdutos}>
-                        Nenhum produto. Rode a sincronização com o SAP.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </TabsContent>
 
           <TabsContent value="estoque" className="mt-4">
             <div className="overflow-x-auto rounded-lg border">
@@ -249,7 +206,7 @@ export function EstoquePainel({
                     <th className="p-3">NCM</th>
                     <th className="p-3 text-right">Livre</th>
                     <th className="p-3 text-right">Pendente</th>
-                    <th className="p-3 text-right">Entreposto</th>
+                    
                     <th className="p-3">Status</th>
                     <th className="p-3">Próxima remessa</th>
                   </tr>
@@ -270,7 +227,7 @@ export function EstoquePainel({
                         <td className="p-3 font-mono text-xs">{e.ncm ?? "—"}</td>
                         <td className="p-3 text-right">{qtd(e.est_livre)}</td>
                         <td className="p-3 text-right">{qtd(e.qtd_pend_faturar)}</td>
-                        <td className="p-3 text-right">{qtd(e.est_entreposto)}</td>
+                        
                         <td className="p-3">
                           <DisponibilidadeBadge info={info} className="text-xs" />
                         </td>
@@ -280,7 +237,7 @@ export function EstoquePainel({
                   })}
                   {estoque.length === 0 && (
                     <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={8}>
+                      <td className="p-6 text-center text-muted-foreground" colSpan={7}>
                         Sem dados de estoque.
                       </td>
                     </tr>
@@ -297,6 +254,7 @@ export function EstoquePainel({
                   <tr>
                     <th className="p-3">Container</th>
                     <th className="p-3">Material</th>
+                    <th className="p-3">Descrição</th>
                     <th className="p-3">Fornecedor</th>
                     <th className="p-3 text-right">Quantidade</th>
                     <th className="p-3">Remessa</th>
@@ -307,6 +265,7 @@ export function EstoquePainel({
                     <tr key={`${c.id_container}-${c.material}`} className="border-t">
                       <td className="p-3 font-mono text-xs">{c.id_container}</td>
                       <td className="p-3 font-mono text-xs">{c.material}</td>
+                      <td className="p-3">{c.descricao || "—"}</td>
                       <td className="p-3">{c.supplier ?? "—"}</td>
                       <td className="p-3 text-right">{qtd(c.est_entreposto)}</td>
                       <td className="p-3">{c.dt_remessa ?? "Pronta entrega"}</td>
@@ -314,7 +273,7 @@ export function EstoquePainel({
                   ))}
                   {containers.length === 0 && (
                     <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={5}>
+                      <td className="p-6 text-center text-muted-foreground" colSpan={6}>
                         Nenhum pedido em trânsito.
                       </td>
                     </tr>
