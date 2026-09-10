@@ -971,8 +971,8 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
           </div>
         )}
 
-        {aba === "portal" ? (
         <>
+
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             { icon: Package, label: org === "carregadores" ? "Produtos visíveis nos Carregadores" : org === "solar" ? "Produtos visíveis no Solar" : "Produtos no catálogo", valor: daUnidade.length },
