@@ -51,8 +51,13 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   está no Grupo 2P.
 - **Migração**: `docs/migracao/grupo2p-fase1-schema.sql` (schema + RPCs + grants,
   preservando os UUIDs de `sap_produtos`) e `scripts/migrar-catalogo-grupo2p.mjs`
-  (`--conferir`, `--aplicar`, `--fotos`). O SQL precisa ser aplicado por alguém com
-  acesso administrativo ao Grupo 2P antes de virar `CATALOGO_DB=grupo2p`.
+  (`--conferir`, `--aplicar`, `--fotos`, `--somente-fotos`). O SQL precisa ser aplicado por
+  alguém com acesso administrativo ao Grupo 2P antes de virar `CATALOGO_DB=grupo2p`.
+- **Cópia executada**: schema aplicado no Grupo 2P e dados copiados com paridade total nas
+  19 tabelas do catálogo (incluindo 429 `sap_produtos`, 1.326 `produtos`/`sap_catalogo_sap`,
+  206 `estoque`) e 460 fotos do acervo `produtos`, sem falhas. As chaves de conflito
+  corrigidas no script: `carregadores_uf_rates` por `uf`, `estoque` por `material` e
+  `containers` recriado (coluna de identidade gerada pelo destino).
 
 ### Banco de dados
 
