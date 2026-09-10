@@ -47,7 +47,6 @@ $$;
 
 -- 3) Schema do catálogo (cópia fiel do Lovable) ------------------------
 
-\restrict fSR5R1mZNpYJNSbdcadVI9dk6u182mUimewtGLvQQRrbPLhFLM6YYkD62TDLfOW
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -551,7 +550,6 @@ ALTER TABLE public.solar_trilho_suportes ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.solar_trilhos ENABLE ROW LEVEL SECURITY;
 
-\unrestrict fSR5R1mZNpYJNSbdcadVI9dk6u182mUimewtGLvQQRrbPLhFLM6YYkD62TDLfOW
 
 
 -- 4) RPCs de disponibilidade -------------------------------------------
