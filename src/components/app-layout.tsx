@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, Boxes, TicketPercent, CreditCard, CalendarClock, Landmark, BadgeDollarSign, Share2, PhoneCall, KanbanSquare, Layers, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, KeyRound, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, ShoppingCart, Building2, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
+import { Home, Boxes, TicketPercent, CreditCard, CalendarClock, Landmark, BadgeDollarSign, Share2, PhoneCall, KanbanSquare, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto-sm.webp";
@@ -435,15 +435,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
                           propostasCarregadoresActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                         )}
                       >
-                        <Zap className="h-4 w-4 shrink-0" />
+                        <ClipboardList className="h-4 w-4 shrink-0" />
                         <span className="truncate">Propostas</span>
                         <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !propostasOpen && "-rotate-90")} />
                       </button>
                       {propostasOpen && (
                         <div className="mt-1 ml-3 pl-3 border-l border-border space-y-0.5">
-                          <SubLink to="/carregadores/propostas" label="Propostas" icon={Zap} active={pathname.startsWith("/carregadores/propostas")} />
+                          <SubLink to="/carregadores/propostas" label="Propostas" icon={ClipboardList} active={pathname.startsWith("/carregadores/propostas")} />
                           {show("carregadores.pedidos") && (
-                            <SubLink to="/carregadores/pedidos" label="Acompanhamento" icon={ShoppingCart} active={pathname.startsWith("/carregadores/pedidos")} />
+                            <SubLink to="/carregadores/pedidos" label="Acompanhamento" icon={KanbanSquare} active={pathname.startsWith("/carregadores/pedidos")} />
                           )}
                         </div>
                       )}
@@ -468,7 +468,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     clientesActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                   )}
                 >
-                  <Layers className="h-4 w-4" />
+                  <Users className="h-4 w-4" />
                 </Link>
               ) : (
                 <div className="mb-1">
@@ -479,7 +479,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       clientesActive ? "text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                     )}
                   >
-                    <Layers className="h-4 w-4 shrink-0" />
+                    <Users className="h-4 w-4 shrink-0" />
                     <span className="truncate">Clientes</span>
                     <ChevronDown className={cn("h-3.5 w-3.5 ml-auto transition-transform", !clientesOpen && "-rotate-90")} />
                   </button>
@@ -596,7 +596,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     financeiroActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground",
                   )}
                 >
-                  <Building2 className="h-4 w-4" />
+                  <Landmark className="h-4 w-4" />
                 </Link>
               ) : (
                 <div className="mb-1 space-y-0.5">
