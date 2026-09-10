@@ -1218,38 +1218,26 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                     <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
                     <td className="px-3 py-2">
                       <Select
-                        value={p.visibilidade_override ? p.visibilidade_override : "auto"}
-                        onValueChange={(v) => {
-                          if (v === "auto") return voltarVisibilidadeAutomatica(p.id);
+                        value={p.visibilidade ?? "ambos"}
+                        onValueChange={(v) =>
                           alterarVisibilidade(p.id, v as SapVisibilidade, {
                             origem: p.origem ?? null,
                             custo: p.custo ?? null,
                             ncm_id: p.ncm_id ?? null,
-                          });
-                        }}
+                          })
+                        }
                       >
-                        <SelectTrigger
-                          className="h-8 w-[188px] text-xs"
-                          title={
-                            p.visibilidade_override
-                              ? "Definida manualmente — as sincronizações do SAP não alteram."
-                              : `Automático (hoje: ${VIS_LABELS[p.visibilidade ?? "nenhuma"] ?? "—"})`
-                          }
-                        >
+                        <SelectTrigger className="h-8 w-[168px] text-xs" title="Instância em que o produto aparece.">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="auto">
-                            Automático ({VIS_LABELS[p.visibilidade ?? "nenhuma"] ?? "—"})
-                          </SelectItem>
-                          {VISIBILIDADE_OPTIONS.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>
-                              Fixar: {o.label}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="solar">{VIS_LABELS.solar}</SelectItem>
+                          <SelectItem value="carregadores">{VIS_LABELS.carregadores}</SelectItem>
+                          <SelectItem value="ambos">{VIS_LABELS.ambos}</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
+
                     <td className="px-3 py-2">
                       {p.vendavel_sap === null || p.vendavel_sap === undefined ? (
                         <Badge variant="outline" title="Nunca verificado — clique em “Verificar preços”.">
