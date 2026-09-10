@@ -349,7 +349,7 @@ function CarregadoresVisaoGeralPage() {
           </div>
         </div>
 
-        <div className={cn("grid gap-4 sm:grid-cols-2", podeDetalhar ? "lg:grid-cols-5" : "lg:grid-cols-4")}>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Card titulo="Pedidos vendidos" valor={String(filtrados.length)} />
           <Card titulo="Valor da NF no período" valor={fmtBRL(totalPeriodo)} />
           <Card titulo="Produtos" valor={fmtBRL(totais.valorProdutos)} />
@@ -358,7 +358,7 @@ function CarregadoresVisaoGeralPage() {
             valor={totais.valorProdutos ? fmtPct(totais.margem / totais.valorProdutos) : "—"}
             sub={podeDetalhar ? fmtBRL(totais.margem) : undefined}
           />
-          {podeDetalhar && <Card titulo="Comissões (custo)" valor={fmtBRL(totais.comissaoTotal)} />}
+          <Card titulo="Comissões (custo)" valor={fmtBRL(totais.comissaoTotal)} />
         </div>
 
         {carregando && (
@@ -385,8 +385,8 @@ function CarregadoresVisaoGeralPage() {
                   className={cn(
                     "hidden lg:grid gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold",
                     podeDetalhar
-                      ? "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px]"
-                      : "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px]",
+                      ? "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_100px_110px_120px]"
+                      : "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_100px_110px]",
                   )}
                 >
                   <span>Pedido</span>
@@ -399,6 +399,7 @@ function CarregadoresVisaoGeralPage() {
                   <span className="text-right">Valor NF</span>
                   <span className="text-right">Frete</span>
                   <span className="text-right">Margem</span>
+                  <span className="text-right">Comissão</span>
                   {podeDetalhar && <span className="text-right">Detalhar</span>}
                 </div>
                 {itens.map((p) => {
@@ -411,8 +412,8 @@ function CarregadoresVisaoGeralPage() {
                         className={cn(
                           "grid gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center hover:bg-surface-2/60 transition-colors",
                           podeDetalhar
-                            ? "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px]"
-                            : "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px]",
+                            ? "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_100px_110px_120px]"
+                            : "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_100px_110px]",
                         )}
                         title="Abrir o pedido"
                       >
@@ -431,6 +432,7 @@ function CarregadoresVisaoGeralPage() {
                           <span className="lg:hidden text-xs text-muted-foreground">Margem: </span>
                           {fmtPct(p.margemPct)}
                         </span>
+                        <Num label="Comissão" v={p.comissaoTotal} />
                         {podeDetalhar && (
                           <button
                             type="button"
@@ -490,8 +492,8 @@ function CarregadoresVisaoGeralPage() {
               className={cn(
                 "hidden lg:grid gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-b border-border",
                 podeDetalhar
-                  ? "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px]"
-                  : "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px]",
+                  ? "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_100px_110px_120px]"
+                  : "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_100px_110px]",
               )}
             >
               <span className="col-span-6" />
@@ -499,18 +501,17 @@ function CarregadoresVisaoGeralPage() {
               <span className="text-right">Valor NF</span>
               <span className="text-right">Frete</span>
               <span className="text-right">Margem</span>
-              {podeDetalhar && <span className="text-right">Comissão</span>}
+              <span className="text-right">Comissão</span>
+              {podeDetalhar && <span className="text-right">Detalhar</span>}
             </div>
             <TotaisLinha
               rotulo={`${filtrados.length} pedido${filtrados.length !== 1 ? "s" : ""}`}
               s={totais}
               detalhar={podeDetalhar}
             />
-            {podeDetalhar && (
-              <div className="px-5 pb-3 text-xs text-muted-foreground">
-                Comissões: {totais.comissoes.map((c) => `${c.rotulo} ${fmtBRL(c.valor)}`).join(" · ")}
-              </div>
-            )}
+            <div className="px-5 pb-3 text-xs text-muted-foreground">
+              Comissões: {totais.comissoes.map((c) => `${c.rotulo} ${fmtBRL(c.valor)}`).join(" · ")}
+            </div>
           </div>
         )}
       </div>
@@ -543,8 +544,8 @@ function TotaisLinha({ rotulo, s, detalhar }: { rotulo: string; s: Somatorio; de
       className={cn(
         "grid gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center bg-surface-2/30 font-semibold",
         detalhar
-          ? "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px]"
-          : "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px]",
+          ? "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_100px_110px_120px]"
+          : "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_100px_110px]",
       )}
     >
       <span className="lg:col-span-6 capitalize">{rotulo}</span>
@@ -558,7 +559,8 @@ function TotaisLinha({ rotulo, s, detalhar }: { rotulo: string; s: Somatorio; de
           <span className="block text-[10px] text-muted-foreground font-normal">{fmtBRL(s.margem)}</span>
         ) : null}
       </span>
-      {detalhar ? <Num label="Comissão" v={s.comissaoTotal} /> : null}
+      <Num label="Comissão" v={s.comissaoTotal} />
+      {detalhar ? <span /> : null}
     </div>
   );
 }
