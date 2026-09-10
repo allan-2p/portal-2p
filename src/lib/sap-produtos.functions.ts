@@ -533,12 +533,21 @@ export const listSapCatalogoCompleto = createServerFn({ method: "GET" })
 
 /**
  * Envia (ou remove) um material do espelho completo do SAP para o catálogo do
- * portal. Ao entrar, o produto é criado em `sap_produtos` sem visibilidade e
- * inativo — a instância e a ativação continuam sendo definidas na moderação.
+ * portal. Ao entrar com `visibilidade`, o produto já nasce ativo (status
+ * manual, que é a regra máxima) na instância escolhida.
  */
 export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ codigo: z.string().min(1), no_catalogo: z.boolean() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        codigo: z.string().min(1),
+        no_catalogo: z.boolean(),
+        visibilidade: z.enum(["solar", "carregadores", "ambos"]).optional(),
+      })
+      .parse(d),
+  )
+
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, FEATURES_CATALOGO);
 
