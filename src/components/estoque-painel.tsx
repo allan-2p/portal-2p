@@ -239,7 +239,7 @@ export function EstoquePainel({
                   })}
                   {estoque.length === 0 && (
                     <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={8}>
+                      <td className="p-6 text-center text-muted-foreground" colSpan={7}>
                         Sem dados de estoque.
                       </td>
                     </tr>
