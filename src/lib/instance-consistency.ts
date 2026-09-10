@@ -22,6 +22,7 @@ export const CAPABILITY_FEATURES: FeatureKey[] = [
   "admin.sistema.excluir",
   "admin.sistema.cancelar",
   "admin.clientes.integracoes",
+  "admin.clientes.transferir",
   "admin.area.integracoes",
 ];
 
