@@ -125,8 +125,6 @@ export function EstoquePainel({
       (acc, e) => (!acc || String(e.atualizado_em) > acc ? String(e.atualizado_em) : acc),
       null,
     );
-  const mostrarVisibilidade = !org;
-  const colsProdutos = mostrarVisibilidade ? 7 : 6;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
