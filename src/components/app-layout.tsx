@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Home, Boxes, TicketPercent, CreditCard, CalendarClock, Landmark, BadgeDollarSign, Share2, PhoneCall, KanbanSquare, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, Eye, LineChart, Tv, Trophy, Zap, Package, History as HistoryIcon, SlidersHorizontal, Percent, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
+import { Home, Boxes, TicketPercent, CreditCard, CalendarClock, Landmark, BadgeDollarSign, Share2, PhoneCall, KanbanSquare, Users, LogOut, ShieldCheck, User as UserIcon, Calendar, BarChart3, ChevronDown, Sparkles, ClipboardList, Plug, Shield, UserCog, Target, Table as TableIcon, Megaphone, Filter, TrendingUp, Settings2, Settings, Eye, LineChart, Tv, Trophy, Package, History as HistoryIcon, SlidersHorizontal, BookOpen , Activity as ActivityIcon, Link2, Menu, Search, Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import grupo2pLogo from "@/assets/2p-logo-preto-sm.webp";
