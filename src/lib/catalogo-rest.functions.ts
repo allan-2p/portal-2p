@@ -85,7 +85,7 @@ export const catalogoSelect = createServerFn({ method: "POST" })
   });
 
 /** Só quem modera/gerencia o catálogo pode gravar. */
-async function exigirGestaoCatalogo(context: unknown) {
+export async function exigirGestaoCatalogo(context: unknown) {
   await requireAnyFeature(context as any, [
     { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
     { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
