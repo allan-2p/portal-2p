@@ -1260,33 +1260,23 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={p.ativo ? "default" : "outline"}>
-                          {p.ativo ? "Ativo" : "Inativo"}
-                        </Badge>
-                        <Select
-                          value={p.ativo_override === null || p.ativo_override === undefined ? "auto" : p.ativo_override ? "on" : "off"}
-                          onValueChange={(v) =>
-                            overrideMut.mutate({
-                              id: p.id,
-                              override: v === "auto" ? null : v === "on",
-                            })
-                          }
+                      <Select
+                        value={p.ativo ? "on" : "off"}
+                        onValueChange={(v) => overrideMut.mutate({ id: p.id, override: v === "on" })}
+                      >
+                        <SelectTrigger
+                          className="h-8 w-[112px] text-xs"
+                          title="Define se o produto aparece na instância. Vale sobre o SAP."
                         >
-                          <SelectTrigger
-                            className="h-7 w-[132px] text-xs"
-                            title={p.ativo_override_motivo ?? "Automático: segue o preço do SAP."}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">Automático</SelectItem>
-                            <SelectItem value="on">Forçar ativo</SelectItem>
-                            <SelectItem value="off">Forçar inativo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="on">Ativo</SelectItem>
+                          <SelectItem value="off">Inativo</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </td>
+
                     {audit && (
                       <td className="px-3 py-2 text-xs">
                         {p.det.prefixo ? (
