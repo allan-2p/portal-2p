@@ -41,7 +41,7 @@ const SYNC_ETAPAS = [
 import { VISIBILIDADE_LABELS, validateVisibilidadeChange } from "@/lib/product-visibility";
 
 const VIS_LABELS: Record<string, string> = VISIBILIDADE_LABELS;
-import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download, Pencil } from "lucide-react";
+import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download, Pencil, Plus } from "lucide-react";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorPath, enviarFotoProduto } from "@/lib/produto-imagens";
 import {
