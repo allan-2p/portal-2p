@@ -1116,8 +1116,48 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                   </td>
                 </tr>
               ) : (
-                rows.map((p) => (
+                rows.map((linha) => {
+                  if (linha.kind === "sap") {
+                    const s = linha.s;
+                    return (
+                      <tr key={`sap-${s.codigo}`} className="border-t border-border bg-muted/20 hover:bg-muted/40">
+                        <td className="px-3 py-2">
+                          <div className="h-10 w-10 rounded-md bg-muted" />
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">{s.codigo}</td>
+                        <td className="px-3 py-2">{s.descricao}</td>
+                        <td className="px-3 py-2">
+                          <Badge variant="outline">Fora do catálogo</Badge>
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">{s.ncm_codigo ?? "—"}</td>
+                        <td
+                          className="px-3 py-2 text-xs text-muted-foreground"
+                          colSpan={7 + (org !== "solar" ? 1 : 0) + (audit ? 2 : 0)}
+                        >
+                          Material do SAP ainda não incluído no catálogo do portal.
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setIncluir({
+                                codigo: s.codigo,
+                                descricao: s.descricao ?? "",
+                                visibilidade: (org ?? "ambos") as SapVisibilidade,
+                              })
+                            }
+                          >
+                            Incluir no catálogo
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  const p = linha.p;
+                  return (
                   <tr key={p.id} className="border-t border-border hover:bg-muted/30">
+
                     <td className="px-3 py-2">
                       <label className="cursor-pointer inline-flex" title="Enviar/alterar foto">
                         <ProdutoFoto
