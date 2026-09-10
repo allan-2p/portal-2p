@@ -644,7 +644,7 @@ function HomePage() {
       retentionPct,
       newRecurring,
     };
-  }, [segTriQ.data, ownerParam]);
+  }, [segTriQ.data, ownerParam, salespeople]);
 
 
 
