@@ -15,6 +15,7 @@ import {
   Target,
   Table as TableIcon,
   Package,
+  Boxes,
   Calculator,
   Percent,
   BookOpen,
