@@ -381,7 +381,14 @@ function CarregadoresVisaoGeralPage() {
                 </div>
               </div>
               <div className="divide-y divide-border">
-                <div className="hidden lg:grid grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px] gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                <div
+                  className={cn(
+                    "hidden lg:grid gap-3 px-5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold",
+                    podeDetalhar
+                      ? "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px]"
+                      : "grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px]",
+                  )}
+                >
                   <span>Pedido</span>
                   <span>Nº NF</span>
                   <span>Compra</span>
@@ -392,7 +399,7 @@ function CarregadoresVisaoGeralPage() {
                   <span className="text-right">Valor NF</span>
                   <span className="text-right">Frete</span>
                   <span className="text-right">Margem</span>
-                  <span className="text-right">Comissão</span>
+                  {podeDetalhar && <span className="text-right">Detalhar</span>}
                 </div>
                 {itens.map((p) => {
                   const aberto = abertos.has(p.id);
@@ -401,7 +408,12 @@ function CarregadoresVisaoGeralPage() {
                       <Link
                         to="/carregadores/propostas/visualizar"
                         search={{ id: p.id }}
-                        className="grid lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px] gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center hover:bg-surface-2/60 transition-colors"
+                        className={cn(
+                          "grid gap-1 lg:gap-3 px-5 py-2.5 text-sm items-center hover:bg-surface-2/60 transition-colors",
+                          podeDetalhar
+                            ? "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px_120px]"
+                            : "lg:grid-cols-[80px_80px_90px_90px_1fr_120px_110px_120px_100px_110px]",
+                        )}
                         title="Abrir o pedido"
                       >
                         <span className="font-mono text-xs text-muted-foreground">{p.numero ?? "—"}</span>
@@ -417,28 +429,36 @@ function CarregadoresVisaoGeralPage() {
                         <Num label="Frete" v={p.frete} />
                         <span className="lg:text-right tabular-nums">
                           <span className="lg:hidden text-xs text-muted-foreground">Margem: </span>
-                          {fmtBRL(p.margem)}
-                          <span className="block text-[10px] text-muted-foreground">{fmtPct(p.margemPct)}</span>
+                          {fmtPct(p.margemPct)}
                         </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            alternar(p.id);
-                          }}
-                          className="flex items-center justify-end gap-1 tabular-nums hover:text-primary"
-                          title="Detalhar comissões"
-                          aria-expanded={aberto}
-                        >
-                          <span className="lg:hidden text-xs text-muted-foreground">Comissão: </span>
-                          {fmtBRL(p.comissaoTotal)}
-                          {aberto ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                        </button>
+                        {podeDetalhar && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              alternar(p.id);
+                            }}
+                            className="flex items-center lg:justify-end gap-1 text-xs hover:text-primary"
+                            title="Ver margem em R$ e comissões"
+                            aria-expanded={aberto}
+                          >
+                            {aberto ? "Ocultar" : "Detalhar"}
+                            {aberto ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                          </button>
+                        )}
                       </Link>
-                      {aberto && (
+                      {podeDetalhar && aberto && (
                         <div className="bg-surface-2/40 px-5 py-2 text-xs">
                           <div className="lg:ml-auto lg:w-[360px] space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Margem bruta (R$)</span>
+                              <span className="tabular-nums">{fmtBRL(p.margem)}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Margem (%)</span>
+                              <span className="tabular-nums">{fmtPct(p.margemPct)}</span>
+                            </div>
                             {p.comissoes.map((c) => (
                               <div key={c.tipo} className="flex items-center justify-between">
                                 <span className="text-muted-foreground">Comissão · {c.rotulo}</span>
@@ -455,7 +475,7 @@ function CarregadoresVisaoGeralPage() {
                     </div>
                   );
                 })}
-                <TotaisLinha rotulo={`Total ${mesLabel(mesK)}`} s={sub} />
+                <TotaisLinha rotulo={`Total ${mesLabel(mesK)}`} s={sub} detalhar={podeDetalhar} />
               </div>
             </div>
           );
