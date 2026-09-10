@@ -515,6 +515,33 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
 }
 
 
+function SectionHeader({
+  Icon,
+  title,
+  subtitle,
+  badge,
+}: {
+  Icon: typeof Target;
+  title: string;
+  subtitle?: string;
+  badge: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-border/60 pb-2">
+      <div className="flex items-center gap-2">
+        <Icon className="h-4 w-4 text-primary" />
+        <div>
+          <h2 className="font-display font-semibold text-lg leading-tight">{title}</h2>
+          {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
+        </div>
+      </div>
+      <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+        {badge}
+      </span>
+    </div>
+  );
+}
+
 function CommissionCard({
   label,
   Icon,
