@@ -181,17 +181,21 @@ async function main() {
 
   let atualizados = 0;
   let semMudanca = 0;
-  for (const cliente of clientes) {
+  let processados = 0;
+
+  async function processar(cliente) {
     const portal = doPortal(cliente.contatos);
     const sf = (porConta.get(cliente.sf_account_id) ?? []).map(doSalesforce).filter(preenchido);
     const final = montar(portal, sf);
-    if (!final) continue;
+    processados++;
+    if (processados % 500 === 0) console.log(`  ... ${processados}/${clientes.length} analisados, ${atualizados} atualizados`);
+    if (!final) return;
 
     const antes = JSON.stringify(cliente.contatos ?? []);
     const depois = JSON.stringify(final);
     if (antes === depois) {
       semMudanca++;
-      continue;
+      return;
     }
     atualizados++;
     if (!APLICAR) {
@@ -200,7 +204,7 @@ async function main() {
         console.log("  antes :", antes.slice(0, 300));
         console.log("  depois:", depois.slice(0, 400));
       }
-      continue;
+      return;
     }
 
     await rest(`clientes?id=eq.${cliente.id}`, {
@@ -229,9 +233,24 @@ async function main() {
       body: JSON.stringify(linhas),
       prefer: "resolution=merge-duplicates,return=minimal",
     });
-
-    if (atualizados % 200 === 0) console.log(`  ... ${atualizados} clientes atualizados`);
   }
+
+  // Processa em paralelo (lotes) para dar conta de milhares de cadastros.
+  const CONCORRENCIA = 12;
+  const fila = [...clientes];
+  await Promise.all(
+    Array.from({ length: CONCORRENCIA }, async () => {
+      for (;;) {
+        const cliente = fila.shift();
+        if (!cliente) return;
+        try {
+          await processar(cliente);
+        } catch (e) {
+          console.error(`  ! ${cliente.doc}: ${e.message}`);
+        }
+      }
+    }),
+  );
 
   console.log(
     `\n${APLICAR ? "APLICADO" : "SIMULAÇÃO"} — ${atualizados} cadastros ${APLICAR ? "atualizados" : "seriam atualizados"}, ${semMudanca} sem mudança.`,
