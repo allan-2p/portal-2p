@@ -292,7 +292,12 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       invalidateScopeCache(data.user_id);
     }
 
+    if (data.ativo !== undefined || data.is_consultor !== undefined || data.numero_sap !== undefined) {
+      await sincronizarConsultorSap(data.user_id);
+    }
+
     // O papel interno é derivado do perfil de permissão (trigger no banco).
+
 
     if (data.ativo !== undefined) {
       await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
