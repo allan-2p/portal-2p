@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/command";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listarLotesAtivos, rotuloLote } from "@/lib/carregadores-lotes.functions";
+import { listarOpcoesEntrega, rotuloLote, fmtMesReferencia, type OpcaoEntrega } from "@/lib/carregadores-lotes.functions";
 import { listClientesPaginaFn, enriquecerCnpjFn } from "@/lib/clientes.functions";
 import { contribuinteDeEnrich } from "@/lib/contribuinte";
 import { cnpjValido } from "@/lib/cnpj";
