@@ -1067,7 +1067,18 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
               <SelectItem value="todos">Todos</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={escopo} onValueChange={(v) => { setEscopo(v as typeof escopo); setPage(0); }}>
+            <SelectTrigger className="w-52">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="catalogo">No catálogo</SelectItem>
+              <SelectItem value="fora">Fora do catálogo (SAP)</SelectItem>
+              <SelectItem value="todos">Catálogo + SAP</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
 
         <div className="border border-border rounded-lg overflow-x-auto">
           <table className="w-full min-w-max text-sm">
