@@ -1182,7 +1182,8 @@ function PropostaCarregadoresPage() {
 
   // Conclusão do pedido herda os mesmos bloqueios (inclui forma de pagamento).
   const errosConclusao: string[] = [...errosPdf];
-  if (!state.entregaLoteId) errosConclusao.push("Informe o mês de referência e o lote de chegada da mercadoria.");
+  if (semEstoquePronto && !(state.entregaLoteMes && state.entregaLoteNome))
+    errosConclusao.push("Sem estoque disponível: informe o mês e o lote de chegada da mercadoria.");
   const podeFechar = errosConclusao.length === 0;
 
   // ---- Bloqueios de salvamento ----
