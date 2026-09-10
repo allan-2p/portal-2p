@@ -208,7 +208,7 @@ export function EstoquePainel({
                     <th className="p-3">NCM</th>
                     <th className="p-3 text-right">Livre</th>
                     <th className="p-3 text-right">Pendente</th>
-                    <th className="p-3 text-right">Entreposto</th>
+                    
                     <th className="p-3">Status</th>
                     <th className="p-3">Próxima remessa</th>
                   </tr>
