@@ -1506,6 +1506,39 @@ export function ClientesCadastroPage({ instancia, buscaInicial }: { instancia: I
         open={!!integracoesDe}
         onOpenChange={(v) => !v && setIntegracoesDe(null)}
       />
+
+      <Dialog open={!!transferirDe} onOpenChange={(v) => { if (!v) { setTransferirDe(null); setTransferirPara(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Transferir consultor</DialogTitle>
+            <DialogDescription>
+              {transferirDe?.razao_social} — hoje com {consultorDoCliente(transferirDe ?? ({} as Cliente), instancia) || "sem consultor"}.
+              A troca também é enviada para o SAP e o Salesforce.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Novo consultor</Label>
+            <Select value={transferirPara} onValueChange={setTransferirPara}>
+              <SelectTrigger><SelectValue placeholder="Escolha o consultor" /></SelectTrigger>
+              <SelectContent>
+                {consultores.map((c) => (
+                  <SelectItem key={c.sap} value={c.sap}>{c.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTransferirDe(null); setTransferirPara(""); }}>Cancelar</Button>
+            <Button
+              disabled={!transferirPara || transferirM.isPending}
+              onClick={() => transferirDe && transferirM.mutate({ id: transferirDe.id, sap: transferirPara })}
+            >
+              {transferirM.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Transferir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
