@@ -194,56 +194,9 @@ export function EstoquePainel({
       ) : (
         <Tabs value={aba} onValueChange={setAba}>
           <TabsList>
-            <TabsTrigger value="produtos">Produtos</TabsTrigger>
             <TabsTrigger value="estoque">Estoque</TabsTrigger>
             <TabsTrigger value="containers">Em trânsito</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="produtos" className="mt-4">
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="p-3">Código</th>
-                    <th className="p-3">Descrição</th>
-                    <th className="p-3">NCM</th>
-                    {mostrarVisibilidade && <th className="p-3">Visibilidade</th>}
-                    <th className="p-3 text-right">Custo</th>
-                    <th className="p-3 text-right">Preço SAP</th>
-                    <th className="p-3">Catálogo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {produtos.map((p) => (
-                    <tr key={p.codigo} className="border-t">
-                      <td className="p-3 font-mono text-xs">{p.codigo}</td>
-                      <td className="p-3">{p.descricao}</td>
-                      <td className="p-3 font-mono text-xs">
-                        {p.ncm ?? <span className="text-muted-foreground">—</span>}
-                      </td>
-                      {mostrarVisibilidade && <td className="p-3 capitalize">{p.visibilidade}</td>}
-                      <td className="p-3 text-right">{money(p.custo)}</td>
-                      <td className="p-3 text-right">{money(p.preco_venda)}</td>
-                      <td className="p-3">
-                        {p.no_catalogo ? (
-                          <Badge variant="secondary">No catálogo</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {produtos.length === 0 && (
-                    <tr>
-                      <td className="p-6 text-center text-muted-foreground" colSpan={colsProdutos}>
-                        Nenhum produto. Rode a sincronização com o SAP.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </TabsContent>
 
           <TabsContent value="estoque" className="mt-4">
             <div className="overflow-x-auto rounded-lg border">
