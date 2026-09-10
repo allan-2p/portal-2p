@@ -35,6 +35,14 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Adicionado
+
+- **Clientes › Cadastros**: nova ação **Transferir consultor**, liberada pela
+  permissão "Clientes • Transferir consultor do cadastro". A troca atualiza o
+  cadastro no portal e envia o novo responsável para o SAP (vendedor) e para o
+  Salesforce (dono da conta e do contato principal), com registro em logs e
+  auditoria.
+
 ### Alterado
 
 - **Catálogo**: o que é definido à mão (nome, custo, preço sugerido e foto) fica
