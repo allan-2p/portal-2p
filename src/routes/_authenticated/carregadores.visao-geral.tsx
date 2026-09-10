@@ -349,12 +349,16 @@ function CarregadoresVisaoGeralPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className={cn("grid gap-4 sm:grid-cols-2", podeDetalhar ? "lg:grid-cols-5" : "lg:grid-cols-4")}>
           <Card titulo="Pedidos vendidos" valor={String(filtrados.length)} />
           <Card titulo="Valor da NF no período" valor={fmtBRL(totalPeriodo)} />
           <Card titulo="Produtos" valor={fmtBRL(totais.valorProdutos)} />
-          <Card titulo="Margem" valor={fmtBRL(totais.margem)} sub={totais.valorProdutos ? fmtPct(totais.margem / totais.valorProdutos) : undefined} />
-          <Card titulo="Comissões (custo)" valor={fmtBRL(totais.comissaoTotal)} />
+          <Card
+            titulo="Margem"
+            valor={totais.valorProdutos ? fmtPct(totais.margem / totais.valorProdutos) : "—"}
+            sub={podeDetalhar ? fmtBRL(totais.margem) : undefined}
+          />
+          {podeDetalhar && <Card titulo="Comissões (custo)" valor={fmtBRL(totais.comissaoTotal)} />}
         </div>
 
         {carregando && (
