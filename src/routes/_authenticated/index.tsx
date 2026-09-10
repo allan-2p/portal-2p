@@ -670,7 +670,8 @@ function HomePage() {
     base > 0 ? ((cur - base) / base) * 100 : undefined;
 
   // ---- Meta / Projetado de Geração — deriva da meta de vendas via taxa de conversão R$ (3M). ----
-  const conversionRate = conversionKpis.convR3 || conversionKpis.convRCur || 0;
+  // TEMP: forçar 32,4% de conversão enquanto ajustamos o cálculo real.
+  const conversionRate = 0.324;
   const generationGoal = conversionRate > 0 ? Math.round(dbGoal / conversionRate) : 0;
   const generationProjected = conversionRate > 0 ? Math.round(projected / conversionRate) : 0;
   const generationPct = generationGoal > 0 ? (generated / generationGoal) * 100 : 0;
