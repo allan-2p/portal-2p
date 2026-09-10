@@ -38,7 +38,7 @@ const SYNC_ETAPAS = [
   "Finalizando e registrando o histórico…",
 ] as const;
 
-import { VISIBILIDADE_LABELS, VISIBILIDADE_OPTIONS, validateVisibilidadeChange } from "@/lib/product-visibility";
+import { VISIBILIDADE_LABELS, validateVisibilidadeChange } from "@/lib/product-visibility";
 
 const VIS_LABELS: Record<string, string> = VISIBILIDADE_LABELS;
 import { Loader2, Package, RefreshCw, Search, ShieldCheck, AlertTriangle, XCircle, History, CheckCircle2, Download, Pencil } from "lucide-react";
@@ -74,238 +74,6 @@ function duracao(inicio: string, fim: string | null) {
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
-function CatalogoSapCompleto({
-  onPropagar,
-  onEnviado,
-}: {
-  onPropagar: () => void;
-  /** Leva o usuário até o material recém-enviado na aba Produtos. */
-  onEnviado: (codigo: string) => void;
-}) {
-  const listAll = useServerFn(listSapCatalogoCompleto);
-  const setNoPortal = useServerFn(setSapCatalogoNoPortal);
-  const [q, setQ] = useState("");
-  const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora" | "sem_ncm">("todos");
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
-  const [salvando, setSalvando] = useState<string | null>(null);
-
-  const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["sap-catalogo-completo"],
-    queryFn: () => listAll({}),
-  });
-
-  const alternarCatalogo = async (codigo: string, no_catalogo: boolean) => {
-    setSalvando(codigo);
-    try {
-      await setNoPortal({ data: { codigo, no_catalogo } });
-      toast.success(
-        no_catalogo
-          ? `${codigo} enviado ao catálogo do portal. Ele entra inativo e sem visibilidade — defina a instância abaixo.`
-          : `${codigo} removido do catálogo do portal.`,
-      );
-      await refetch();
-      onPropagar();
-      if (no_catalogo) onEnviado(codigo);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao atualizar o catálogo.");
-    } finally {
-      setSalvando(null);
-    }
-  };
-
-
-  const itens = data?.itens ?? [];
-  const semNcm = useMemo(() => itens.filter((i) => !i.ncm_codigo), [itens]);
-  const semNcmNoCatalogo = useMemo(() => semNcm.filter((i) => i.no_catalogo), [semNcm]);
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return itens.filter((i) => {
-      if (escopo === "catalogo" && !i.no_catalogo) return false;
-      if (escopo === "fora" && i.no_catalogo) return false;
-      if (escopo === "sem_ncm" && i.ncm_codigo) return false;
-      if (!term) return true;
-      return (
-        i.codigo.toLowerCase().includes(term) ||
-        i.descricao.toLowerCase().includes(term) ||
-        (i.ncm_codigo ?? "").includes(term)
-      );
-    });
-  }, [itens, q, escopo]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const current = Math.min(page, totalPages - 1);
-  const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
-
-
-  return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        Espelho de leitura de <strong>todos</strong> os materiais devolvidos pelo SAP, inclusive os que não fazem
-        parte do catálogo do portal. Atualizado a cada “Sinc. SAP”.
-      </p>
-
-      {!isLoading && semNcm.length > 0 && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-            <div className="text-sm space-y-1">
-              <p className="font-medium">
-                {semNcm.length} material(is) sem NCM no SAP
-                {semNcmNoCatalogo.length > 0 && ` — ${semNcmNoCatalogo.length} no catálogo do portal`}
-              </p>
-              <p className="text-muted-foreground">
-                A RFC <code className="font-mono">listar_material</code> não devolveu o campo NCM (STEUC) para esses
-                itens, por isso a coluna aparece como “—”. Próximo passo: solicitar ao time SAP a liberação do campo
-                <code className="font-mono"> MARA-STEUC</code> na estrutura de saída <code className="font-mono">e_t_material</code>
-                {" "}e o preenchimento do NCM no cadastro do material. Depois, rode “Sinc. SAP” novamente.
-              </p>
-              {semNcmNoCatalogo.length > 0 && (
-                <p className="text-muted-foreground">
-                  Itens do portal: {semNcmNoCatalogo.slice(0, 8).map((i) => i.codigo).join(", ")}
-                  {semNcmNoCatalogo.length > 8 && ` +${semNcmNoCatalogo.length - 8}`}
-                </p>
-              )}
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setEscopo("sem_ncm");
-              setPage(0);
-            }}
-          >
-            Ver itens sem NCM
-          </Button>
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-56">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Buscar por código, descrição ou NCM"
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPage(0);
-            }}
-          />
-        </div>
-        <Select value={escopo} onValueChange={(v) => { setEscopo(v as typeof escopo); setPage(0); }}>
-          <SelectTrigger className="w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os materiais</SelectItem>
-            <SelectItem value="catalogo">Somente no catálogo do portal</SelectItem>
-            <SelectItem value="fora">Fora do catálogo do portal</SelectItem>
-            <SelectItem value="sem_ncm">Somente sem NCM</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} aria-label="Atualizar catálogo completo">
-          <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-        </Button>
-      </div>
-
-      <div className="border border-border rounded-lg overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="text-left px-3 py-2">Código</th>
-              <th className="text-left px-3 py-2">Descrição</th>
-              <th className="text-left px-3 py-2">Unidade</th>
-              <th className="text-left px-3 py-2">NCM (SAP)</th>
-              <th className="text-left px-3 py-2">No catálogo</th>
-              <th className="text-left px-3 py-2">Sincronizado</th>
-              <th className="text-right px-3 py-2">Ação</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin inline" />
-                </td>
-              </tr>
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
-
-                  Nenhum material. Clique em “Sinc. SAP” para importar o catálogo completo.
-                </td>
-              </tr>
-            ) : (
-              rows.map((i) => (
-                <tr key={i.codigo} className="border-t border-border hover:bg-muted/30">
-                  <td className="px-3 py-2 font-mono text-xs">{i.codigo}</td>
-                  <td className="px-3 py-2">{i.descricao}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{i.unidade ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono text-xs">{i.ncm_codigo ?? "—"}</td>
-                  <td className="px-3 py-2">
-                    <Badge variant={i.no_catalogo ? "default" : "outline"}>{i.no_catalogo ? "Sim" : "Não"}</Badge>
-                  </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">{fmt(i.last_synced_at)}</td>
-                  <td className="px-3 py-2 text-right">
-                    <Button
-                      variant={i.no_catalogo ? "ghost" : "outline"}
-                      size="sm"
-                      disabled={salvando === i.codigo}
-                      onClick={() => alternarCatalogo(i.codigo, !i.no_catalogo)}
-                      title={
-                        i.no_catalogo
-                          ? "Remover do catálogo do portal"
-                          : "Enviar este material para o catálogo do portal (entra inativo)"
-                      }
-                    >
-                      {salvando === i.codigo ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : i.no_catalogo ? (
-                        "Remover"
-                      ) : (
-                        "Enviar ao catálogo"
-                      )}
-                    </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="text-muted-foreground">
-          {filtered.length} material(is) • página {current + 1} de {totalPages}
-        </span>
-        <div className="flex items-center gap-2">
-          <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(0); }}>
-            <SelectTrigger className="w-24 h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAGE_SIZES.map((s) => (
-                <SelectItem key={s} value={String(s)}>
-                  {s} / pág
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" disabled={current === 0} onClick={() => setPage(current - 1)}>
-            Anterior
-          </Button>
-          <Button variant="outline" size="sm" disabled={current >= totalPages - 1} onClick={() => setPage(current + 1)}>
-            Próxima
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } = {}) {
   const list = useServerFn(listSapProdutos);
@@ -321,17 +89,23 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
   const [permissao, setPermissao] = useState("all");
   const [visibilidade, setVisibilidade] = useState("all");
   const [status, setStatus] = useState<"ativos" | "inativos" | "todos">("ativos");
+  const [escopo, setEscopo] = useState<"todos" | "catalogo" | "fora">("catalogo");
   const [audit, setAudit] = useState(false);
   const [showRuns, setShowRuns] = useState(false);
   const [soDivergentes, setSoDivergentes] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [aba, setAba] = useState<"portal" | "sap">("portal");
   const atualizarCampos = useServerFn(atualizarSapProdutoCampos);
+  const listCompleto = useServerFn(listSapCatalogoCompleto);
+  const setNoPortal = useServerFn(setSapCatalogoNoPortal);
+  /** Material do SAP que está sendo incluído no catálogo (escolha da instância). */
+  const [incluir, setIncluir] = useState<{ codigo: string; descricao: string; visibilidade: SapVisibilidade } | null>(null);
+  const [incluindo, setIncluindo] = useState(false);
   const [draft, setDraft] = useState<
     { id: string; codigo: string; descricao: string; custo: string; preco_sugerido: string } | null
   >(null);
   const [salvandoDraft, setSalvandoDraft] = useState(false);
+
 
 
 
@@ -376,6 +150,32 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
     queryKey: ["sap-produtos"],
     queryFn: () => list({}),
   });
+
+  /** Espelho completo do SAP — alimenta as linhas “fora do catálogo”. */
+  const completoQ = useQuery({
+    queryKey: ["sap-catalogo-completo"],
+    queryFn: () => listCompleto({}),
+  });
+
+  /** Inclui o material no catálogo já ativo, na instância escolhida. */
+  const confirmarInclusao = async () => {
+    if (!incluir) return;
+    setIncluindo(true);
+    try {
+      await setNoPortal({
+        data: { codigo: incluir.codigo, no_catalogo: true, visibilidade: incluir.visibilidade as "solar" | "carregadores" | "ambos" },
+      });
+      toast.success(`${incluir.codigo} incluído no catálogo, ativo em ${VIS_LABELS[incluir.visibilidade]}.`);
+      setIncluir(null);
+      await Promise.all([refetch(), completoQ.refetch()]);
+      propagar();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao incluir no catálogo.");
+    } finally {
+      setIncluindo(false);
+    }
+  };
+
 
   const runsQuery = useQuery({
     queryKey: ["sap-sync-runs"],
@@ -473,6 +273,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+    if (escopo === "fora") return [];
     return produtos.filter((p) => {
       if (tipo !== "all" && p.tipo !== tipo) return false;
       if (permissao !== "all" && (p.permissao ?? "").toLowerCase() !== permissao) return false;
@@ -490,7 +291,24 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
         (p.lista_preco ?? "").toLowerCase().includes(term)
       );
     });
-  }, [produtos, q, tipo, permissao, visibilidade, status, soDivergentes, org]);
+  }, [produtos, q, tipo, permissao, visibilidade, status, soDivergentes, org, escopo]);
+
+  /** Materiais do SAP que ainda não fazem parte do catálogo do portal. */
+  const foraDoCatalogo = useMemo(() => {
+    if (escopo === "catalogo") return [];
+    const term = q.trim().toLowerCase();
+    const noCatalogo = new Set(produtos.map((p) => p.codigo));
+    return (completoQ.data?.itens ?? []).filter((i) => {
+      if (i.no_catalogo || noCatalogo.has(i.codigo)) return false;
+      if (!term) return true;
+      return (
+        i.codigo.toLowerCase().includes(term) ||
+        (i.descricao ?? "").toLowerCase().includes(term) ||
+        (i.ncm_codigo ?? "").includes(term)
+      );
+    });
+  }, [completoQ.data, produtos, q, escopo]);
+
 
   /** Base da unidade (sem os filtros da tela) — alimenta os cartões de resumo. */
   const daUnidade = useMemo(
@@ -593,9 +411,18 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
     toast.success(`${filtered.length} produto(s) exportado(s).`);
   };
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  /** Lista única: catálogo do portal + materiais do SAP fora do catálogo. */
+  const linhas = useMemo(
+    () => [
+      ...filtered.map((p) => ({ kind: "portal" as const, p })),
+      ...foraDoCatalogo.map((s) => ({ kind: "sap" as const, s })),
+    ],
+    [filtered, foraDoCatalogo],
+  );
+  const totalPages = Math.max(1, Math.ceil(linhas.length / pageSize));
   const current = Math.min(page, totalPages - 1);
-  const rows = filtered.slice(current * pageSize, current * pageSize + pageSize);
+  const rows = linhas.slice(current * pageSize, current * pageSize + pageSize);
+
   const lastRun = data?.lastRun ?? null;
 
 
@@ -789,25 +616,8 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
           ) : null}
         </div>
 
-        <div className="flex items-center gap-1 border-b border-border">
-          {([
-            { id: "portal", label: "Catálogo do portal" },
-            { id: "sap", label: "Todos os produtos do SAP" },
-          ] as const).map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setAba(t.id)}
-              className={
-                aba === t.id
-                  ? "px-3 py-2 text-sm font-medium border-b-2 border-primary text-foreground"
-                  : "px-3 py-2 text-sm text-muted-foreground border-b-2 border-transparent hover:text-foreground"
-              }
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+
+
 
         {showRuns && (
           <div className="border border-border rounded-lg overflow-hidden">
@@ -929,8 +739,8 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
           </div>
         )}
 
-        {aba === "portal" ? (
         <>
+
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             { icon: Package, label: org === "carregadores" ? "Produtos visíveis nos Carregadores" : org === "solar" ? "Produtos visíveis no Solar" : "Produtos no catálogo", valor: daUnidade.length },
@@ -1025,7 +835,18 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
               <SelectItem value="todos">Todos</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={escopo} onValueChange={(v) => { setEscopo(v as typeof escopo); setPage(0); }}>
+            <SelectTrigger className="w-52">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="catalogo">No catálogo</SelectItem>
+              <SelectItem value="fora">Fora do catálogo (SAP)</SelectItem>
+              <SelectItem value="todos">Catálogo + SAP</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
 
         <div className="border border-border rounded-lg overflow-x-auto">
           <table className="w-full min-w-max text-sm">
@@ -1063,8 +884,48 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                   </td>
                 </tr>
               ) : (
-                rows.map((p) => (
+                rows.map((linha) => {
+                  if (linha.kind === "sap") {
+                    const s = linha.s;
+                    return (
+                      <tr key={`sap-${s.codigo}`} className="border-t border-border bg-muted/20 hover:bg-muted/40">
+                        <td className="px-3 py-2">
+                          <div className="h-10 w-10 rounded-md bg-muted" />
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">{s.codigo}</td>
+                        <td className="px-3 py-2">{s.descricao}</td>
+                        <td className="px-3 py-2">
+                          <Badge variant="outline">Fora do catálogo</Badge>
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">{s.ncm_codigo ?? "—"}</td>
+                        <td
+                          className="px-3 py-2 text-xs text-muted-foreground"
+                          colSpan={7 + (org !== "solar" ? 1 : 0) + (audit ? 2 : 0)}
+                        >
+                          Material do SAP ainda não incluído no catálogo do portal.
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setIncluir({
+                                codigo: s.codigo,
+                                descricao: s.descricao ?? "",
+                                visibilidade: (org ?? "ambos") as SapVisibilidade,
+                              })
+                            }
+                          >
+                            Incluir no catálogo
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  const p = linha.p;
+                  return (
                   <tr key={p.id} className="border-t border-border hover:bg-muted/30">
+
                     <td className="px-3 py-2">
                       <label className="cursor-pointer inline-flex" title="Enviar/alterar foto">
                         <ProdutoFoto
@@ -1125,38 +986,26 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                     <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
                     <td className="px-3 py-2">
                       <Select
-                        value={p.visibilidade_override ? p.visibilidade_override : "auto"}
-                        onValueChange={(v) => {
-                          if (v === "auto") return voltarVisibilidadeAutomatica(p.id);
+                        value={p.visibilidade ?? "ambos"}
+                        onValueChange={(v) =>
                           alterarVisibilidade(p.id, v as SapVisibilidade, {
                             origem: p.origem ?? null,
                             custo: p.custo ?? null,
                             ncm_id: p.ncm_id ?? null,
-                          });
-                        }}
+                          })
+                        }
                       >
-                        <SelectTrigger
-                          className="h-8 w-[188px] text-xs"
-                          title={
-                            p.visibilidade_override
-                              ? "Definida manualmente — as sincronizações do SAP não alteram."
-                              : `Automático (hoje: ${VIS_LABELS[p.visibilidade ?? "nenhuma"] ?? "—"})`
-                          }
-                        >
+                        <SelectTrigger className="h-8 w-[168px] text-xs" title="Instância em que o produto aparece.">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="auto">
-                            Automático ({VIS_LABELS[p.visibilidade ?? "nenhuma"] ?? "—"})
-                          </SelectItem>
-                          {VISIBILIDADE_OPTIONS.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>
-                              Fixar: {o.label}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="solar">{VIS_LABELS.solar}</SelectItem>
+                          <SelectItem value="carregadores">{VIS_LABELS.carregadores}</SelectItem>
+                          <SelectItem value="ambos">{VIS_LABELS.ambos}</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
+
                     <td className="px-3 py-2">
                       {p.vendavel_sap === null || p.vendavel_sap === undefined ? (
                         <Badge variant="outline" title="Nunca verificado — clique em “Verificar preços”.">
@@ -1179,33 +1028,23 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={p.ativo ? "default" : "outline"}>
-                          {p.ativo ? "Ativo" : "Inativo"}
-                        </Badge>
-                        <Select
-                          value={p.ativo_override === null || p.ativo_override === undefined ? "auto" : p.ativo_override ? "on" : "off"}
-                          onValueChange={(v) =>
-                            overrideMut.mutate({
-                              id: p.id,
-                              override: v === "auto" ? null : v === "on",
-                            })
-                          }
+                      <Select
+                        value={p.ativo ? "on" : "off"}
+                        onValueChange={(v) => overrideMut.mutate({ id: p.id, override: v === "on" })}
+                      >
+                        <SelectTrigger
+                          className="h-8 w-[112px] text-xs"
+                          title="Define se o produto aparece na instância. Vale sobre o SAP."
                         >
-                          <SelectTrigger
-                            className="h-7 w-[132px] text-xs"
-                            title={p.ativo_override_motivo ?? "Automático: segue o preço do SAP."}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">Automático</SelectItem>
-                            <SelectItem value="on">Forçar ativo</SelectItem>
-                            <SelectItem value="off">Forçar inativo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="on">Ativo</SelectItem>
+                          <SelectItem value="off">Inativo</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </td>
+
                     {audit && (
                       <td className="px-3 py-2 text-xs">
                         {p.det.prefixo ? (
@@ -1254,7 +1093,8 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       </Button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1262,8 +1102,9 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className="text-muted-foreground">
-            {filtered.length} produto(s) • página {current + 1} de {totalPages}
+            {linhas.length} item(ns) • página {current + 1} de {totalPages}
           </span>
+
           <div className="flex items-center gap-2">
             <Select
               value={String(pageSize)}
@@ -1302,20 +1143,49 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
           </div>
         </div>
         </>
-        ) : (
-          <CatalogoSapCompleto
-            onPropagar={propagar}
-            onEnviado={(codigo) => {
-              // Material entra inativo: sem isso ele sumia atrás do filtro
-              // padrão "Ativos" e parecia que o envio não funcionou.
-              setStatus("todos");
-              setVisibilidade("all");
-              setQ(codigo);
-              setPage(0);
-              setAba("portal");
-            }}
-          />
-        )}
+
+        <Dialog open={!!incluir} onOpenChange={(o) => !o && setIncluir(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Incluir {incluir?.codigo} no catálogo</DialogTitle>
+            </DialogHeader>
+            {incluir ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">{incluir.descricao}</p>
+                <div className="space-y-1">
+                  <Label>Onde este produto aparece</Label>
+                  <Select
+                    value={incluir.visibilidade}
+                    onValueChange={(v) => setIncluir({ ...incluir, visibilidade: v as SapVisibilidade })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="solar">{VIS_LABELS.solar}</SelectItem>
+                      <SelectItem value="carregadores">{VIS_LABELS.carregadores}</SelectItem>
+                      <SelectItem value="ambos">{VIS_LABELS.ambos}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ele entra <strong>ativo</strong> na instância escolhida. Depois é possível mudar o status ou a
+                  visibilidade na própria lista.
+                </p>
+              </div>
+            ) : null}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIncluir(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void confirmarInclusao()} disabled={incluindo}>
+                {incluindo ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Incluir e ativar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
 
         <Dialog open={!!draft} onOpenChange={(o) => !o && setDraft(null)}>
           <DialogContent>

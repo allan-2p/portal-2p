@@ -94,7 +94,7 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: produto, error: readError } = await (await catalogoDb()).from("sap_produtos")
-      .select("id, descricao, origem, custo, ncm_id, visibilidade")
+      .select("id, descricao, origem, custo, ncm_id, ncm_codigo, visibilidade, ativo_override")
       .eq("id", data.id)
       .maybeSingle();
     if (readError) throw new Error(readError.message);
@@ -115,11 +115,14 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
     if (bloqueio) throw new Error(bloqueio);
 
     // Ao entrar em Carregadores sem NCM/custo o produto vai para a Gestão de
-    // Produtos como inativo — a ativação acontece lá, depois do NCM definido.
+    // Produtos como inativo — a menos que o status tenha sido definido
+    // manualmente, que é a regra máxima de aparecer ou não na instância.
     const { validateAtivacaoCarregadores, showsInCarregadores } = await import("@/lib/product-visibility");
     const pendente =
+      (produto as any).ativo_override !== true &&
       showsInCarregadores(data.visibilidade) &&
       validateAtivacaoCarregadores({ custo: Number(produto.custo ?? 0), ncm_id: produto.ncm_id, ncm_codigo: (produto as any).ncm_codigo ?? null }) !== null;
+
 
     // Decisão manual: grava também o override, para que as sincronizações do
     // SAP (catálogo e estoque) não voltem a visibilidade para o padrão.
@@ -530,12 +533,21 @@ export const listSapCatalogoCompleto = createServerFn({ method: "GET" })
 
 /**
  * Envia (ou remove) um material do espelho completo do SAP para o catálogo do
- * portal. Ao entrar, o produto é criado em `sap_produtos` sem visibilidade e
- * inativo — a instância e a ativação continuam sendo definidas na moderação.
+ * portal. Ao entrar com `visibilidade`, o produto já nasce ativo (status
+ * manual, que é a regra máxima) na instância escolhida.
  */
 export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ codigo: z.string().min(1), no_catalogo: z.boolean() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        codigo: z.string().min(1),
+        no_catalogo: z.boolean(),
+        visibilidade: z.enum(["solar", "carregadores", "ambos"]).optional(),
+      })
+      .parse(d),
+  )
+
   .handler(async ({ data, context }) => {
     await requireAnyFeature(context, FEATURES_CATALOGO);
 
@@ -559,6 +571,22 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
           .maybeSingle();
         ncmId = (n as any)?.id ?? null;
       }
+      // Entrando no catálogo com instância escolhida: já nasce ativo e com o
+      // status/visibilidade travados manualmente (regra máxima sobre o SAP).
+      const manual = data.visibilidade
+        ? {
+            ativo: true,
+            visibilidade: data.visibilidade,
+            ativo_override: true,
+            ativo_override_por: (context as any).userId ?? null,
+            ativo_override_em: new Date().toISOString(),
+            ativo_override_motivo: "Incluído no catálogo pela Gestão de Produtos.",
+            visibilidade_override: data.visibilidade,
+            visibilidade_override_por: (context as any).userId ?? null,
+            visibilidade_override_em: new Date().toISOString(),
+            visibilidade_override_motivo: "Definida ao incluir no catálogo.",
+          }
+        : {};
       const { data: existente } = await (await catalogoDb()).from("sap_produtos")
         .select("id")
         .eq("codigo", material.codigo)
@@ -566,7 +594,7 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
 
       if (existente) {
         const { error } = await (await catalogoDb()).from("sap_produtos")
-          .update({ descricao: material.descricao, ...(ncm ? { ncm_codigo: ncm } : {}), ...(ncmId ? { ncm_id: ncmId } : {}) })
+          .update({ descricao: material.descricao, ...(ncm ? { ncm_codigo: ncm } : {}), ...(ncmId ? { ncm_id: ncmId } : {}), ...manual } as any)
           .eq("codigo", material.codigo);
         if (error) throw new Error(error.message);
       } else {
@@ -582,8 +610,16 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
           sap_raw: (material as any).sap_raw ?? null,
           ...(ncm ? { ncm_codigo: ncm } : {}),
           ...(ncmId ? { ncm_id: ncmId } : {}),
-        });
+          ...manual,
+        } as any);
         if (error) throw new Error(error.message);
+      }
+
+      if (data.visibilidade) {
+        await (await catalogoDb()).from("produtos")
+          .update({ ativo: true, visibilidade: data.visibilidade })
+          .eq("origem", "sap")
+          .eq("codigo", String(material.codigo));
       }
     } else {
       const { error } = await (await catalogoDb()).from("sap_produtos")
@@ -591,6 +627,7 @@ export const setSapCatalogoNoPortal = createServerFn({ method: "POST" })
         .eq("codigo", material.codigo);
       if (error) throw new Error(error.message);
     }
+
 
     const { error: flagError } = await (await catalogoDb()).from("sap_catalogo_sap")
       .update({ no_catalogo: data.no_catalogo })
