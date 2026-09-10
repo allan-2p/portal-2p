@@ -33,6 +33,7 @@ export type ContatoEntrada = {
   cargo?: string | null;
   emails?: unknown;
   telefones?: unknown;
+  sf_contact_id?: string | null;
 };
 
 export class ContatosTableMissing extends Error {
@@ -88,6 +89,13 @@ export async function salvarContatos(
   const clienteId = String(cliente["id"] ?? "");
   if (!clienteId) return [];
 
+  // Preserva o vínculo com o Salesforce já gravado quando o cadastro não
+  // manda o id de volta (o portal é a fonte da verdade dos dados).
+  const anteriores = await listContatos(clienteId);
+  const sfPorChave = new Map(
+    anteriores.map((a) => [`${a.tipo}|${a.nome.trim().toLowerCase()}`, a.sf_contact_id ?? null]),
+  );
+
   const linhas = (contatos ?? [])
     .map((c) => ({
       cliente_id: clienteId,
@@ -101,6 +109,12 @@ export async function salvarContatos(
       cargo: String(c.cargo ?? "").trim() || null,
       emails: limpar(c.emails),
       telefones: limpar(c.telefones),
+      sf_contact_id:
+        (c.sf_contact_id ?? null) ||
+        sfPorChave.get(
+          `${["principal", "financeiro", "outro"].includes(String(c.tipo)) ? String(c.tipo) : "outro"}|${String(c.nome ?? "").trim().toLowerCase()}`,
+        ) ||
+        null,
       ativo: true,
       updated_at: new Date().toISOString(),
     }))
