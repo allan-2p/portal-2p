@@ -183,6 +183,7 @@ export const adminToggleActive = createServerFn({ method: "POST" })
     } else {
       await supabaseAdmin.auth.admin.updateUserById(data.user_id, { ban_duration: "none" });
     }
+    await sincronizarConsultorSap(data.user_id);
     return { ok: true };
   });
 
