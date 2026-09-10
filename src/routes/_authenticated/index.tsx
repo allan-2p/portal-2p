@@ -600,72 +600,52 @@ function HomePage() {
     staleTime: 60_000,
   });
 
-  // Meta trimestral de Retenção (Regras de Metas)
-  const currentQuarter = Math.floor(today.getMonth() / 3) + 1;
-  const retentionOwners = ownerParam ? [ownerParam] : [...CARTEIRA_OWNER_IDS];
-  const fetchRetentionGoals = useServerFn(listRetentionGoals);
-  const retentionGoalsQ = useQuery({
-    queryKey: ["home-retention-goals", today.getFullYear(), currentQuarter, retentionOwners.join(",")],
-    queryFn: () =>
-      fetchRetentionGoals({
-        data: {
-          year: today.getFullYear(),
-          quarter: currentQuarter,
-          sfUserIds: retentionOwners,
-        },
-      }),
-    enabled: dataEnabled && retentionOwners.length > 0,
-    staleTime: 60_000,
+  // Retenção — mesma base da tela de Segmentação: contas classificadas pelas
+  // vendas do trimestre anterior (A ≥ R$30k, B entre R$15k e R$30k) e por
+  // consultor responsável pelo cliente. Meta = 80% da base A+B.
+  const fetchSegmentacao = useServerFn(getSegmentacaoFn);
+  const segTriQ = useQuery({
+    queryKey: ["home-segmentacao-tri"],
+    queryFn: () => fetchSegmentacao({ data: { instancia: "solar" as const, periodo: "tri" as const } }),
+    enabled: dataEnabled,
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
   });
-  const configuredRetentionGoal = useMemo(() => {
-    return (retentionGoalsQ.data?.records ?? []).reduce((a, r) => a + (r.goal ?? 0), 0);
-  }, [retentionGoalsQ.data]);
 
   const retentionKpis = useMemo(() => {
     const AB_THRESHOLD = 15_000; // conta A ou B: faturamento ≥ R$ 15k no trimestre
     const A_THRESHOLD = 30_000; // acima disso é A; entre 15k e 30k é B
-    const prevStartT = quarterRange.prevStart.getTime();
-    const prevEndT = quarterRange.prevEnd.getTime();
-    const curStartT = quarterRange.curStart.getTime();
-    const curEndT = quarterRange.curEnd.getTime();
-    const prevTotals = new Map<string, { total: number; owner: string | null }>();
-    const curTotals = new Map<string, { total: number; owner: string | null }>();
-    const carteira = new Set<string>(CARTEIRA_OWNER_IDS);
-    for (const r of vendasQuarterQ.data?.records ?? []) {
-      if (!ownerMatch(r.ownerId)) continue;
-      // Base A/B considera apenas a carteira Solar quando não há filtro de vendedor.
-      if (!ownerParam && !(r.ownerId && carteira.has(r.ownerId))) continue;
-      if (r.tipoNf === "Bonificação") continue;
-      const acc = r.accountId;
-      if (!acc) continue;
-      if (!r.closeDate) continue;
-      const [yr, mo, dd] = r.closeDate.split("-").map(Number);
-      const t = new Date(yr, mo - 1, dd).getTime();
-      const val = r.total ?? r.amount ?? 0;
-      const bucket = t >= prevStartT && t <= prevEndT ? prevTotals : t >= curStartT && t <= curEndT ? curTotals : null;
-      if (!bucket) continue;
-      const entry = bucket.get(acc) ?? { total: 0, owner: r.ownerId ?? null };
-      entry.total += val;
-      if (!entry.owner) entry.owner = r.ownerId ?? null;
-      bucket.set(acc, entry);
-    }
-    // A e B somam juntos na quantidade da base de retenção.
-    const prevAB = new Set<string>();
+    const norm = (s: string) =>
+      s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const selecionados = ownerParam
+      ? new Set(
+          ownerParam
+            .split(",")
+            .map((id) => CARTEIRA_OWNER_NAMES[id.trim()])
+            .filter(Boolean)
+            .map(norm),
+        )
+      : null;
+
     let prevA = 0;
     let prevB = 0;
-    for (const [id, v] of prevTotals) {
-      if (v.total < AB_THRESHOLD) continue;
-      prevAB.add(id);
-      if (v.total > A_THRESHOLD) prevA++;
-      else prevB++;
-    }
-    const curAB = new Set<string>();
-    for (const [id, v] of curTotals) if (v.total >= AB_THRESHOLD) curAB.add(id);
     let retained = 0;
-    for (const id of prevAB) if (curAB.has(id)) retained++;
     let newRecurring = 0;
-    for (const id of curAB) if (!prevAB.has(id)) newRecurring++;
-    const retentionBase = prevAB.size;
+    for (const r of segTriQ.data?.rows ?? []) {
+      if (selecionados && !(r.consultor && selecionados.has(norm(r.consultor)))) continue;
+      const base = r.vendasTriAnterior ?? 0;
+      const atual = r.vendas ?? 0;
+      const eraAB = base >= AB_THRESHOLD;
+      const ehAB = atual >= AB_THRESHOLD;
+      if (eraAB) {
+        if (base > A_THRESHOLD) prevA++;
+        else prevB++;
+        if (ehAB) retained++;
+      } else if (ehAB) {
+        newRecurring++;
+      }
+    }
+    const retentionBase = prevA + prevB;
     // Meta: 80% das contas A+B do trimestre anterior seguem A ou B.
     const retentionGoal = Math.round(retentionBase * 0.8);
     const retentionPct = retentionGoal > 0 ? (retained / retentionGoal) * 100 : 0;
@@ -678,7 +658,8 @@ function HomePage() {
       retentionPct,
       newRecurring,
     };
-  }, [vendasQuarterQ.data, ownerParam, quarterRange, configuredRetentionGoal]);
+  }, [segTriQ.data, ownerParam]);
+
 
 
   const fmtPct = (n: number) =>
