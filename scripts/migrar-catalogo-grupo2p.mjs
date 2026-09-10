@@ -18,6 +18,7 @@
 const APLICAR = process.argv.includes("--aplicar");
 const FOTOS = process.argv.includes("--fotos");
 const SO_CONFERIR = process.argv.includes("--conferir");
+const SO_FOTOS = process.argv.includes("--somente-fotos");
 
 const ORIGEM = {
   url: (process.env.SUPABASE_URL || "").replace(/\/+$/, ""),
@@ -184,6 +185,7 @@ async function copiarFotos() {
       });
       if (!sobe.ok) throw new Error(`upload ${sobe.status} ${(await sobe.text()).slice(0, 120)}`);
       ok++;
+      if (ok % 50 === 0) console.log(`  ... ${ok}/${arquivos.length}`);
     } catch (e) {
       falhas++;
       console.log(`  ! ${caminho}: ${e instanceof Error ? e.message : e}`);
@@ -193,6 +195,6 @@ async function copiarFotos() {
 }
 
 console.log(SO_CONFERIR ? "== CONFERÊNCIA ==" : APLICAR ? "== APLICANDO ==" : "== SIMULAÇÃO (use --aplicar) ==");
-await copiarTabelas();
-if (FOTOS) await copiarFotos();
+if (!SO_FOTOS) await copiarTabelas();
+if (FOTOS || SO_FOTOS) await copiarFotos();
 console.log("Fim.");
