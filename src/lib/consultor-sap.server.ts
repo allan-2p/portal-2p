@@ -19,10 +19,14 @@ const codigo = (v: unknown) => String(v ?? "").trim();
  * Consultores cadastrados no portal: usuários com código SAP + o de-para
  * oficial em `consultores_sap` (consultores que existem no SAP mas ainda não
  * têm login). Dedupe pelo código SAP, preferindo o usuário do portal.
+ *
+ * Regra geral de desligamento: quando o código SAP está vinculado a um usuário
+ * do portal inativo (ou que deixou de ser consultor), ele some de todos os
+ * filtros — mesmo que a linha em `consultores_sap` continue ativa.
  */
 export async function listarConsultoresPortal(instancia: "solar" | "carregadores"): Promise<ConsultorPortal[]> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const [{ data: perfis }, { data: cadastro }] = await Promise.all([
+  const [{ data: perfis }, { data: cadastro }, { data: todosPerfis }] = await Promise.all([
     supabaseAdmin
       .from("profiles")
       .select("id, full_name, email, numero_sap, ativo, is_consultor, organizacao")
@@ -36,7 +40,18 @@ export async function listarConsultoresPortal(instancia: "solar" | "carregadores
       .eq("ativo", true)
       .in("organizacao", [instancia, "grupo"])
       .order("nome", { ascending: true }),
+    supabaseAdmin.from("profiles").select("id, numero_sap, ativo, is_consultor"),
   ]);
+
+  // Códigos/usuários desligados: nunca voltam pela lista importada do SAP.
+  const sapBloqueado = new Set<string>();
+  const perfilBloqueado = new Set<string>();
+  for (const p of (todosPerfis ?? []) as any[]) {
+    if (p.ativo && p.is_consultor) continue;
+    const sap = codigo(p.numero_sap);
+    if (sap) sapBloqueado.add(sap);
+    if (p.id) perfilBloqueado.add(String(p.id));
+  }
 
   const porSap = new Map<string, ConsultorPortal>();
   for (const p of (perfis ?? []) as any[]) {
@@ -46,10 +61,13 @@ export async function listarConsultoresPortal(instancia: "solar" | "carregadores
   for (const c of (cadastro ?? []) as any[]) {
     const sap = codigo(c.codigo_sap);
     if (!sap || porSap.has(sap)) continue;
+    if (sapBloqueado.has(sap)) continue;
+    if (c.profile_id && perfilBloqueado.has(String(c.profile_id))) continue;
     porSap.set(sap, { id: (c.profile_id as string | null) ?? sap, nome: String(c.nome ?? "—"), sap });
   }
   return [...porSap.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }
+
 
 /** Consultor do portal com esse código SAP (ou `null` quando o código é só importado). */
 export async function consultorPorSap(sap: string | null | undefined): Promise<(ConsultorPortal & { email: string | null; sfUserId: string | null }) | null> {
