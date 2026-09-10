@@ -45,8 +45,27 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 - **Prioridade da calculadora Solar**: as 12 opções prioritárias de `solar_suportes` foram
   para as ordens 1–12 e o trilho 2P para a ordem 1 em `solar_trilhos`; as demais opções
   foram deslocadas para 100+.
+- **`sap_produtos`**: novas colunas `visibilidade_override` (+ `_por/_em/_motivo`) — a
+  visibilidade definida na moderação vira decisão travada, como já era com `ativo_override`.
+  Backfill aplicado nos 107 itens curados manualmente.
+
+### Corrigido
+
+- **Decisões manuais do catálogo voltavam no sync**: `updateCarregadoresProduct` gravava
+  `ativo` sem override; o cálculo de órfão do `syncSapProdutos` derrubava item forçado ativo;
+  a visibilidade não tinha override e o `executarSyncEstoque` a devolvia para o padrão
+  `solar`. Agora todo campo com `*_override` é intocável pelos syncs.
+- **Upsert em lote zerando NCM**: as linhas do `syncSapProdutos` passam a levar sempre
+  `ncm_codigo`/`ncm_id` (chaves parciais no lote apagavam a coluna das outras linhas).
 
 ### Adicionado
+
+- **Moderação › Grupo 2P** (`/admin/grupo-2p`): Produtos e Estoque em abas na mesma tela,
+  saindo de Configurações › Objetos e Campos; `/admin/produtos` e `/admin/estoque`
+  redirecionam. Mesma feature `admin.objetos.produtos` (sem mudança de permissão).
+- **Visibilidade em modo Automático/Fixar** na tela de Produtos, com liberação do override.
+
+
 
 
 - **Integrações › Pedidos sem atualização**: nova tela que lista os pedidos em andamento
