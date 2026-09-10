@@ -103,8 +103,10 @@ export const updateCarregadoresProduct = createServerFn({ method: "POST" })
     });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: atual, error: readError } = await (await catalogoDb()).from("sap_produtos")
-      .select(COLS)
+    const dbLeitura = await catalogoDb();
+    const { colunasComTravas } = await import("@/lib/catalogo-travas.server");
+    const { data: atual, error: readError } = await dbLeitura.from("sap_produtos")
+      .select(await colunasComTravas(dbLeitura, COLS))
       .eq("id", data.id)
       .maybeSingle();
     if (readError) throw new Error(readError.message);
