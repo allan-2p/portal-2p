@@ -120,7 +120,7 @@ export const catalogoUpsert = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await exigirGestaoCatalogo(context);
+    await exigirGestaoCatalogo(context, data.tabela);
     const db = await catalogoDb();
     const base: any = db.from(data.tabela);
     const q = data.onConflict
@@ -144,7 +144,7 @@ export const catalogoUpdate = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await exigirGestaoCatalogo(context);
+    await exigirGestaoCatalogo(context, data.tabela);
     const db = await catalogoDb();
     const q = aplicarFiltros(db.from(data.tabela).update(data.valores as any), data.filtros);
     const { error } = await q;
@@ -164,7 +164,7 @@ export const catalogoDelete = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await exigirGestaoCatalogo(context);
+    await exigirGestaoCatalogo(context, data.tabela);
     const db = await catalogoDb();
     const q = aplicarFiltros(db.from(data.tabela).delete(), data.filtros);
     const { error } = await q;
