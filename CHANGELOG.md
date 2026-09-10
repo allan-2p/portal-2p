@@ -58,6 +58,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   206 `estoque`) e 460 fotos do acervo `produtos`, sem falhas. As chaves de conflito
   corrigidas no script: `carregadores_uf_rates` por `uf`, `estoque` por `material` e
   `containers` recriado (coluna de identidade gerada pelo destino).
+- **Virada de chave**: `CATALOGO_DB=grupo2p` ativado — catálogo, estoque, calculadora Solar
+  e Carregadores passam a ler e gravar no Grupo 2P (dados ressincronizados e conferidos
+  antes do corte). O login e o restante do portal seguem no Lovable Cloud.
 
 ### Banco de dados
 
