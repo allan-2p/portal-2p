@@ -3005,31 +3005,67 @@ function PropostaCarregadoresPage() {
                   </>
                 )}
 
-                <Field label="Chegada da mercadoria (mês / lote)">
+                <Field label="Chegada da mercadoria — mês de referência">
                   <Select
-                    value={state.entregaLoteId || undefined}
-                    onValueChange={(v) => set("entregaLoteId", v)}
+                    value={state.entregaLoteMes || undefined}
+                    onValueChange={(v) =>
+                      setState((s) => ({ ...s, entregaLoteMes: v, entregaLoteNome: "", entregaLoteId: "" }))
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={lotesQ.isLoading ? "Carregando lotes..." : "Selecione o lote"} />
+                      <SelectValue placeholder={lotesQ.isLoading ? "Carregando..." : "Selecione o mês"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {lotes.map((l) => (
-                        <SelectItem key={l.id} value={l.id!}>
-                          {rotuloLote(l)}
+                      {mesesEntrega.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {fmtMesReferencia(m)}
+                        </SelectItem>
+                      ))}
+                      {!lotesQ.isLoading && mesesEntrega.length === 0 ? (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          Nenhum container em trânsito nem lote cadastrado.
+                        </div>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+                </Field>
+
+                <Field label="Chegada da mercadoria — lote / container">
+                  <Select
+                    value={state.entregaLoteNome || undefined}
+                    disabled={!state.entregaLoteMes}
+                    onValueChange={(v) =>
+                      setState((s) => ({
+                        ...s,
+                        entregaLoteNome: v,
+                        entregaLoteId: lotesDoMes.find((l) => l.lote === v)?.id ?? "",
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={state.entregaLoteMes ? "Selecione o lote" : "Escolha o mês primeiro"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lotesDoMes.map((l) => (
+                        <SelectItem key={`${l.mes_referencia}-${l.lote}`} value={l.lote}>
+                          {l.lote}
                           {l.previsao_chegada ? ` — prev. ${l.previsao_chegada.split("-").reverse().join("/")}` : ""}
                         </SelectItem>
                       ))}
-                      {!lotesQ.isLoading && lotes.length === 0 ? (
+                      {state.entregaLoteMes && lotesDoMes.length === 0 ? (
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                          Nenhum lote ativo — cadastre em Moderação › Carregadores › Lotes de Entrega.
+                          Nenhum lote para este mês.
                         </div>
                       ) : null}
                     </SelectContent>
                   </Select>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Obrigatório para fechar o pedido: mês de referência e lote em que a mercadoria chega.
+                    {semEstoquePronto
+                      ? "Sem estoque disponível para algum item: mês e lote são obrigatórios para fechar o pedido."
+                      : "Estoque disponível — o preenchimento é opcional."}
                   </p>
+                </Field>
+
                 </Field>
 
                 <Field label="Observações do Pedido">
