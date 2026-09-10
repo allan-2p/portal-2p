@@ -1,4 +1,5 @@
-/**
+
+import { catalogoDb } from "@/lib/catalogo-db.server";/**
  * Verificação de saúde das integrações do Portal 2P.
  *
  * Cada integração devolve um status simples (ok / erro / não configurada) e,
@@ -63,8 +64,7 @@ export async function collectIntegrationsHealth(): Promise<IntegrationHealth[]> 
 
   // SAP — última execução de sincronização
   try {
-    const { data } = await supabaseAdmin
-      .from("sap_produtos_sync_runs")
+    const { data } = await (await catalogoDb()).from("sap_produtos_sync_runs")
       .select("status, finished_at, started_at, error_message")
       .order("started_at", { ascending: false })
       .limit(1)

@@ -1,4 +1,5 @@
-/**
+
+import { catalogoDb } from "@/lib/catalogo-db.server";/**
  * Motor de sincronização de estoque/produtos com o SAP.
  *
  * Usado tanto pelo botão manual (`syncEstoqueProdutos`) quanto pelo cron
@@ -27,16 +28,14 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
   );
   iniciarColetaNumerica();
 
-  const { data: run } = await supabaseAdmin
-    .from("estoque_sync_runs")
+  const { data: run } = await (await catalogoDb()).from("estoque_sync_runs")
     .insert({ status: "running", triggered_by: userId })
     .select("id")
     .single();
 
   const finish = async (patch: Record<string, unknown>) => {
     if (run?.id) {
-      await supabaseAdmin
-        .from("estoque_sync_runs")
+      await (await catalogoDb()).from("estoque_sync_runs")
         .update({ finished_at: new Date().toISOString(), ...patch })
         .eq("id", run.id);
     }
@@ -52,7 +51,7 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
 
     // Alerta 2: saldo que mudou ~1000× em relação ao gravado — assinatura do
     // bug de milhar, seja inflando (×1000) ou desinflando (÷1000).
-    const { data: antes } = await supabaseAdmin.from("estoque").select("material, est_livre");
+    const { data: antes } = await (await catalogoDb()).from("estoque").select("material, est_livre");
     const saltos = detectarSaltosDeEscala(
       new Map(estoque.map((e) => [e.material, e.est_livre])),
       new Map((antes ?? []).map((r: any) => [r.material as string, Number(r.est_livre ?? 0)])),
@@ -72,8 +71,7 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
 
     // ---- estoque: upsert + remoção do que saiu do SAP (sem janela vazia) ----
     for (let i = 0; i < estoque.length; i += 500) {
-      const { error } = await supabaseAdmin
-        .from("estoque")
+      const { error } = await (await catalogoDb()).from("estoque")
         .upsert(
           estoque.slice(i, i + 500).map((r) => ({ ...r, atualizado_em: now })),
           { onConflict: "material" },
@@ -82,13 +80,12 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
     }
     const materiais = estoque.map((e) => e.material);
     if (materiais.length) {
-      await supabaseAdmin.from("estoque").delete().not("material", "in", `(${materiais.join(",")})`);
+      await (await catalogoDb()).from("estoque").delete().not("material", "in", `(${materiais.join(",")})`);
     }
 
     // ---- containers: mesmo padrão do estoque (upsert e depois remove ausentes) ----
     for (let i = 0; i < containers.length; i += 500) {
-      const { error } = await supabaseAdmin
-        .from("containers")
+      const { error } = await (await catalogoDb()).from("containers")
         .upsert(
           containers.slice(i, i + 500).map((c) => ({ ...c, atualizado_em: now })),
           { onConflict: "id_container,material" },
@@ -97,15 +94,14 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
     }
     // Remove só o que não veio nesta carga (comparação por atualizado_em desta execução).
     if (containers.length) {
-      await supabaseAdmin.from("containers").delete().lt("atualizado_em", now);
+      await (await catalogoDb()).from("containers").delete().lt("atualizado_em", now);
     }
 
     // ---- produtos consolidados: catálogo + NCM/custo/preço do estoque ----
     const estoqueMap = new Map(estoque.map((e) => [e.material, e]));
-    const { data: atuais } = await supabaseAdmin.from("produtos").select("codigo, visibilidade, ativo");
+    const { data: atuais } = await (await catalogoDb()).from("produtos").select("codigo, visibilidade, ativo");
     const atuaisMap = new Map((atuais ?? []).map((r: any) => [r.codigo as string, r]));
-    const { data: legado } = await supabaseAdmin
-      .from("sap_produtos")
+    const { data: legado } = await (await catalogoDb()).from("sap_produtos")
       .select("codigo, visibilidade, visibilidade_override, ativo");
     const legadoMap = new Map((legado ?? []).map((r: any) => [r.codigo as string, r]));
 
@@ -142,8 +138,7 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
     });
 
     for (let i = 0; i < produtos.length; i += 500) {
-      const { error } = await supabaseAdmin
-        .from("produtos")
+      const { error } = await (await catalogoDb()).from("produtos")
         .upsert(produtos.slice(i, i + 500), { onConflict: "codigo" });
       if (error) throw new Error(`produtos: ${error.message}`);
     }
@@ -152,8 +147,7 @@ export async function executarSyncEstoque(userId: string | null): Promise<Estoqu
     let ncmAplicado = 0;
     for (const p of produtos) {
       if (!p.ncm) continue;
-      const { error, count } = await supabaseAdmin
-        .from("sap_produtos")
+      const { error, count } = await (await catalogoDb()).from("sap_produtos")
         .update({ ncm_codigo: p.ncm }, { count: "exact" })
         .eq("codigo", p.codigo)
         .is("ncm_codigo", null);

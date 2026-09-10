@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { pltypDaTabela } from "@/lib/sap-clientes-map";
 import { contribuinteDoFaturamento, documentoDaSimulacao, tpOvDoPedido } from "@/lib/sap-tp-ov";
 
+import { catalogoDb } from "@/lib/catalogo-db.server";
 export type PrecoSolarInput = {
   itens: { codigo: string; quantidade: number }[];
   documento: string;
@@ -87,8 +88,7 @@ export const precosSolarFn = createServerFn({ method: "POST" })
       return { precos: {} as Record<string, number>, fallback: [] as string[], avisos: [] as string[] };
 
 
-    const { data: prods } = await context.supabase
-      .from("sap_produtos")
+    const { data: prods } = await (await catalogoDb()).from("sap_produtos")
       .select("codigo, preco_sugerido")
       .in(
         "codigo",

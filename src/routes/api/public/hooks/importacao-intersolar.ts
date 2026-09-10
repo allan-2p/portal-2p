@@ -15,6 +15,7 @@ import { cronSecretValido } from "@/lib/cron-auth.server";
 import { salvarClienteFn } from "@/lib/clientes.functions";
 import { salvarPropostaSolar } from "@/lib/propostas-solar.functions";
 
+import { catalogoDb } from "@/lib/catalogo-db.server";
 const LIMPADOR = "200000052";
 const ESCOVA = "200000104";
 
@@ -62,8 +63,7 @@ async function consultorDoVendedor(nome: string) {
 
 async function produtoIdPorCodigo(codigo: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("sap_produtos")
+  const { data } = await (await catalogoDb()).from("sap_produtos")
     .select("id, codigo")
     .eq("codigo", codigo)
     .maybeSingle();
@@ -335,13 +335,12 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
 
               const codigo = `INTERSOLAR26-${String(l.linha).padStart(2, "0")}`;
               const validade = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
-              const { data: jaTem } = await supabaseAdmin
-                .from("solar_cupons")
+              const { data: jaTem } = await (await catalogoDb()).from("solar_cupons")
                 .select("id")
                 .ilike("codigo", codigo)
                 .maybeSingle();
               if (!jaTem) {
-                const { error } = await supabaseAdmin.from("solar_cupons").insert({
+                const { error } = await (await catalogoDb()).from("solar_cupons").insert({
                   codigo,
                   tipos: ["valor"],
                   valor: desconto,
@@ -356,7 +355,7 @@ export const Route = createFileRoute("/api/public/hooks/importacao-intersolar")(
                 });
                 if (error) throw new Error(`Falha ao criar o cupom ${codigo}: ${error.message}`);
               } else {
-                await supabaseAdmin.from("solar_cupons").update({ valor: desconto, ativo: true }).eq("id", (jaTem as any).id);
+                await (await catalogoDb()).from("solar_cupons").update({ valor: desconto, ativo: true }).eq("id", (jaTem as any).id);
               }
               const refeita = await salvarPropostaSolar({
                 data: { ...base, propostaId: salva.id, cupomCodigo: codigo },

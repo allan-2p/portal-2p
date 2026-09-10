@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireAnyFeature } from "@/lib/guards.server";
 
+import { catalogoDb } from "@/lib/catalogo-db.server";
 export type EstoqueLinha = {
   material: string;
   descricao: string | null;
@@ -72,8 +73,7 @@ export const listEstoque = createServerFn({ method: "GET" })
       containers: ContainerLinha[];
       lastRun: EstoqueSyncRun | null;
     }> => {
-      let produtosQuery = context.supabase
-        .from("produtos")
+      let produtosQuery = (await catalogoDb()).from("produtos")
         .select(
           "codigo, descricao, unidade, ncm, tipo, grp_mercadorias, custo, preco_venda, visibilidade, no_catalogo, ativo, last_synced_at",
         )
@@ -83,18 +83,15 @@ export const listEstoque = createServerFn({ method: "GET" })
 
       const [{ data: produtos }, { data: estoque }, { data: containers }, { data: runs }] = await Promise.all([
         produtosQuery,
-        context.supabase
-          .from("estoque")
+        (await catalogoDb()).from("estoque")
           .select(
             "material, descricao, ncm, umb, grp_mercadorias, cmm, preco_venda, est_livre, qtd_pend_faturar, est_entreposto, atualizado_em",
           )
           .order("descricao"),
-        context.supabase
-          .from("containers")
+        (await catalogoDb()).from("containers")
           .select("id_container, material, est_entreposto, supplier, dt_remessa")
           .order("dt_remessa"),
-        context.supabase
-          .from("estoque_sync_runs")
+        (await catalogoDb()).from("estoque_sync_runs")
           .select("id, started_at, finished_at, status, materiais_count, containers_count, ncm_aplicado, error_message")
           .order("started_at", { ascending: false })
           .limit(1),
@@ -125,8 +122,7 @@ export const listEstoque = createServerFn({ method: "GET" })
 export const listEstoqueSyncRuns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ runs: EstoqueSyncRun[] }> => {
-    const { data, error } = await context.supabase
-      .from("estoque_sync_runs")
+    const { data, error } = await (await catalogoDb()).from("estoque_sync_runs")
       .select("id, started_at, finished_at, status, materiais_count, containers_count, ncm_aplicado, error_message")
       .order("started_at", { ascending: false })
       .limit(25);
