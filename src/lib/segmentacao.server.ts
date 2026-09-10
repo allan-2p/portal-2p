@@ -214,7 +214,7 @@ async function calcularSegmentacaoRaw(opts: {
     clientesParams.set("or", `(${alvos.join(",")})`);
   }
   // Clientes e oportunidades saem juntos — não há dependência entre eles.
-  const [clientes, vendasTri, vendidoAtual, geradoAtual, pedidos] = await Promise.all([
+  const [clientes, vendasTri, vendidoAtual, geradoAtual, pedidos, consultoresAtivos] = await Promise.all([
     buscarTudo("clientes", clientesParams),
     buscarTudo(
       "opportunity_sf",
@@ -250,7 +250,10 @@ async function calcularSegmentacaoRaw(opts: {
         OPP_COLS_PEDIDO,
       ),
     ) as Promise<OppRow[]>,
+    // Vendedores ativos da instância — o filtro da tela só pode listar esses.
+    import("./consultor-sap.server").then((m) => m.listarConsultoresPortal(opts.instance)),
   ]);
+
 
 
   // ---------- Agregações por conta ----------
@@ -283,13 +286,19 @@ async function calcularSegmentacaoRaw(opts: {
 
   const mult = opts.periodo === "tri" ? 3 : 1;
 
+  const normNome = (v: string) =>
+    v.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+  const ativosNorm = new Set(consultoresAtivos.map((c) => normNome(c.nome)));
   const consultores = new Set<string>();
   const rows: SegmentacaoRow[] = clientes.map((c) => {
     const acc = (c.sf_account_id as string | null) ?? null;
     const vendasTriAnterior = (acc && vendasBase.get(acc)) || 0;
     const mensal = vendasTriAnterior / 3;
     const consultor = (c.consultor_nome as string | null) || null;
-    if (consultor) consultores.add(consultor);
+    // Só entram no filtro vendedores ativos da instância (ex.: sai quem migrou
+    // de unidade ou foi desativado). Sem cadastro de ativos, mantém a base.
+    if (consultor && (ativosNorm.size === 0 || ativosNorm.has(normNome(consultor))))
+      consultores.add(consultor);
     return {
       id: c.id as string,
       nome: (c.razao_social as string) || (c.nome_fantasia as string) || "(sem nome)",
