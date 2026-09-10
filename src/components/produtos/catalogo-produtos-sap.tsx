@@ -931,7 +931,7 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                   return (
                   <tr key={p.id} className="border-t border-border hover:bg-muted/30">
 
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <label className="cursor-pointer inline-flex" title="Enviar/alterar foto">
                         <ProdutoFoto
                           url={fotos[(p as any).imagem_path ?? ""] ?? null}
@@ -950,45 +950,54 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                         />
                       </label>
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs">{p.codigo}</td>
-                    <td className="px-3 py-2">{p.descricao}</td>
-                    <td className="px-3 py-2">
-                      <Badge variant="secondary">{TIPO_LABELS[p.tipo] ?? p.tipo}</Badge>
+                    <td className="px-2 py-2 font-mono text-xs">
+                      <div className="truncate">{p.codigo}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        NCM {p.ncm_codigo ?? "—"}
+                        {p.ncm_codigo && !p.ncm_id ? (
+                          <span className="ml-1 text-amber-500" title="NCM do SAP ainda não cadastrado na tabela de alíquotas">
+                            !
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs">
-                      {p.ncm_codigo ?? "—"}
-                      {p.ncm_codigo && !p.ncm_id ? (
-                        <span className="ml-1 text-amber-500" title="NCM do SAP ainda não cadastrado na tabela de alíquotas">
-                          !
-                        </span>
-                      ) : null}
+                    <td className="px-2 py-2">
+                      <div className="truncate" title={p.descricao}>
+                        {p.descricao}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        Lista {p.lista_preco ?? "—"} • {p.permissao} • sinc. {fmt(p.last_synced_at)}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {TIPO_LABELS[p.tipo] ?? p.tipo}
+                      </Badge>
                     </td>
                     {org !== "solar" && (
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2">
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
-                          className="h-8 w-28"
+                          className="h-8 w-full text-xs"
                           defaultValue={Number((p as any).custo ?? 0)}
                           onBlur={(e) => void salvarNumero(p, "custo", e.target.value, Number((p as any).custo ?? 0))}
                         />
                       </td>
                     )}
-                    <td className="px-3 py-2">
+                    <td className="px-2 py-2">
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
-                        className="h-8 w-28"
+                        className="h-8 w-full text-xs"
                         defaultValue={Number((p as any).preco_sugerido ?? 0)}
                         onBlur={(e) =>
                           void salvarNumero(p, "preco_sugerido", e.target.value, Number((p as any).preco_sugerido ?? 0))
                         }
                       />
                     </td>
-                    <td className="px-3 py-2 text-muted-foreground">{p.lista_preco ?? "—"}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{p.permissao}</td>
                     <td className="px-3 py-2">
                       <Select
                         value={p.visibilidade ?? "ambos"}
