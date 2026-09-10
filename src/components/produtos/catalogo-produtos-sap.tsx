@@ -1325,7 +1325,8 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
                       </Button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -1333,8 +1334,9 @@ export function CatalogoProdutosSap({ org }: { org?: "solar" | "carregadores" } 
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className="text-muted-foreground">
-            {filtered.length} produto(s) • página {current + 1} de {totalPages}
+            {linhas.length} item(ns) • página {current + 1} de {totalPages}
           </span>
+
           <div className="flex items-center gap-2">
             <Select
               value={String(pageSize)}
