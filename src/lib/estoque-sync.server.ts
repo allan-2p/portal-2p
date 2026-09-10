@@ -239,7 +239,6 @@ export async function reservarEstoquePedido(
   itens: { codigo: string; qtd: number }[],
 ): Promise<{ materiais: number; erro?: string }> {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const agregado = new Map<string, number>();
     for (const i of itens) {
       const cod = String(i?.codigo ?? "").trim();
@@ -249,7 +248,7 @@ export async function reservarEstoquePedido(
     }
     if (!agregado.size) return { materiais: 0 };
 
-    const { data, error } = await supabaseAdmin.rpc("reservar_estoque_pendente", {
+    const { data, error } = await (await catalogoDb()).rpc("reservar_estoque_pendente", {
       p_itens: [...agregado].map(([material, qtd]) => ({ material, qtd })),
     });
     if (error) return { materiais: 0, erro: error.message };

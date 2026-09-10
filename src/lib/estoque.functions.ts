@@ -143,7 +143,7 @@ export const checkDisponibilidade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ material: z.string().min(1), qtd: z.number().positive() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { data: res, error } = await context.supabase.rpc("check_disponibilidade", {
+    const { data: res, error } = await (await catalogoDb()).rpc("check_disponibilidade", {
       p_material: data.material,
       p_qtd: data.qtd,
     });
@@ -167,7 +167,7 @@ export const checkDisponibilidadeLote = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Record<string, DisponibilidadeInfo>> => {
     const out: Record<string, DisponibilidadeInfo> = {};
     for (const item of data.itens) {
-      const { data: res, error } = await context.supabase.rpc("check_disponibilidade", {
+      const { data: res, error } = await (await catalogoDb()).rpc("check_disponibilidade", {
         p_material: item.material,
         p_qtd: item.qtd,
       });
