@@ -220,6 +220,28 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     return total;
   }, [goalsQ.data, info.currentMonth]);
 
+  // ---- Faturamento do TRIMESTRE (soma dos 3 meses) ---- //
+  const faturamentoTriReal = useMemo(() => {
+    let total = 0;
+    for (const r of curVendasQ.data?.records ?? []) {
+      if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
+      if (r.tipoNf === "Bonificação") continue;
+      total += r.total ?? r.amount ?? 0;
+    }
+    return total;
+  }, [curVendasQ.data, ownerSet]);
+
+  const faturamentoTriMeta = useMemo(() => {
+    let total = 0;
+    for (const g of goalsQ.data?.records ?? []) {
+      if (!g.active) continue;
+      if (!info.months.includes(g.month)) continue;
+      total += g.monthly_goal;
+    }
+    return total;
+  }, [goalsQ.data, info.months.join(",")]);
+
+
 
   // ---- Retenção e Novos A/B (agregados + por owner p/ comissão) ---- //
   const abKpis = useMemo(() => {
