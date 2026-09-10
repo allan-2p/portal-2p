@@ -11,6 +11,41 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (error || !data) throw new Error("Forbidden: admin role required");
 }
 
+/**
+ * Desligamento de vendedor: quando o usuário fica inativo (ou deixa de ser
+ * consultor), o código dele também sai da lista de vendedores importada do SAP,
+ * some dos filtros e volta sozinho quando o usuário é reativado.
+ */
+async function sincronizarConsultorSap(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: perfil } = await supabaseAdmin
+    .from("profiles")
+    .select("id, full_name, email, numero_sap, ativo, is_consultor")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!perfil) return;
+  const sap = String((perfil as any).numero_sap ?? "").trim();
+  const habilitado = Boolean((perfil as any).ativo) && Boolean((perfil as any).is_consultor);
+
+  // Mantém o vínculo do código com o usuário, mesmo desligado (histórico).
+  if (sap) {
+    await supabaseAdmin.from("consultores_sap").upsert(
+      {
+        codigo_sap: sap,
+        nome: String((perfil as any).full_name || (perfil as any).email || sap),
+        profile_id: userId,
+        ativo: habilitado,
+      },
+      { onConflict: "codigo_sap" },
+    );
+  }
+  await supabaseAdmin
+    .from("consultores_sap")
+    .update({ ativo: habilitado })
+    .eq("profile_id", userId);
+}
+
+
 const CreateInput = z.object({
   email: z.string().email(),
   password: z.string().min(8),
@@ -148,6 +183,7 @@ export const adminToggleActive = createServerFn({ method: "POST" })
     } else {
       await supabaseAdmin.auth.admin.updateUserById(data.user_id, { ban_duration: "none" });
     }
+    await sincronizarConsultorSap(data.user_id);
     return { ok: true };
   });
 
@@ -256,7 +292,12 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       invalidateScopeCache(data.user_id);
     }
 
+    if (data.ativo !== undefined || data.is_consultor !== undefined || data.numero_sap !== undefined) {
+      await sincronizarConsultorSap(data.user_id);
+    }
+
     // O papel interno é derivado do perfil de permissão (trigger no banco).
+
 
     if (data.ativo !== undefined) {
       await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
