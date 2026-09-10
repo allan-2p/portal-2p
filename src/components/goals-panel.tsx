@@ -220,6 +220,28 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
     return total;
   }, [goalsQ.data, info.currentMonth]);
 
+  // ---- Faturamento do TRIMESTRE (soma dos 3 meses) ---- //
+  const faturamentoTriReal = useMemo(() => {
+    let total = 0;
+    for (const r of curVendasQ.data?.records ?? []) {
+      if (!r.ownerId || !ownerSet.has(r.ownerId)) continue;
+      if (r.tipoNf === "Bonificação") continue;
+      total += r.total ?? r.amount ?? 0;
+    }
+    return total;
+  }, [curVendasQ.data, ownerSet]);
+
+  const faturamentoTriMeta = useMemo(() => {
+    let total = 0;
+    for (const g of goalsQ.data?.records ?? []) {
+      if (!g.active) continue;
+      if (!info.months.includes(g.month)) continue;
+      total += g.monthly_goal;
+    }
+    return total;
+  }, [goalsQ.data, info.months.join(",")]);
+
+
 
   // ---- Retenção e Novos A/B (agregados + por owner p/ comissão) ---- //
   const abKpis = useMemo(() => {
@@ -359,72 +381,97 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   const pct = (real: number, meta: number) => (meta > 0 ? (real / meta) * 100 : null);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-end justify-between flex-wrap gap-2">
-        <div>
-          <h2 className="font-display font-semibold text-lg">Metas · {info.label}</h2>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-4">
-        <GoalCard
-          label={`VENDIDO · ${info.monthLabel}`}
+    <div className="space-y-6">
+      {/* ===================== MENSAL ===================== */}
+      <section className="space-y-3">
+        <SectionHeader
           Icon={Target}
-          realized={fmtBRL(faturamentoReal)}
-          goal={fmtBRL(faturamentoMeta)}
-          pct={pct(faturamentoReal, faturamentoMeta)}
-          hint={faturamentoMeta === 0 ? "sem meta do mês" : "mês atual"}
-          loading={loading}
+          title={`Meta mensal · ${info.monthLabel}`}
+          subtitle="Vendido e comissão do mês corrente"
+          badge="Mensal"
         />
-        <GoalCard
-          label="Retenção A/B"
-          Icon={Repeat}
-          realized={String(abKpis.retencaoAtivos)}
-          goal={String(retencaoMeta)}
-          pct={pct(abKpis.retencaoAtivos, retencaoMeta)}
-          hint={`base A/B tri ant.: ${abKpis.retencaoBase}`}
-          loading={loading}
-        />
-        <CommissionCard
-          label="Novos A+B"
-          Icon={Sparkles}
-          value={String(abKpis.novosAB)}
-          hint={`A: ${abKpis.novosA} · B: ${abKpis.novosB}`}
-          loading={loading}
-        />
-      </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <GoalCard
+            label={`Vendido · ${info.monthLabel}`}
+            Icon={Target}
+            realized={fmtBRL(faturamentoReal)}
+            goal={fmtBRL(faturamentoMeta)}
+            pct={pct(faturamentoReal, faturamentoMeta)}
+            hint={faturamentoMeta === 0 ? "sem meta do mês" : "mês atual"}
+            loading={loading}
+          />
+          <CommissionCard
+            label="Comissão · Vendido (mês)"
+            Icon={Wallet}
+            value={fmtBRL(comissao.vendido)}
+            hint={
+              faturamentoMeta === 0
+                ? "sem meta ativa"
+                : `atingimento: ${pct(faturamentoReal, faturamentoMeta)?.toFixed(1) ?? "0"}%`
+            }
+            loading={loading || commissionQ.isLoading}
+          />
+        </div>
+      </section>
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <CommissionCard
-          label="Comissão · Vendido"
-          Icon={Wallet}
-          value={fmtBRL(comissao.vendido)}
-          hint={
-            faturamentoMeta === 0
-              ? "sem meta ativa"
-              : `atingimento: ${pct(faturamentoReal, faturamentoMeta)?.toFixed(1) ?? "0"}%`
-          }
-          loading={loading || commissionQ.isLoading}
-        />
-        <CommissionCard
-          label="Comissão · Retenção"
+      {/* ===================== TRIMESTRAL ===================== */}
+      <section className="space-y-3">
+        <SectionHeader
           Icon={Repeat}
-          value={fmtBRL(comissao.retencao)}
-          hint={
-            retencaoMeta === 0
-              ? "sem meta"
-              : `atingimento: ${pct(abKpis.retencaoAtivos, retencaoMeta)?.toFixed(1) ?? "0"}%`
-          }
-          loading={loading || commissionQ.isLoading}
+          title={`Metas trimestrais · ${info.label}`}
+          subtitle={`Acumulado de ${pad(info.months[0])}/${info.year} a ${pad(info.months[2])}/${info.year}`}
+          badge="Trimestral"
         />
-        <CommissionCard
-          label="Comissão · Novos A/B"
-          Icon={Gift}
-          value={fmtBRL(comissao.novos)}
-          hint={`A: ${abKpis.novosA} · B: ${abKpis.novosB}`}
-          loading={loading || commissionQ.isLoading}
-        />
-      </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          <GoalCard
+            label={`Faturamento · ${info.label}`}
+            Icon={Target}
+            realized={fmtBRL(faturamentoTriReal)}
+            goal={fmtBRL(faturamentoTriMeta)}
+            pct={pct(faturamentoTriReal, faturamentoTriMeta)}
+            hint={faturamentoTriMeta === 0 ? "sem metas no trimestre" : "soma dos 3 meses"}
+            loading={loading}
+          />
+          <GoalCard
+            label="Retenção A/B"
+            Icon={Repeat}
+            realized={String(abKpis.retencaoAtivos)}
+            goal={String(retencaoMeta)}
+            pct={pct(abKpis.retencaoAtivos, retencaoMeta)}
+            hint={`base A/B tri ant.: ${abKpis.retencaoBase}`}
+            loading={loading}
+          />
+          <CommissionCard
+            label="Novos A+B"
+            Icon={Sparkles}
+            value={String(abKpis.novosAB)}
+            hint={`A: ${abKpis.novosA} · B: ${abKpis.novosB}`}
+            loading={loading}
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <CommissionCard
+            label="Comissão · Retenção (trimestre)"
+            Icon={Repeat}
+            value={fmtBRL(comissao.retencao)}
+            hint={
+              retencaoMeta === 0
+                ? "sem meta"
+                : `atingimento: ${pct(abKpis.retencaoAtivos, retencaoMeta)?.toFixed(1) ?? "0"}%`
+            }
+            loading={loading || commissionQ.isLoading}
+          />
+          <CommissionCard
+            label="Comissão · Novos A/B (trimestre)"
+            Icon={Gift}
+            value={fmtBRL(comissao.novos)}
+            hint={`A: ${abKpis.novosA} · B: ${abKpis.novosB}`}
+            loading={loading || commissionQ.isLoading}
+          />
+        </div>
+      </section>
+
 
       {(() => {
         const bonuses = (bonusGoalsQ.data?.records ?? []).filter(
@@ -467,6 +514,33 @@ export function GoalsPanel({ ownerId }: { ownerId: string }) {
   );
 }
 
+
+function SectionHeader({
+  Icon,
+  title,
+  subtitle,
+  badge,
+}: {
+  Icon: typeof Target;
+  title: string;
+  subtitle?: string;
+  badge: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 flex-wrap border-b border-border/60 pb-2">
+      <div className="flex items-center gap-2">
+        <Icon className="h-4 w-4 text-primary" />
+        <div>
+          <h2 className="font-display font-semibold text-lg leading-tight">{title}</h2>
+          {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
+        </div>
+      </div>
+      <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
+        {badge}
+      </span>
+    </div>
+  );
+}
 
 function CommissionCard({
   label,
