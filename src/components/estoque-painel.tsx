@@ -229,7 +229,7 @@ export function EstoquePainel({
                         <td className="p-3 font-mono text-xs">{e.ncm ?? "—"}</td>
                         <td className="p-3 text-right">{qtd(e.est_livre)}</td>
                         <td className="p-3 text-right">{qtd(e.qtd_pend_faturar)}</td>
-                        <td className="p-3 text-right">{qtd(e.est_entreposto)}</td>
+                        
                         <td className="p-3">
                           <DisponibilidadeBadge info={info} className="text-xs" />
                         </td>
