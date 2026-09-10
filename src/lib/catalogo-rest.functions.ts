@@ -87,9 +87,21 @@ export const catalogoSelect = createServerFn({ method: "POST" })
     return (linhas ?? null) as any;
   });
 
-/** Só quem modera/gerencia o catálogo pode gravar. */
-export async function exigirGestaoCatalogo(context: unknown) {
-  await requireAnyFeature(context as any, FEATURES_CATALOGO);
+/**
+ * Permissão de escrita por tabela. O padrão é a moderação do catálogo, mas
+ * cupons não são catálogo: quem edita cupons do Solar pode criá-los.
+ */
+const PERMISSOES_ESCRITA: Partial<
+  Record<TabelaCatalogo, { instance: "solar" | "carregadores"; feature: any; action: any }[]>
+> = {
+  solar_cupons: [{ instance: "solar", feature: "cupons", action: "editar" }],
+  solar_cupom_usos: [{ instance: "solar", feature: "cupons", action: "editar" }],
+};
+
+/** Só quem modera/gerencia a tabela em questão pode gravar. */
+export async function exigirGestaoCatalogo(context: unknown, tabela?: TabelaCatalogo) {
+  const regras = (tabela && PERMISSOES_ESCRITA[tabela]) || FEATURES_CATALOGO;
+  await requireAnyFeature(context as any, regras as any);
 }
 
 const linhasSchema = z.array(z.record(z.string(), z.any())).min(1).max(2000);
@@ -108,7 +120,7 @@ export const catalogoUpsert = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await exigirGestaoCatalogo(context);
+    await exigirGestaoCatalogo(context, data.tabela);
     const db = await catalogoDb();
     const base: any = db.from(data.tabela);
     const q = data.onConflict
@@ -132,7 +144,7 @@ export const catalogoUpdate = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await exigirGestaoCatalogo(context);
+    await exigirGestaoCatalogo(context, data.tabela);
     const db = await catalogoDb();
     const q = aplicarFiltros(db.from(data.tabela).update(data.valores as any), data.filtros);
     const { error } = await q;
@@ -152,7 +164,7 @@ export const catalogoDelete = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await exigirGestaoCatalogo(context);
+    await exigirGestaoCatalogo(context, data.tabela);
     const db = await catalogoDb();
     const q = aplicarFiltros(db.from(data.tabela).delete(), data.filtros);
     const { error } = await q;
