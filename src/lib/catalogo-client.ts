@@ -17,7 +17,7 @@ import {
 } from "@/lib/catalogo-rest.functions";
 
 type Filtro = { op: string; coluna: string; valor: any };
-type Resposta<T> = { data: T; error: { message: string } | null };
+type Resposta<T> = { data: T; count?: number; error: { message: string; code?: string } | null };
 
 class CatalogoQuery<T = any> implements PromiseLike<Resposta<T>> {
   private filtros: Filtro[] = [];
@@ -31,12 +31,15 @@ class CatalogoQuery<T = any> implements PromiseLike<Resposta<T>> {
   private valores: Record<string, any> = {};
   private onConflict?: string;
   private retornar = false;
+  private contar = false;
 
   constructor(private tabela: TabelaCatalogo) {}
 
-  select(colunas = "*") {
-    if (this.acao === "select") this.colunas = colunas;
-    else this.retornar = true;
+  select(colunas = "*", opts?: { count?: "exact"; head?: boolean }) {
+    if (this.acao === "select") {
+      this.colunas = colunas;
+      this.contar = opts?.count === "exact";
+    } else this.retornar = true;
     return this;
   }
   insert(linhas: any) {
@@ -123,6 +126,10 @@ class CatalogoQuery<T = any> implements PromiseLike<Resposta<T>> {
             unico: this.unico,
           },
         });
+        if (this.contar) {
+          const linhas = Array.isArray(data) ? data : data ? [data] : [];
+          return { data: data as T, count: linhas.length, error: null };
+        }
         return { data: data as T, error: null };
       }
       if (this.acao === "insert" || this.acao === "upsert") {
@@ -145,7 +152,9 @@ class CatalogoQuery<T = any> implements PromiseLike<Resposta<T>> {
       await catalogoDelete({ data: { tabela: this.tabela, filtros: this.filtros as any } });
       return { data: null as T, error: null };
     } catch (e) {
-      return { data: null as T, error: { message: e instanceof Error ? e.message : String(e) } };
+      const msg = e instanceof Error ? e.message : String(e);
+      const code = /duplicate key|unique constraint/i.test(msg) ? "23505" : undefined;
+      return { data: null as T, error: { message: msg, code } };
     }
   }
 

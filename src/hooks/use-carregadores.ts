@@ -47,7 +47,7 @@ export function useCarregadoresUfs() {
         .select("uf, nome, aliq_interna, fcp")
         .order("uf");
       if (error) throw error;
-      return (data ?? []).map((u) => ({
+      return (data ?? []).map((u: any) => ({
         uf: u.uf,
         nome: u.nome,
         aliq_interna: Number(u.aliq_interna),

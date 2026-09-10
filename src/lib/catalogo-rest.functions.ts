@@ -81,7 +81,7 @@ export const catalogoSelect = createServerFn({ method: "POST" })
     if (data.unico === "single") q = q.single();
     const { data: linhas, error } = await q;
     if (error) throw new Error(error.message);
-    return (linhas ?? null) as unknown;
+    return (linhas ?? null) as any;
   });
 
 /** Só quem modera/gerencia o catálogo pode gravar. */
@@ -90,7 +90,6 @@ async function exigirGestaoCatalogo(context: unknown) {
     { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
     { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
     { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
-    { instance: "solar", feature: "solar.regras", action: "moderar" },
   ]);
 }
 
@@ -118,7 +117,7 @@ export const catalogoUpsert = createServerFn({ method: "POST" })
       : base.insert(data.linhas);
     const { data: linhas, error } = data.retornar ? await q.select() : await q;
     if (error) throw new Error(error.message);
-    return (linhas ?? null) as unknown;
+    return (linhas ?? null) as any;
   });
 
 /** Atualização por filtro. */
