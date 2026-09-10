@@ -223,6 +223,24 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
             </Button>
           ))}
         </div>
+        <div className="flex gap-1 rounded-lg border border-border p-1">
+          {(
+            [
+              ["todos", "Todos"],
+              ["ativos", "Ativos"],
+              ["inativos", "Inativos"],
+            ] as [FiltroStatus, string][]
+          ).map(([k, label]) => (
+            <Button
+              key={k}
+              size="sm"
+              variant={statusFiltro === k ? "secondary" : "ghost"}
+              onClick={() => setStatusFiltro(k)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -242,7 +260,8 @@ export function CatalogoFotos({ org = "carregadores" }: { org?: "solar" | "carre
         <p className="py-10 text-center text-muted-foreground">Nenhum produto encontrado.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {lista.map((p) => {
+          {listaPagina.map((p) => {
+
             const url = p.imagem_path ? fotos[p.imagem_path] : undefined;
             const ocupado = enviando === p.id;
             return (
