@@ -27,6 +27,8 @@ export type SapProdutoRow = {
   /** Decisão manual que vence a varredura de preço (null = automático). */
   ativo_override: boolean | null;
   ativo_override_motivo: string | null;
+  /** Visibilidade travada manualmente (null = automático). */
+  visibilidade_override: SapVisibilidade | null;
   preco_vk12: number | null;
   preco_checado_em: string | null;
 };
@@ -41,6 +43,39 @@ export type SapSyncRun = {
   updated_count: number;
   error_message: string | null;
 };
+
+/**
+ * Volta a visibilidade ao modo automático: sem override, as sincronizações do
+ * SAP podem definir a instância pelo grupo de mercadoria de novo.
+ */
+export const limparSapProdutoVisibilidadeOverride = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireAnyFeature(context, [
+      { instance: "solar", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "admin.objetos.produtos", action: "moderar" },
+      { instance: "carregadores", feature: "carregadores.produtos", action: "moderar" },
+    ]);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("sap_produtos")
+      .update({
+        visibilidade_override: null,
+        visibilidade_override_por: null,
+        visibilidade_override_em: null,
+        visibilidade_override_motivo: null,
+      } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await recordModeration(context, {
+      area: "produtos",
+      action: "override-removido",
+      target: data.id,
+      summary: "Visibilidade voltou ao modo automático (segue o grupo de mercadoria do SAP).",
+    });
+    return { ok: true };
+  });
 
 /** Define em quais portais o produto aparece (propostas, catálogos, etc). */
 export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
@@ -90,17 +125,42 @@ export const setSapProdutoVisibilidade = createServerFn({ method: "POST" })
       showsInCarregadores(data.visibilidade) &&
       validateAtivacaoCarregadores({ custo: Number(produto.custo ?? 0), ncm_id: produto.ncm_id, ncm_codigo: (produto as any).ncm_codigo ?? null }) !== null;
 
-    const { error } = await context.supabase
+    // Decisão manual: grava também o override, para que as sincronizações do
+    // SAP (catálogo e estoque) não voltem a visibilidade para o padrão.
+    const override = {
+      visibilidade_override: data.visibilidade,
+      visibilidade_override_por: (context as any).userId ?? null,
+      visibilidade_override_em: new Date().toISOString(),
+      visibilidade_override_motivo: "Definida manualmente na moderação de produtos.",
+    };
+    const { error } = await supabaseAdmin
       .from("sap_produtos")
       .update(
-        data.visibilidade === "nenhuma"
-          ? { visibilidade: null, ativo: false }
+        (data.visibilidade === "nenhuma"
+          ? { visibilidade: null, ativo: false, ...override }
           : pendente
-            ? { visibilidade: data.visibilidade, ativo: false }
-            : { visibilidade: data.visibilidade },
+            ? { visibilidade: data.visibilidade, ativo: false, ...override }
+            : { visibilidade: data.visibilidade, ...override }) as any,
       )
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    // Espelha no catálogo consolidado, que é o lido pelos wizards.
+    const { data: codigoRow } = await supabaseAdmin
+      .from("sap_produtos")
+      .select("codigo")
+      .eq("id", data.id)
+      .maybeSingle();
+    if ((codigoRow as any)?.codigo) {
+      await supabaseAdmin
+        .from("produtos")
+        .update({
+          visibilidade: data.visibilidade,
+          ...(data.visibilidade === "nenhuma" || pendente ? { ativo: false } : {}),
+        })
+        .eq("origem", "sap")
+        .eq("codigo", String((codigoRow as any).codigo));
+    }
     await recordModeration(context, {
       area: "produtos",
       action: "atualizou",
@@ -118,7 +178,7 @@ export const listSapProdutos = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from("sap_produtos")
       .select(
-        "id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo, vendavel_sap, ativo_override, ativo_override_motivo, preco_vk12, preco_checado_em",
+        "id, codigo, descricao, tipo, permissao, lista_preco, ativo, visibilidade, last_synced_at, origem, custo, ncm_id, ncm_codigo, vendavel_sap, ativo_override, ativo_override_motivo, visibilidade_override, preco_vk12, preco_checado_em",
       )
       .order("descricao");
     if (error) throw new Error(error.message);
@@ -292,8 +352,9 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
 
       const { data: existentes } = await supabaseAdmin
         .from("sap_produtos")
-        .select("codigo, ativo, origem, descricao, tipo, permissao, lista_preco, ncm_codigo, ncm_id");
+        .select("codigo, ativo, ativo_override, origem, descricao, tipo, permissao, lista_preco, ncm_codigo, ncm_id");
       const known = new Set((existentes ?? []).map((r: { codigo: string }) => r.codigo));
+      const atuaisMap = new Map((existentes ?? []).map((r: any) => [r.codigo as string, r]));
 
       // NCM do SAP alimenta o produto e, quando o código existir na tabela de
       // NCMs do portal, vincula automaticamente as alíquotas.
@@ -309,9 +370,14 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
         }
       }
 
+      // Todas as linhas do lote precisam ter as MESMAS chaves: no upsert em
+      // lote, a chave ausente em uma linha zera a coluna dela. Por isso o NCM
+      // vem sempre no payload, caindo no valor já gravado quando o SAP não
+      // trouxer nada.
       const rows = materiais.map((m) => {
         const ncm = ncmDe(m);
         const ncmId = ncm ? (ncmMap.get(ncm) ?? null) : null;
+        const atual: any = atuaisMap.get(m.codigo);
         return {
           codigo: m.codigo,
           descricao: m.descricao,
@@ -320,8 +386,8 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           lista_preco: m.lista_preco,
           sap_raw: m.raw as any,
           last_synced_at: now,
-          ...(ncm ? { ncm_codigo: ncm } : {}),
-          ...(ncmId ? { ncm_id: ncmId } : {}),
+          ncm_codigo: ncm ?? atual?.ncm_codigo ?? null,
+          ncm_id: ncmId ?? atual?.ncm_id ?? null,
         };
       });
 
@@ -336,8 +402,9 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
           .upsert(novos.slice(i, i + 500), { onConflict: "codigo" });
         if (error) throw new Error(error.message);
       }
-      const atuaisMap = new Map((existentes ?? []).map((r: any) => [r.codigo as string, r]));
       const mudou = (novo: any, atual: any) =>
+
+
         (atual.descricao ?? "") !== (novo.descricao ?? "") ||
         (atual.tipo ?? "") !== (novo.tipo ?? "") ||
         (atual.permissao ?? "") !== (novo.permissao ?? "") ||
@@ -359,13 +426,18 @@ export const syncSapProdutos = createServerFn({ method: "POST" })
 
 
       // Merge: o que não veio mais do SAP fica inativo (sem apagar histórico).
-      // Produtos criados manualmente no portal e materiais enviados de propósito
-      // ao catálogo do portal não são afetados — só saem por decisão manual.
+      // Produtos criados manualmente no portal, materiais enviados de propósito
+      // ao catálogo do portal e itens forçados ativos na moderação não são
+      // afetados — só saem por decisão manual.
       const vindos = new Set(rows.map((r) => r.codigo));
       const orfaos = (existentes ?? [])
         .filter(
           (r: any) =>
-            r.ativo && r.origem !== "manual" && !vindos.has(r.codigo) && !jaNoCatalogo.has(String(r.codigo)),
+            r.ativo &&
+            r.ativo_override !== true &&
+            r.origem !== "manual" &&
+            !vindos.has(r.codigo) &&
+            !jaNoCatalogo.has(String(r.codigo)),
         )
         .map((r: any) => r.codigo as string);
       for (let i = 0; i < orfaos.length; i += 500) {

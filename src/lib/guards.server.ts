@@ -199,11 +199,11 @@ export async function adminAreasFor(ctx: GuardContext): Promise<{
       "admin.perfis",
       "admin.auditoria",
       "admin.vinculos",
-      "admin.objetos.produtos",
       "admin.tabelas",
     ]),
     moderacao: areaOr("moderacao", [
       "admin.produtos",
+      "admin.objetos.produtos",
       "admin.metas",
       "admin.regras",
       "admin.comissoes",

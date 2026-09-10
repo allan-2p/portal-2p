@@ -91,13 +91,6 @@ export const ADMIN_SECTIONS: AdminSection[] = [
         ],
       },
       {
-        label: "Objetos e Campos",
-        items: [
-          { to: "/admin/produtos", label: "Produtos", icon: Package, feature: "admin.objetos.produtos" },
-          { to: "/admin/estoque", label: "Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
-        ],
-      },
-      {
         label: "E-mails",
         items: [
           { to: "/admin/emails", label: "Painel de e-mails", icon: Mail, feature: "admin.emails" },
@@ -208,6 +201,13 @@ export const ADMIN_SECTIONS: AdminSection[] = [
           { to: "/carregadores/lotes", label: "Lotes de Entrega", icon: CalendarDays, feature: "carregadores.regras" },
           { to: "/carregadores/metas", label: "Regras de Metas", icon: Target, feature: "carregadores.metas" },
           { to: "/carregadores/comissoes", label: "Regras de Comissões", icon: Percent, feature: "carregadores.comissoes" },
+        ],
+      },
+      {
+        label: "Grupo 2P",
+        collapsible: true,
+        items: [
+          { to: "/admin/grupo-2p", label: "Produtos e Estoque", icon: Boxes, feature: "admin.objetos.produtos" },
         ],
       },
     ],
