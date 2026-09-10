@@ -45,6 +45,12 @@ export async function espelharProdutos(payload: {
   containers: any[];
 }): Promise<MirrorResult[]> {
   const target: MirrorTarget = "grupo-2p";
+  // Depois do corte, o catálogo JÁ é gravado no grupo-2p: espelhar de novo
+  // seria copiar o dado em cima dele mesmo.
+  const { catalogoNoGrupo2p } = await import("@/lib/catalogo-db.server");
+  if (catalogoNoGrupo2p()) {
+    return [{ target, ok: true, skipped: true, message: "Catálogo já vive no Grupo 2P — espelho aposentado." }];
+  }
   const sb = mirrorClient();
   if (!sb) {
     return [
