@@ -35,7 +35,22 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Moderação: catálogo por unidade
+
+- **Calculadora**: Módulos, Trilhos, Suportes e Microinversores saíram da Gestão de
+  Produtos e agora ficam em *Regras de Propostas › Calculadora* (2P Solar), com a
+  permissão `admin.regras`.
+- **Gestão de Produtos por unidade**: Solar e Carregadores ganharam abas de
+  *Catálogo SAP* e *Estoque* filtradas pela própria unidade, cada uma com sua
+  sincronização com o SAP.
+- **Grupo 2P removido**: a tela `/admin/grupo-2p` redireciona para a Gestão de
+  Produtos do Solar.
+- **Permissões**: `src/lib/catalogo-features.ts` centraliza quem pode moderar
+  catálogo/estoque — moderador de produtos do Solar (`admin.produtos`) ou de
+  Carregadores (`carregadores.produtos`), além de `admin.objetos.produtos`.
+
 ### Consolidação do catálogo no Grupo 2P (Fase 1)
+
 
 - **Chave única de destino**: `src/lib/catalogo-db.server.ts` decide, por `CATALOGO_DB`,
   se o catálogo é lido/gravado no Lovable Cloud (padrão) ou no Grupo 2P. Todo o código
