@@ -67,7 +67,9 @@ export function EstoquePainel({
   const sync = useServerFn(syncEstoqueProdutos);
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
-  const [aba, setAba] = useAbaPersistente(`estoque-painel-${org ?? "todos"}`, "produtos");
+  const [abaSalva, setAba] = useAbaPersistente(`estoque-painel-${org ?? "todos"}`, "estoque");
+  // A aba "produtos" saiu do painel — quem tinha ela salva volta para Estoque.
+  const aba = abaSalva === "estoque" || abaSalva === "containers" ? abaSalva : "estoque";
 
   const queryKey = ["estoque-consolidado", org ?? "todos"];
   const q = useQuery({ queryKey, queryFn: () => fetchAll({ data: org ? { org } : {} }) });
