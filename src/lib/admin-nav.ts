@@ -186,7 +186,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
                 label: "Catálogo",
                 icon: Package,
                 feature: "admin.produtos",
-                hash: "aba:produtos-solar=catalogo",
+                hash: "aba:produtos-solar=sap",
               },
               {
                 to: "/admin/produtos-solar",
@@ -239,7 +239,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
                 label: "Catálogo",
                 icon: Package,
                 feature: "carregadores.produtos",
-                hash: "aba:carregadores-produtos=produtos",
+                hash: "aba:carregadores-produtos=sap",
               },
               {
                 to: "/carregadores/produtos",
