@@ -63,6 +63,7 @@ export type FeatureKey =
   | "admin.sistema.excluir"
   | "admin.sistema.cancelar"
   | "admin.clientes.integracoes"
+  | "admin.clientes.transferir"
   | "marketing.home"
   | "marketing.social"
   | "marketing.trafego"
@@ -315,6 +316,7 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   "admin.sistema.excluir": "Sistema • Excluir registros (universal)",
   "admin.sistema.cancelar": "Sistema • Cancelar pedidos (universal)",
   "admin.clientes.integracoes": "Clientes • Integrações e histórico (auditoria)",
+  "admin.clientes.transferir": "Clientes • Transferir consultor do cadastro",
   "admin.vinculos": "Admin • Vínculos Salesforce",
   "admin.emails": "Configurações • E-mails enviados",
   "admin.area.configuracoes": "Acesso • Configurações (engrenagem)",
