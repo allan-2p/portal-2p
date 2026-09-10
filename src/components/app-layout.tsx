@@ -9,7 +9,7 @@ import { NotificationsDropdown } from "./notifications-dropdown";
 import { InstanceSwitcher } from "./instance-switcher";
 import { MarketingUnitSwitch } from "./marketing-unit-switch";
 
-import { useInstance } from "./instance-provider";
+import { useInstance, HOME_ROUTE } from "./instance-provider";
 import { INSTANCES, featureForPath, instanceForFeature, type FeatureKey } from "@/lib/instances";
 import { SCREENS, type ScreenKey } from "@/lib/view-screens";
 import { isGroupAdminPath } from "@/lib/admin-area";
