@@ -16,9 +16,19 @@ import { grupo2pConfig } from "./grupo2p-db.server";
 
 let cache: SupabaseClient | null = null;
 
-/** `true` quando o catálogo já foi cortado para o grupo-2p. */
+/**
+ * `true` quando o catálogo já foi cortado para o grupo-2p.
+ *
+ * O corte já aconteceu, então o grupo-2p é o PADRÃO: sem isso, qualquer
+ * ambiente onde a variável não esteja definida (site publicado, por exemplo)
+ * voltaria a gravar no Lovable e criaria bancos divididos — foi o que fez
+ * cupons criados em um lado "não existirem" no outro.
+ * `CATALOGO_DB=lovable` continua disponível como saída de emergência.
+ */
 export function catalogoNoGrupo2p(): boolean {
-  return (process.env["CATALOGO_DB"] ?? "").toLowerCase() === "grupo2p";
+  const alvo = (process.env["CATALOGO_DB"] ?? "").toLowerCase();
+  if (alvo === "lovable") return false;
+  return true;
 }
 
 /** Cliente de serviço do grupo-2p com a API `.from()` do supabase-js. */
