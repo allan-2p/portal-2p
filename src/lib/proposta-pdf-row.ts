@@ -13,6 +13,7 @@ import {
   type SolarPropostaPdfData,
 } from "@/lib/solar-proposta-pdf";
 import { cidadeUfCep } from "@/lib/local-format";
+import { encaixarPisCofins, normalizarPisCofins } from "@/lib/aliquotas-fiscais";
 
 type Row = Record<string, any>;
 
@@ -72,8 +73,10 @@ export function pdfDataCarregadoresDaProposta(p: Row): PropostaPdfData {
   const semIpi = base - ipiTotal;
   const ipiRate = aliqItem('aliq_ipi') || (semIpi > 0 ? ipiTotal / semIpi : 0);
   const pisCofinsRate =
-    aliqItem('aliq_pis_cofins') ||
-    (semIpi > 0 ? num(totais['pisCofins']) / semIpi : 0);
+    encaixarPisCofins(
+      aliqItem('aliq_pis_cofins') ||
+        (semIpi > 0 ? num(totais['pisCofins']) / semIpi : 0),
+    ) ?? 0;
 
   const fat = baseFaturamento(p);
   const ent = (p['entrega'] ?? {}) as Row;
