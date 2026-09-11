@@ -155,9 +155,43 @@ type Item = {
   origem: "calculadora" | "manual";
   /** Item obrigatório do kit fotovoltaico — quantidade travada em 1, não removível. */
   kit?: boolean;
+  /** Quantidade original vinda da Calculadora 2P (quando o item foi calculado). */
+  qtdCalc?: number;
   /** Item digitado manualmente (fora do catálogo SAP). */
   avulso?: { codigo: string; descricao: string };
 };
+
+/**
+ * Um produto só pode aparecer uma vez na proposta: linhas com o mesmo código
+ * SAP (ou mesmo produto do catálogo) são fundidas somando as quantidades,
+ * preservando a quantidade original da calculadora para exibição.
+ */
+function mesclarDuplicados(lista: Item[], chave: (i: Item) => string): Item[] {
+  const out: Item[] = [];
+  const idx = new Map<string, number>();
+  for (const i of lista) {
+    const k = chave(i);
+    if (!k || i.kit) {
+      out.push(i);
+      continue;
+    }
+    const pos = idx.get(k);
+    if (pos === undefined) {
+      idx.set(k, out.length);
+      out.push(i);
+      continue;
+    }
+    const base = out[pos] as Item;
+    out[pos] = {
+      ...base,
+      qtd: base.qtd + i.qtd,
+      qtdCalc: base.qtdCalc ?? (base.origem === "calculadora" ? base.qtd : i.qtdCalc),
+      origem: base.origem === "calculadora" || i.origem === "calculadora" ? "calculadora" : base.origem,
+    };
+  }
+  return out;
+}
+
 
 /** Fileira da disposição dos painéis (uma linha da tabela da calculadora). */
 type FileiraCalc = {
