@@ -1122,6 +1122,7 @@ function NovaPropostaSolarPage() {
         key: Math.random().toString(36).slice(2),
         produtoId: prod.id,
         qtd: c.quantidade,
+        qtdCalc: c.quantidade,
         valor: 0,
         origem: "calculadora",
       });
@@ -1129,13 +1130,22 @@ function NovaPropostaSolarPage() {
     const extras = itensCalc.filter((i) => i.origem === "manual" && !i.kit);
     // O item do kit é obrigatório e sobrevive ao recálculo da estrutura.
     const kitAtual = itensCalc.filter((i) => i.kit);
-    setItensCalc([...kitAtual, ...novos, ...extras]);
+    // Nunca duplicar: extras que repetem um item calculado entram na mesma
+    // linha, somando a quantidade e mantendo o valor da calculadora à vista.
+    const consolidados = mesclarDuplicados([...kitAtual, ...novos, ...extras], chaveItem);
+    const fundidos = consolidados.filter((i) => i.qtdCalc !== undefined && i.qtd !== i.qtdCalc);
+    setItensCalc(consolidados);
     setAssinaturaCalc(assinaturaAtual);
     setEditandoCalc(false);
+    if (fundidos.length)
+      toast.info(
+        "Itens repetidos foram unificados em uma linha só — a quantidade da calculadora fica indicada na linha.",
+      );
     if (faltando.length)
       toast.warning(`Itens sem correspondência no catálogo foram incluídos sem preço: ${faltando.join(", ")}.`);
     // Espera os preços do SAP antes de liberar a etapa: nunca seguir com zero calado.
-    await atualizarPrecos([...kitAtual, ...novos, ...extras], listaPreco, setItensCalc);
+    await atualizarPrecos(consolidados, listaPreco, setItensCalc);
+
     setCalculando(false);
     if (!faltando.length) toast.success("Estrutura calculada e itens precificados.");
 
