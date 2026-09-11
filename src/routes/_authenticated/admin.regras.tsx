@@ -243,6 +243,8 @@ function Calculadora2P() {
         </Bloco>
       </section>
 
+      <TabelaEquacoesCalculadora />
+
       <RegrasSuportes />
 
 
