@@ -53,6 +53,14 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   varredura de preço e estoque). Status e visibilidade já eram travados pelos
   overrides manuais.
 
+### Corrigido
+
+- **Solar › Calculadora**: o mini-trilho Smart (SMART10) voltou a somar os
+  microinversores da 1ª fileira na quantidade. Como os cadastros passaram a
+  guardar o código SAP numérico, a regra que reconhecia a família pelo código
+  antigo (2P-MTL*) deixou de somar — ex.: 2 fileiras de 4 módulos com 2 micros
+  calculava 20 em vez de 22.
+
 ### Banco de dados
 
 - Nova coluna `campos_manuais` em `sap_produtos` (lista dos campos editados
