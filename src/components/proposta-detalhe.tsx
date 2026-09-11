@@ -56,7 +56,24 @@ import { pesoItensProposta } from "@/lib/peso-proposta.functions";
 
 
 
-type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
+type Item = {
+  codigo?: string | null;
+  nome?: string;
+  qtd?: number;
+  valor?: number;
+  aliq_ipi?: number | null;
+  aliq_icms?: number | null;
+  aliq_pis_cofins?: number | null;
+};
+
+/** Alíquota em % para exibição; nulo vira traço, 0 aparece como 0,00%. */
+const fmtAliqPct = (v: unknown) =>
+  v == null || !Number.isFinite(Number(v))
+    ? "—"
+    : `${(Number(v) * 100).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}%`;
 
 const fmtData = (v?: string | null) => fmtDataBR(v);
 
