@@ -52,8 +52,22 @@ export type SimulacaoValores = {
   aliqPisCofins: number | null;
 };
 
+/**
+ * Alíquotas oficiais de PIS+COFINS. O SAP devolve só os VALORES (arredondados a
+ * centavos), então a alíquota derivada oscila (9,26%, 9,27%) em itens baratos.
+ * Quando a diferença é só de arredondamento, usamos a alíquota oficial.
+ */
+const PIS_COFINS_OFICIAIS = [0, 0.0365, 0.0925];
+
+export function encaixarPisCofins(bruta: number): number | null {
+  if (!Number.isFinite(bruta) || bruta < 0) return null;
+  const alvo = PIS_COFINS_OFICIAIS.find((a) => Math.abs(bruta - a) <= 0.0015);
+  return alvo ?? Math.round(bruta * 1e6) / 1e6;
+}
+
 const URL_PADRAO =
   "https://app.webfiori.com.br/sap/bc/srt/rfc/sap/znfe_ov_simular_ws/500/znfe_ov_simular_ws/znfe_ov_simularbinding";
+
 
 const norm = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 /**
