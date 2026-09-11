@@ -497,41 +497,41 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           )}
         </ul>
 
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm min-w-[860px]">
+        <div className="hidden md:block">
+          <table className="w-full table-fixed text-[13px]">
             <thead>
-              <tr className="text-xs text-muted-foreground uppercase tracking-wider border-y border-border">
-                <th className="text-left px-5 py-3">Foto</th>
-                <th className="text-left px-5 py-3">Código</th>
-                <th className="text-left px-5 py-3">Descrição</th>
-                <th className="text-right px-5 py-3">Qtde</th>
-                <th className="text-center px-3 py-3">IPI</th>
-                <th className="text-center px-3 py-3">ICMS</th>
-                <th className="text-center px-3 py-3">PIS/COFINS</th>
-                <th className="text-right px-5 py-3">Preço unitário</th>
-                <th className="text-right px-5 py-3">Total</th>
+              <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-y border-border">
+                <th className="w-12 text-left px-2 py-3">Foto</th>
+                <th className="w-24 text-left px-2 py-3">Código</th>
+                <th className="text-left px-2 py-3">Descrição</th>
+                <th className="w-14 text-right px-2 py-3">Qtde</th>
+                <th className="w-14 text-center px-1 py-3">IPI</th>
+                <th className="w-14 text-center px-1 py-3">ICMS</th>
+                <th className="w-24 text-center px-1 py-3">PIS/COFINS</th>
+                <th className="w-28 text-right px-2 py-3">Preço unitário</th>
+                <th className="w-28 text-right px-2 py-3">Total</th>
               </tr>
             </thead>
             <tbody>
               {itens.map((i, idx) => (
                 <tr key={idx} className="border-b border-border/50 last:border-0">
-                  <td className="px-5 py-2">
+                  <td className="px-2 py-2">
                     <ProdutoFoto url={i.codigo ? fotos[i.codigo] : undefined} alt={i.nome} />
                   </td>
-                  <td className="px-5 py-3 text-muted-foreground">{i.codigo || "—"}</td>
-                  <td className="px-5 py-3 font-medium">{i.nome || "—"}</td>
-                  <td className="px-5 py-3 text-right">{i.qtd ?? 0}</td>
-                  <td className="px-3 py-3 text-center text-muted-foreground">
+                  <td className="px-2 py-3 text-muted-foreground tabular-nums">{i.codigo || "—"}</td>
+                  <td className="px-2 py-3 font-medium leading-tight break-words">{i.nome || "—"}</td>
+                  <td className="px-2 py-3 text-right tabular-nums">{i.qtd ?? 0}</td>
+                  <td className="px-1 py-3 text-center text-muted-foreground tabular-nums">
                     {fmtAliqPct(i.aliq_ipi)}
                   </td>
-                  <td className="px-3 py-3 text-center text-muted-foreground">
+                  <td className="px-1 py-3 text-center text-muted-foreground tabular-nums">
                     {fmtAliqPct(i.aliq_icms)}
                   </td>
-                  <td className="px-3 py-3 text-center text-muted-foreground">
+                  <td className="px-1 py-3 text-center text-muted-foreground tabular-nums">
                     {fmtAliqPct(normalizarPisCofins(i.aliq_pis_cofins))}
                   </td>
-                  <td className="px-5 py-3 text-right">{fmtBRL(i.valor ?? 0)}</td>
-                  <td className="px-5 py-3 text-right font-semibold">
+                  <td className="px-2 py-3 text-right tabular-nums">{fmtBRL(i.valor ?? 0)}</td>
+                  <td className="px-2 py-3 text-right font-semibold tabular-nums">
                     {fmtBRL((i.valor ?? 0) * (i.qtd ?? 0))}
                   </td>
                 </tr>
