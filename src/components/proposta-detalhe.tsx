@@ -497,19 +497,19 @@ export function PropostaDetalhe({ id }: { id?: string }) {
           )}
         </ul>
 
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm min-w-[860px]">
+        <div className="hidden md:block">
+          <table className="w-full table-fixed text-[13px]">
             <thead>
-              <tr className="text-xs text-muted-foreground uppercase tracking-wider border-y border-border">
-                <th className="text-left px-5 py-3">Foto</th>
-                <th className="text-left px-5 py-3">Código</th>
-                <th className="text-left px-5 py-3">Descrição</th>
-                <th className="text-right px-5 py-3">Qtde</th>
-                <th className="text-center px-3 py-3">IPI</th>
-                <th className="text-center px-3 py-3">ICMS</th>
-                <th className="text-center px-3 py-3">PIS/COFINS</th>
-                <th className="text-right px-5 py-3">Preço unitário</th>
-                <th className="text-right px-5 py-3">Total</th>
+              <tr className="text-[11px] text-muted-foreground uppercase tracking-wider border-y border-border">
+                <th className="w-12 text-left px-2 py-3">Foto</th>
+                <th className="w-24 text-left px-2 py-3">Código</th>
+                <th className="text-left px-2 py-3">Descrição</th>
+                <th className="w-14 text-right px-2 py-3">Qtde</th>
+                <th className="w-14 text-center px-1 py-3">IPI</th>
+                <th className="w-14 text-center px-1 py-3">ICMS</th>
+                <th className="w-24 text-center px-1 py-3">PIS/COFINS</th>
+                <th className="w-28 text-right px-2 py-3">Preço unitário</th>
+                <th className="w-28 text-right px-2 py-3">Total</th>
               </tr>
             </thead>
             <tbody>
