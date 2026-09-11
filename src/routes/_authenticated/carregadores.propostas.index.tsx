@@ -404,9 +404,9 @@ function HistoricoCarregadoresPage() {
                             </Link>
                           </Button>
                         )}
-                        {/* Duplicar só faz sentido para refazer um pedido cancelado. */}
-                        {r.status === "Cancelado" && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Duplicar proposta" asChild>
+                        {/* Copiar vale para qualquer pedido (finalizado, em andamento ou cancelado). */}
+                        {r.status !== "Salvo" && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Copiar pedido" title="Copiar pedido" asChild>
                             <Link to="/carregadores/propostas/nova" search={{ dup: r.id }}>
                               <Copy className="h-4 w-4" />
                             </Link>

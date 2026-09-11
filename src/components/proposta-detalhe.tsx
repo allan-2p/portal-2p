@@ -24,7 +24,7 @@ import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorCodigo } from "@/lib/produto-imagens";
-import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Copy, FileText, Pencil, Printer } from "lucide-react";
 import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cidadeUf } from "@/lib/local-format";
 import { adicionarDiasUteis } from "@/lib/dias-uteis";
@@ -664,6 +664,14 @@ export function PropostaDetalheDialog({
                       <Pencil className="h-4 w-4" /> Editar
                     </Link>
                   )}
+                </Button>
+              )}
+              {/* Copiar pedido (Carregadores): abre o wizard com os mesmos dados. */}
+              {id && !!dq.data && String((dq.data as Record<string, any>)['organizacao'] ?? "solar") !== "solar" && (
+                <Button size="sm" variant="outline" className="gap-2" asChild>
+                  <Link to="/carregadores/propostas/nova" search={{ dup: id }}>
+                    <Copy className="h-4 w-4" /> Copiar
+                  </Link>
                 </Button>
               )}
               {id && somenteLeitura && (
