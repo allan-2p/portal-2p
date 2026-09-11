@@ -239,10 +239,14 @@ function quantificarFileira(
       const extraZip = [1, 2, 4].includes(ctx.tipo_gerador) ? ctx.microinversores : 0;
       add("zipado", f.suporte.codigo_sap, f.suporte.nome, totGrampo + extraZip);
     } else {
-      // Mini-trilho POR suporte. As famílias 2P-MTL* e 2P-MINI300 somam +micro
-      // na 1ª fileira; os minis 3.4 (100000317/318/319) não. php:2870-2909
+      // Mini-trilho POR suporte. As famílias Smart10 (2P-MTL* / 2P-MINI300,
+      // suportes SMART10) somam +micro na 1ª fileira; os minis 3.4 não.
+      // Os cadastros guardam o código SAP numérico (ex.: 100000203), então a
+      // regra também reconhece os suportes SMART10 pelo legado. php:2870-2909
       const codMini = f.suporte.cod_mini_trilho ?? f.suporte.codigo_sap;
-      const somaMicro = /^2P-(MTL|MINI)/i.test(String(codMini ?? "")) ? micro1a : 0;
+      const familiaSmart10 =
+        /^2P-(MTL|MINI)/i.test(String(codMini ?? "")) || [9, 10, 20].includes(leg);
+      const somaMicro = familiaSmart10 ? micro1a : 0;
       add("mini_trilho", codMini, `${f.suporte.nome} — mini trilho`, totGrampo + somaMicro);
     }
 
