@@ -515,23 +515,23 @@ export function PropostaDetalhe({ id }: { id?: string }) {
             <tbody>
               {itens.map((i, idx) => (
                 <tr key={idx} className="border-b border-border/50 last:border-0">
-                  <td className="px-5 py-2">
+                  <td className="px-2 py-2">
                     <ProdutoFoto url={i.codigo ? fotos[i.codigo] : undefined} alt={i.nome} />
                   </td>
-                  <td className="px-5 py-3 text-muted-foreground">{i.codigo || "—"}</td>
-                  <td className="px-5 py-3 font-medium">{i.nome || "—"}</td>
-                  <td className="px-5 py-3 text-right">{i.qtd ?? 0}</td>
-                  <td className="px-3 py-3 text-center text-muted-foreground">
+                  <td className="px-2 py-3 text-muted-foreground tabular-nums">{i.codigo || "—"}</td>
+                  <td className="px-2 py-3 font-medium leading-tight break-words">{i.nome || "—"}</td>
+                  <td className="px-2 py-3 text-right tabular-nums">{i.qtd ?? 0}</td>
+                  <td className="px-1 py-3 text-center text-muted-foreground tabular-nums">
                     {fmtAliqPct(i.aliq_ipi)}
                   </td>
-                  <td className="px-3 py-3 text-center text-muted-foreground">
+                  <td className="px-1 py-3 text-center text-muted-foreground tabular-nums">
                     {fmtAliqPct(i.aliq_icms)}
                   </td>
-                  <td className="px-3 py-3 text-center text-muted-foreground">
+                  <td className="px-1 py-3 text-center text-muted-foreground tabular-nums">
                     {fmtAliqPct(normalizarPisCofins(i.aliq_pis_cofins))}
                   </td>
-                  <td className="px-5 py-3 text-right">{fmtBRL(i.valor ?? 0)}</td>
-                  <td className="px-5 py-3 text-right font-semibold">
+                  <td className="px-2 py-3 text-right tabular-nums">{fmtBRL(i.valor ?? 0)}</td>
+                  <td className="px-2 py-3 text-right font-semibold tabular-nums">
                     {fmtBRL((i.valor ?? 0) * (i.qtd ?? 0))}
                   </td>
                 </tr>
