@@ -19,7 +19,10 @@ export const getActiveUsersToday = createServerFn({ method: "GET" }).handler(
     // Safety cap: max 5 pages (1000 users)
     for (let i = 0; i < 5; i++) {
       const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
-      if (error) break;
+      if (error) {
+        console.error("[active-users] falha ao listar usuários:", error.message);
+        break;
+      }
       const users = data?.users ?? [];
       for (const u of users) {
         const raw = (u as { last_sign_in_at?: string | null }).last_sign_in_at;
