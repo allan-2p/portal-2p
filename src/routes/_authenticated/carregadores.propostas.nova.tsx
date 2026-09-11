@@ -2351,7 +2351,12 @@ function PropostaCarregadoresPage() {
                           value={it.produtoId}
                           disabled={!!it.produtoId}
                           carregando={produtosQ.isLoading}
-                          opcoes={opcoesProduto}
+                          opcoes={opcoesProduto.filter(
+                            (o) =>
+                              o.value === it.produtoId ||
+                              !state.itens.some((x) => x.key !== it.key && x.produtoId === o.value),
+                          )}
+
                           placeholder="Selecione o produto"
                           buscaPlaceholder="Busque por código ou nome…"
                           vazio="Nenhum produto encontrado."
