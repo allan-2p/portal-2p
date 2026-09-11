@@ -332,7 +332,7 @@ function PropostaCarregadoresPage() {
         toast.error("Não foi possível carregar a proposta.");
         return;
       }
-      const itens = (
+      const itensBrutos = (
         (data.itens as { produtoId?: string; qtd?: number; valor?: number; valorManual?: boolean }[]) ?? []
       )
         .filter((i) => i.produtoId)
@@ -348,6 +348,15 @@ function PropostaCarregadoresPage() {
             valorManual: i.valorManual ?? valor > 0,
           };
         });
+      // Propostas antigas podem trazer o mesmo produto em várias linhas:
+      // consolida em uma linha só somando as quantidades.
+      const itens = itensBrutos.reduce<typeof itensBrutos>((acc, i) => {
+        const existente = acc.find((x) => x.produtoId === i.produtoId);
+        if (existente) existente.qtd += i.qtd;
+        else acc.push(i);
+        return acc;
+      }, []);
+
 
       const finalidadeCarregada = finalidadeUsoDoCadastro(data.finalidade_uso as string | null);
       setFinalidadeFat(
