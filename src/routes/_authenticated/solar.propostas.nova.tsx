@@ -155,9 +155,43 @@ type Item = {
   origem: "calculadora" | "manual";
   /** Item obrigatório do kit fotovoltaico — quantidade travada em 1, não removível. */
   kit?: boolean;
+  /** Quantidade original vinda da Calculadora 2P (quando o item foi calculado). */
+  qtdCalc?: number;
   /** Item digitado manualmente (fora do catálogo SAP). */
   avulso?: { codigo: string; descricao: string };
 };
+
+/**
+ * Um produto só pode aparecer uma vez na proposta: linhas com o mesmo código
+ * SAP (ou mesmo produto do catálogo) são fundidas somando as quantidades,
+ * preservando a quantidade original da calculadora para exibição.
+ */
+function mesclarDuplicados(lista: Item[], chave: (i: Item) => string): Item[] {
+  const out: Item[] = [];
+  const idx = new Map<string, number>();
+  for (const i of lista) {
+    const k = chave(i);
+    if (!k || i.kit) {
+      out.push(i);
+      continue;
+    }
+    const pos = idx.get(k);
+    if (pos === undefined) {
+      idx.set(k, out.length);
+      out.push(i);
+      continue;
+    }
+    const base = out[pos] as Item;
+    out[pos] = {
+      ...base,
+      qtd: base.qtd + i.qtd,
+      qtdCalc: base.qtdCalc ?? (base.origem === "calculadora" ? base.qtd : i.qtdCalc),
+      origem: base.origem === "calculadora" || i.origem === "calculadora" ? "calculadora" : base.origem,
+    };
+  }
+  return out;
+}
+
 
 /** Fileira da disposição dos painéis (uma linha da tabela da calculadora). */
 type FileiraCalc = {
@@ -647,8 +681,10 @@ function NovaPropostaSolarPage() {
                 qtd: Number(i.qtd ?? 1),
                 valor: money2(i.valor),
                 origem: i.origem === "manual" ? ("manual" as const) : ("calculadora" as const),
+                ...(i.qtdCalc !== undefined && i.qtdCalc !== null ? { qtdCalc: Number(i.qtdCalc) } : {}),
                 ...(i.avulso ? { avulso: i.avulso } : {}),
               }))
+
             : itensSalvos.map((i) => ({ ...i, origem: "calculadora" as const })),
         );
         setModo("calculadora");
@@ -688,6 +724,20 @@ function NovaPropostaSolarPage() {
     setItensCalc((atual) => resolver(atual));
   }, [produtosQ.data]);
 
+  // Propostas antigas podem ter o mesmo item em mais de uma linha: consolida
+  // em uma linha só assim que o catálogo estiver disponível.
+  useEffect(() => {
+    if (!(produtosQ.data ?? []).length) return;
+    const unificar = (atual: Item[]) => {
+      const novo = mesclarDuplicados(atual, chaveItem);
+      return novo.length === atual.length ? atual : novo;
+    };
+    setItensLista(unificar);
+    setItensCalc(unificar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [produtosQ.data]);
+
+
   // ------------------------------------------------------------------
   // Calculadora 2P
   // ------------------------------------------------------------------
@@ -720,12 +770,35 @@ function NovaPropostaSolarPage() {
   const geradorPedeQuantidade =
     geradorEhMicro || /otimizador/i.test(geradorSel?.nome ?? "");
 
+  /** Chave de identidade do item: código SAP (ou id do catálogo como reserva). */
+  const chaveItem = (i: Item) =>
+    normCod(i.avulso?.codigo ?? produtos.find((p) => p.id === i.produtoId)?.codigo ?? "") ||
+    (i.produtoId ? `id:${i.produtoId}` : "");
+
   /** Inclui um produto do catálogo na lista do modo indicado. */
   function adicionarProdutoEm(id: string, alvo: "calculadora" | "lista") {
     const p = produtos.find((x) => x.id === id);
     if (!p) return;
     const setter = alvo === "calculadora" ? setItensCalc : setItensLista;
     const atual = alvo === "calculadora" ? itensCalc : itensLista;
+    const alvoChave = normCod(p.codigo) || `id:${p.id}`;
+    const existente = atual.find((x) => chaveItem(x) === alvoChave);
+    // Um item só pode existir uma vez na proposta: em vez de criar outra linha,
+    // ajusta a quantidade da linha que já existe.
+    if (existente) {
+      const novaQtd = existente.qtd + 1;
+      const novos = atual.map((x) => (x.key === existente.key ? { ...x, qtd: novaQtd } : x));
+      setter(novos);
+      toast.info(
+        `${p.codigo} já está na proposta — a quantidade da linha existente foi ajustada para ${novaQtd}.`,
+      );
+      void (async () => {
+        setTrocando(true);
+        await atualizarPrecos(novos, listaPreco, setter);
+        setTrocando(false);
+      })();
+      return;
+    }
     const novos: Item[] = [
       ...atual,
       {
@@ -739,6 +812,7 @@ function NovaPropostaSolarPage() {
       },
     ];
     setter(novos);
+
     // Mostra o carregamento neutro (overlay "Atualizando itens e valores…")
     // enquanto o SAP responde — sem isso, o item zerado acionava o alerta
     // vermelho de bloqueio durante a busca do preço.
@@ -1054,6 +1128,8 @@ function NovaPropostaSolarPage() {
           key: Math.random().toString(36).slice(2),
           produtoId: "",
           qtd: c.quantidade,
+          qtdCalc: c.quantidade,
+
           valor: 0,
           origem: "calculadora",
           avulso: { codigo: c.codigo ?? "SEM-CODIGO", descricao: c.descricao },
@@ -1064,6 +1140,7 @@ function NovaPropostaSolarPage() {
         key: Math.random().toString(36).slice(2),
         produtoId: prod.id,
         qtd: c.quantidade,
+        qtdCalc: c.quantidade,
         valor: 0,
         origem: "calculadora",
       });
@@ -1071,13 +1148,22 @@ function NovaPropostaSolarPage() {
     const extras = itensCalc.filter((i) => i.origem === "manual" && !i.kit);
     // O item do kit é obrigatório e sobrevive ao recálculo da estrutura.
     const kitAtual = itensCalc.filter((i) => i.kit);
-    setItensCalc([...kitAtual, ...novos, ...extras]);
+    // Nunca duplicar: extras que repetem um item calculado entram na mesma
+    // linha, somando a quantidade e mantendo o valor da calculadora à vista.
+    const consolidados = mesclarDuplicados([...kitAtual, ...novos, ...extras], chaveItem);
+    const fundidos = consolidados.filter((i) => i.qtdCalc !== undefined && i.qtd !== i.qtdCalc);
+    setItensCalc(consolidados);
     setAssinaturaCalc(assinaturaAtual);
     setEditandoCalc(false);
+    if (fundidos.length)
+      toast.info(
+        "Itens repetidos foram unificados em uma linha só — a quantidade da calculadora fica indicada na linha.",
+      );
     if (faltando.length)
       toast.warning(`Itens sem correspondência no catálogo foram incluídos sem preço: ${faltando.join(", ")}.`);
     // Espera os preços do SAP antes de liberar a etapa: nunca seguir com zero calado.
-    await atualizarPrecos([...kitAtual, ...novos, ...extras], listaPreco, setItensCalc);
+    await atualizarPrecos(consolidados, listaPreco, setItensCalc);
+
     setCalculando(false);
     if (!faltando.length) toast.success("Estrutura calculada e itens precificados.");
 
@@ -1729,8 +1815,10 @@ function NovaPropostaSolarPage() {
                     qtd: i.qtd,
                     valor: i.valor,
                     origem: i.origem,
+                    ...(i.qtdCalc !== undefined ? { qtdCalc: i.qtdCalc } : {}),
                     ...(i.avulso ? { avulso: i.avulso } : {}),
                   })),
+
                 }
               : {}),
           },
@@ -2935,6 +3023,12 @@ function NovaPropostaSolarPage() {
                                 : ""}
                             {!i.valor && !i.avulso ? " · sem preço no SAP" : ""}
                           </div>
+                          {i.qtdCalc !== undefined && i.qtd !== i.qtdCalc && (
+                            <div className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                              Calculadora: {i.qtdCalc} · quantidade alterada para {i.qtd}
+                            </div>
+                          )}
+
                           <DisponibilidadeBadge info={disponibilidade[normCod(codigo)]} />
                         </td>
                         <td className="px-4 py-3">

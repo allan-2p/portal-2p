@@ -332,7 +332,7 @@ function PropostaCarregadoresPage() {
         toast.error("Não foi possível carregar a proposta.");
         return;
       }
-      const itens = (
+      const itensBrutos = (
         (data.itens as { produtoId?: string; qtd?: number; valor?: number; valorManual?: boolean }[]) ?? []
       )
         .filter((i) => i.produtoId)
@@ -348,6 +348,15 @@ function PropostaCarregadoresPage() {
             valorManual: i.valorManual ?? valor > 0,
           };
         });
+      // Propostas antigas podem trazer o mesmo produto em várias linhas:
+      // consolida em uma linha só somando as quantidades.
+      const itens = itensBrutos.reduce<typeof itensBrutos>((acc, i) => {
+        const existente = acc.find((x) => x.produtoId === i.produtoId);
+        if (existente) existente.qtd += i.qtd;
+        else acc.push(i);
+        return acc;
+      }, []);
+
 
       const finalidadeCarregada = finalidadeUsoDoCadastro(data.finalidade_uso as string | null);
       setFinalidadeFat(
@@ -2342,7 +2351,12 @@ function PropostaCarregadoresPage() {
                           value={it.produtoId}
                           disabled={!!it.produtoId}
                           carregando={produtosQ.isLoading}
-                          opcoes={opcoesProduto}
+                          opcoes={opcoesProduto.filter(
+                            (o) =>
+                              o.value === it.produtoId ||
+                              !state.itens.some((x) => x.key !== it.key && x.produtoId === o.value),
+                          )}
+
                           placeholder="Selecione o produto"
                           buscaPlaceholder="Busque por código ou nome…"
                           vazio="Nenhum produto encontrado."
@@ -2350,6 +2364,19 @@ function PropostaCarregadoresPage() {
                             semProduto && "border-destructive focus-visible:ring-destructive",
                           )}
                           onChange={(v) => {
+                            // Um produto só pode existir em uma linha: se já
+                            // estiver na proposta, o vendedor ajusta a linha
+                            // existente em vez de duplicar o item.
+                            const jaExiste = state.itens.find(
+                              (x) => x.key !== it.key && x.produtoId === v,
+                            );
+                            if (jaExiste) {
+                              const prod = produtos.find((p) => p.id === v);
+                              toast.error(
+                                `${prod?.codigo ?? "Este produto"} já está na proposta. Ajuste a quantidade da linha existente (hoje ${jaExiste.qtd}).`,
+                              );
+                              return;
+                            }
                             const sugerido = precoSugeridoItem(v, state);
                             setItem(
                               it.key,
@@ -2358,6 +2385,7 @@ function PropostaCarregadoresPage() {
                                 : { produtoId: v },
                             );
                           }}
+
                         />
                         {it.produtoId ? (
                           <p className="text-[11px] text-muted-foreground mt-1">
