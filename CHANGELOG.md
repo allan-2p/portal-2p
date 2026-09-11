@@ -35,6 +35,15 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ## [Não publicado]
 
+### Corrigido
+
+- **Listagem de usuários e contador de "usuários ativos hoje"**: 30 cadastros de acesso
+  criados por script estavam com campos internos nulos, o que derrubava a listagem de
+  usuários (erro 500) e zerava o contador da tela de login. Os campos foram normalizados
+  e a falha agora fica registrada no log em vez de passar despercebida.
+
+
+
 ### Adicionado
 
 - **Script de transferência de carteira em lote** (`scripts/transferir-consultor-lote.ts`):
