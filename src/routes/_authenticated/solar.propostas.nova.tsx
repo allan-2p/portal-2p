@@ -681,8 +681,10 @@ function NovaPropostaSolarPage() {
                 qtd: Number(i.qtd ?? 1),
                 valor: money2(i.valor),
                 origem: i.origem === "manual" ? ("manual" as const) : ("calculadora" as const),
+                ...(i.qtdCalc !== undefined && i.qtdCalc !== null ? { qtdCalc: Number(i.qtdCalc) } : {}),
                 ...(i.avulso ? { avulso: i.avulso } : {}),
               }))
+
             : itensSalvos.map((i) => ({ ...i, origem: "calculadora" as const })),
         );
         setModo("calculadora");
