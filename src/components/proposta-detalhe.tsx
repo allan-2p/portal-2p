@@ -666,6 +666,14 @@ export function PropostaDetalheDialog({
                   )}
                 </Button>
               )}
+              {/* Copiar pedido (Carregadores): abre o wizard com os mesmos dados. */}
+              {id && !!dq.data && String((dq.data as Record<string, any>)['organizacao'] ?? "solar") !== "solar" && (
+                <Button size="sm" variant="outline" className="gap-2" asChild>
+                  <Link to="/carregadores/propostas/nova" search={{ dup: id }}>
+                    <Copy className="h-4 w-4" /> Copiar
+                  </Link>
+                </Button>
+              )}
               {id && somenteLeitura && (
                 <span
                   className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
