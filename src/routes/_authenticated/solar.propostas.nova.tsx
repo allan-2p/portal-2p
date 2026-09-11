@@ -3021,6 +3021,12 @@ function NovaPropostaSolarPage() {
                                 : ""}
                             {!i.valor && !i.avulso ? " · sem preço no SAP" : ""}
                           </div>
+                          {i.qtdCalc !== undefined && i.qtd !== i.qtdCalc && (
+                            <div className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                              Calculadora: {i.qtdCalc} · quantidade alterada para {i.qtd}
+                            </div>
+                          )}
+
                           <DisponibilidadeBadge info={disponibilidade[normCod(codigo)]} />
                         </td>
                         <td className="px-4 py-3">
