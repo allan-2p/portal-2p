@@ -1112,6 +1112,8 @@ function NovaPropostaSolarPage() {
           key: Math.random().toString(36).slice(2),
           produtoId: "",
           qtd: c.quantidade,
+          qtdCalc: c.quantidade,
+
           valor: 0,
           origem: "calculadora",
           avulso: { codigo: c.codigo ?? "SEM-CODIGO", descricao: c.descricao },
