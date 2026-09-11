@@ -1815,8 +1815,10 @@ function NovaPropostaSolarPage() {
                     qtd: i.qtd,
                     valor: i.valor,
                     origem: i.origem,
+                    ...(i.qtdCalc !== undefined ? { qtdCalc: i.qtdCalc } : {}),
                     ...(i.avulso ? { avulso: i.avulso } : {}),
                   })),
+
                 }
               : {}),
           },
