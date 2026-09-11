@@ -724,6 +724,20 @@ function NovaPropostaSolarPage() {
     setItensCalc((atual) => resolver(atual));
   }, [produtosQ.data]);
 
+  // Propostas antigas podem ter o mesmo item em mais de uma linha: consolida
+  // em uma linha só assim que o catálogo estiver disponível.
+  useEffect(() => {
+    if (!(produtosQ.data ?? []).length) return;
+    const unificar = (atual: Item[]) => {
+      const novo = mesclarDuplicados(atual, chaveItem);
+      return novo.length === atual.length ? atual : novo;
+    };
+    setItensLista(unificar);
+    setItensCalc(unificar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [produtosQ.data]);
+
+
   // ------------------------------------------------------------------
   // Calculadora 2P
   // ------------------------------------------------------------------
