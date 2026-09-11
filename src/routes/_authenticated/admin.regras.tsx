@@ -14,6 +14,7 @@ import { SOLAR_CALC_CONFIG_FALLBACK } from "@/lib/solar-calculadora";
 import { resolverProduto } from "@/lib/solar-sku";
 import { sugerirMaterial, useSapCatalogoCodigos } from "@/components/solar/sap-codigo";
 import { RegrasSuportes } from "@/components/solar/regras-suportes";
+import { TabelaEquacoesCalculadora } from "@/components/solar/tabela-equacoes-calculadora";
 
 
 export const Route = createFileRoute("/_authenticated/admin/regras")({
