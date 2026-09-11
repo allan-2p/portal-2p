@@ -37,6 +37,14 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Adicionado
 
+- **Script de transferência de carteira em lote** (`scripts/transferir-consultor-lote.ts`):
+  transfere vários cadastros de consultor a partir de um CSV, aplicando a mesma regra da
+  ação "Transferir consultor" (portal + vendedor no SAP + dono da conta no Salesforce).
+  Usado para repassar 115 clientes de Fernando Lira para Gabriel Kendi (45) e
+  Gabriel Sargiani (70).
+
+
+
 - **2P Solar › Regras de Propostas › Calculadora**: nova **tabela de equações**
   com todas as fórmulas de quantificação (comprimento da fileira, barras,
   junções, grampos, fixadores, mini-trilho Smart, kit parafuso, terminais e
