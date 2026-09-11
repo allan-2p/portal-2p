@@ -45,6 +45,7 @@ import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
 import { propostaPdfDaLinha } from "@/lib/proposta-pdf-row";
 import { PropostaPdfPreview } from "@/components/proposta-pdf-preview";
 import { garantirAliquotasProposta } from "@/lib/proposta-aliquotas.functions";
+import { normalizarPisCofins } from "@/lib/aliquotas-fiscais";
 
 import { useState } from "react";
 import { toast } from "sonner";
