@@ -24,7 +24,7 @@ import { PropostaTimeline } from "@/components/proposta-timeline";
 import { propostaStatusStyle } from "@/lib/proposta-status";
 import { ProdutoFoto } from "@/components/produto-foto";
 import { useImagensPorCodigo } from "@/lib/produto-imagens";
-import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Pencil, Printer } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Copy, FileText, Pencil, Printer } from "lucide-react";
 import { BonificacaoBadge, ehTipoNfBonificacao } from "@/components/bonificacao-badge";
 import { cidadeUf } from "@/lib/local-format";
 import { adicionarDiasUteis } from "@/lib/dias-uteis";
