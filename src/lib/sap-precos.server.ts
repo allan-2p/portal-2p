@@ -52,8 +52,22 @@ export type SimulacaoValores = {
   aliqPisCofins: number | null;
 };
 
+/**
+ * Alíquotas oficiais de PIS+COFINS. O SAP devolve só os VALORES (arredondados a
+ * centavos), então a alíquota derivada oscila (9,26%, 9,27%) em itens baratos.
+ * Quando a diferença é só de arredondamento, usamos a alíquota oficial.
+ */
+const PIS_COFINS_OFICIAIS = [0, 0.0365, 0.0925];
+
+export function encaixarPisCofins(bruta: number): number | null {
+  if (!Number.isFinite(bruta) || bruta < 0) return null;
+  const alvo = PIS_COFINS_OFICIAIS.find((a) => Math.abs(bruta - a) <= 0.0015);
+  return alvo ?? Math.round(bruta * 1e6) / 1e6;
+}
+
 const URL_PADRAO =
   "https://app.webfiori.com.br/sap/bc/srt/rfc/sap/znfe_ov_simular_ws/500/znfe_ov_simular_ws/znfe_ov_simularbinding";
+
 
 const norm = (c: string) => String(c ?? "").trim().replace(/^0+(?=\d)/, "");
 /**
@@ -298,10 +312,15 @@ export async function simularSap(
       // O SAP não devolve % de PIS/COFINS: derivamos dos valores. A base é o
       // valor SEM IPI e SEM ICMS (líquido + PIS + COFINS) — dividir pelo
       // líquido puro dá a alíquota "por dentro" (10,19% em vez de 9,25%).
+      // Os valores vêm arredondados a centavos, então a divisão dá 9,26/9,27%
+      // em itens de valor baixo: encaixamos no regime oficial mais próximo.
       aliqPisCofins: (() => {
         const base = liquido + vlPis + vlCofins;
-        return base > 0 ? Math.round(((vlPis + vlCofins) / base) * 1e6) / 1e6 : null;
+        if (!(base > 0)) return null;
+        const bruta = (vlPis + vlCofins) / base;
+        return encaixarPisCofins(bruta);
       })(),
+
     });
   }
 
