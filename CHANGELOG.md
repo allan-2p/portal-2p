@@ -42,6 +42,9 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
   cadastro no portal e envia o novo responsável para o SAP (vendedor) e para o
   Salesforce (dono da conta e do contato principal), com registro em logs e
   auditoria.
+- **Carregadores › Propostas**: pedidos finalizados (e demais status de pedido)
+  ganharam a ação **Copiar**, que abre uma nova proposta com os mesmos dados do
+  pedido — disponível na listagem (ícone de cópia) e no detalhe da proposta.
 
 ### Alterado
 
