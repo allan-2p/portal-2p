@@ -37,6 +37,12 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Adicionado
 
+- **2P Solar › Regras de Propostas › Calculadora**: nova **tabela de equações**
+  com todas as fórmulas de quantificação (comprimento da fileira, barras,
+  junções, grampos, fixadores, mini-trilho Smart, kit parafuso, terminais e
+  validações), exibindo os parâmetros ativos para conferência da engenharia.
+
+
 - **Clientes › Cadastros**: nova ação **Transferir consultor**, liberada pela
   permissão "Clientes • Transferir consultor do cadastro". A troca atualiza o
   cadastro no portal e envia o novo responsável para o SAP (vendedor) e para o
