@@ -754,12 +754,35 @@ function NovaPropostaSolarPage() {
   const geradorPedeQuantidade =
     geradorEhMicro || /otimizador/i.test(geradorSel?.nome ?? "");
 
+  /** Chave de identidade do item: código SAP (ou id do catálogo como reserva). */
+  const chaveItem = (i: Item) =>
+    normCod(i.avulso?.codigo ?? produtos.find((p) => p.id === i.produtoId)?.codigo ?? "") ||
+    (i.produtoId ? `id:${i.produtoId}` : "");
+
   /** Inclui um produto do catálogo na lista do modo indicado. */
   function adicionarProdutoEm(id: string, alvo: "calculadora" | "lista") {
     const p = produtos.find((x) => x.id === id);
     if (!p) return;
     const setter = alvo === "calculadora" ? setItensCalc : setItensLista;
     const atual = alvo === "calculadora" ? itensCalc : itensLista;
+    const alvoChave = normCod(p.codigo) || `id:${p.id}`;
+    const existente = atual.find((x) => chaveItem(x) === alvoChave);
+    // Um item só pode existir uma vez na proposta: em vez de criar outra linha,
+    // ajusta a quantidade da linha que já existe.
+    if (existente) {
+      const novaQtd = existente.qtd + 1;
+      const novos = atual.map((x) => (x.key === existente.key ? { ...x, qtd: novaQtd } : x));
+      setter(novos);
+      toast.info(
+        `${p.codigo} já está na proposta — a quantidade da linha existente foi ajustada para ${novaQtd}.`,
+      );
+      void (async () => {
+        setTrocando(true);
+        await atualizarPrecos(novos, listaPreco, setter);
+        setTrocando(false);
+      })();
+      return;
+    }
     const novos: Item[] = [
       ...atual,
       {
@@ -773,6 +796,7 @@ function NovaPropostaSolarPage() {
       },
     ];
     setter(novos);
+
     // Mostra o carregamento neutro (overlay "Atualizando itens e valores…")
     // enquanto o SAP responde — sem isso, o item zerado acionava o alerta
     // vermelho de bloqueio durante a busca do preço.
