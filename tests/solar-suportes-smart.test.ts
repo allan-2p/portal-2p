@@ -84,6 +84,22 @@ describe("suportes Smart — cadastro e quantificador", () => {
     });
   });
 
+  it("1b) SMART10-30 com código SAP numérico (100000203) também soma +micro — caso pedido 60361", () => {
+    // 2 fileiras de 4 módulos com micro: 8 finais + 12 intermediários + 2 micro = 22.
+    const s = suporte(9, "SMART10-30", { cod_mini_trilho: "100000203" });
+    const f: QuantFileira = {
+      ...fileira(trilho(3, "Smart 10"), s),
+      qtd_paineis: 4,
+      qtd_fileiras: 2,
+    };
+    const ctx: QuantContexto = { ...ctxMicro, microinversores: 2 };
+    const r = quantificarProjeto([f], modulo, ctx, cfg);
+    expect(item(r, "grampo_intermediario")).toMatchObject({ quantidade: 12 });
+    expect(item(r, "grampo_final")).toMatchObject({ quantidade: 8 });
+    expect(item(r, "mini_trilho")).toMatchObject({ codigo: "100000203", quantidade: 22 });
+    expect(item(r, "kit_parafuso_smart")).toMatchObject({ quantidade: 22 });
+  });
+
   it("2) LAJE 10: 2P-LJ10A + 2P-LJ10B (tot/2 cada) + ZMIL, sem kit e sem ZMI", () => {
     const s = suporte(13, "LAJE 10", { codigo_sap: "2P-LJ10A", cod_extra: "2P-LJ10B" });
     const r = quantificarProjeto([fileira(trilho(5, "Laje 10"), s)], modulo, ctxMicro, cfg);
