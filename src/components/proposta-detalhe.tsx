@@ -45,6 +45,7 @@ import { BoletosSharepointCard } from "@/components/boletos-sharepoint-card";
 import { propostaPdfDaLinha } from "@/lib/proposta-pdf-row";
 import { PropostaPdfPreview } from "@/components/proposta-pdf-preview";
 import { garantirAliquotasProposta } from "@/lib/proposta-aliquotas.functions";
+import { normalizarPisCofins } from "@/lib/aliquotas-fiscais";
 
 import { useState } from "react";
 import { toast } from "sonner";
@@ -56,7 +57,24 @@ import { pesoItensProposta } from "@/lib/peso-proposta.functions";
 
 
 
-type Item = { codigo?: string | null; nome?: string; qtd?: number; valor?: number };
+type Item = {
+  codigo?: string | null;
+  nome?: string;
+  qtd?: number;
+  valor?: number;
+  aliq_ipi?: number | null;
+  aliq_icms?: number | null;
+  aliq_pis_cofins?: number | null;
+};
+
+/** Alíquota em % para exibição; nulo vira traço, 0 aparece como 0,00%. */
+const fmtAliqPct = (v: unknown) =>
+  v == null || !Number.isFinite(Number(v))
+    ? "—"
+    : `${(Number(v) * 100).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}%`;
 
 const fmtData = (v?: string | null) => fmtDataBR(v);
 
@@ -480,13 +498,16 @@ export function PropostaDetalhe({ id }: { id?: string }) {
         </ul>
 
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
+          <table className="w-full text-sm min-w-[860px]">
             <thead>
               <tr className="text-xs text-muted-foreground uppercase tracking-wider border-y border-border">
                 <th className="text-left px-5 py-3">Foto</th>
                 <th className="text-left px-5 py-3">Código</th>
                 <th className="text-left px-5 py-3">Descrição</th>
                 <th className="text-right px-5 py-3">Qtde</th>
+                <th className="text-center px-3 py-3">IPI</th>
+                <th className="text-center px-3 py-3">ICMS</th>
+                <th className="text-center px-3 py-3">PIS/COFINS</th>
                 <th className="text-right px-5 py-3">Preço unitário</th>
                 <th className="text-right px-5 py-3">Total</th>
               </tr>
@@ -500,6 +521,15 @@ export function PropostaDetalhe({ id }: { id?: string }) {
                   <td className="px-5 py-3 text-muted-foreground">{i.codigo || "—"}</td>
                   <td className="px-5 py-3 font-medium">{i.nome || "—"}</td>
                   <td className="px-5 py-3 text-right">{i.qtd ?? 0}</td>
+                  <td className="px-3 py-3 text-center text-muted-foreground">
+                    {fmtAliqPct(i.aliq_ipi)}
+                  </td>
+                  <td className="px-3 py-3 text-center text-muted-foreground">
+                    {fmtAliqPct(i.aliq_icms)}
+                  </td>
+                  <td className="px-3 py-3 text-center text-muted-foreground">
+                    {fmtAliqPct(normalizarPisCofins(i.aliq_pis_cofins))}
+                  </td>
                   <td className="px-5 py-3 text-right">{fmtBRL(i.valor ?? 0)}</td>
                   <td className="px-5 py-3 text-right font-semibold">
                     {fmtBRL((i.valor ?? 0) * (i.qtd ?? 0))}
@@ -508,7 +538,7 @@ export function PropostaDetalhe({ id }: { id?: string }) {
               ))}
               {itens.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-5 py-8 text-center text-muted-foreground">
                     Nenhum item nesta proposta.
                   </td>
                 </tr>

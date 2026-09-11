@@ -37,6 +37,12 @@ Seções permitidas em cada versão: `Adicionado`, `Alterado`, `Corrigido`, `Rem
 
 ### Corrigido
 
+- **PIS/COFINS na proposta**: itens salvos antes da correção ainda mostravam 9,26% ou
+  9,27% no PDF por arredondamento do SAP; agora a alíquota oficial é aplicada também na
+  exibição. O resumo da proposta passou a mostrar IPI, ICMS e PIS/COFINS por item, igual
+  ao PDF.
+
+
 - **Listagem de usuários e contador de "usuários ativos hoje"**: 30 cadastros de acesso
   criados por script estavam com campos internos nulos, o que derrubava a listagem de
   usuários (erro 500) e zerava o contador da tela de login. Os campos foram normalizados
