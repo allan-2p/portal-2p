@@ -2350,6 +2350,19 @@ function PropostaCarregadoresPage() {
                             semProduto && "border-destructive focus-visible:ring-destructive",
                           )}
                           onChange={(v) => {
+                            // Um produto só pode existir em uma linha: se já
+                            // estiver na proposta, o vendedor ajusta a linha
+                            // existente em vez de duplicar o item.
+                            const jaExiste = state.itens.find(
+                              (x) => x.key !== it.key && x.produtoId === v,
+                            );
+                            if (jaExiste) {
+                              const prod = produtos.find((p) => p.id === v);
+                              toast.error(
+                                `${prod?.codigo ?? "Este produto"} já está na proposta. Ajuste a quantidade da linha existente (hoje ${jaExiste.qtd}).`,
+                              );
+                              return;
+                            }
                             const sugerido = precoSugeridoItem(v, state);
                             setItem(
                               it.key,
@@ -2358,6 +2371,7 @@ function PropostaCarregadoresPage() {
                                 : { produtoId: v },
                             );
                           }}
+
                         />
                         {it.produtoId ? (
                           <p className="text-[11px] text-muted-foreground mt-1">
